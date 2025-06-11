@@ -1,0 +1,51 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 0,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Install requirements with 'pip install -r requirements.txt' (python 2) or 'pip3 install -r requirements.txt' (python 3)\n",
+    "from aflow_chull_plotter import Plotter"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 0,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "alloy = 'AFLOW_ALLOY_INSERT_HERE'\n",
+    "# NOTE: If your aflow is not installed in your path, then replace aflow_executable below with the path\n",
+    "plotter = Plotter(aflow_executable = 'aflow')\n",
+    "plotter.plot(alloy)\n",
+    "# NOTE: For 2D plot double click to the right of point to go to compound link\n",
+    "# For ternary plot double click on point and then click on the pop-up banner to go to compound link\n",
+    "# Be patient when you see the * to the left"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python <ver>",
+   "language": "python",
+   "name": "python<ver>"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": <ver>
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython<ver>",
+   "version": "<full ver>"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
+

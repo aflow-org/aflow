@@ -1,0 +1,79 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# AFLOW binaries
+src/aflow
+src/aflow_data
+src/aflowd
+src/apennsy
+
+# AFLOW output files
+src/aflow_data_calculated.cpp
+src/aflow_data_stokes.cpp
+src/aflow_data_nist.cpp
+src/aflow_matlab_funcs.cpp
+src/aflow_gnuplot_funcs.cpp
+src/aflowlib_webapp_entry.cpp
+src/aflowlib_webapp_bands.cpp
+src/aflow_chull_jupyter.cpp
+src/aflow_chull_jupyter_plotter.cpp
+src/aflow_chull_python.cpp
+src/aflow_cce_python.cpp
+src/aflow_chull_jupyter_requirements.cpp
+src/aflow_mix_nomix_table.cpp
+src/aflow_nomix.*.cpp
+src/aflow_data_htqc.cpp
+src/aflow_data_binary.cpp
+src/aflow_data_libraries.cpp
+src/aflow_data_aflow_potcars.cpp
+src/aflow_data_latex.cpp
+src/aflow_data_readme.cpp
+src/aflow_data_extra.cpp
+src/aflow_sym_python.cpp
+src/aflow_xtalfinder_python.cpp
+
+# OS-specific
+*.swp
+.DS_Store
+
+# handing files over to Stefano
+src/FILES_CHANGED.txt
+src/zip_modified_aflow_files.sh
+src/MODIFIED_FILES_*.zip
+src/compile_output*.txt
+
+# old Makefiles
+Makefile.aflow.OLD
+
+# generated documentation
+doc/out

@@ -1,0 +1,116 @@
+/*!
+ \mainpage AFLOW
+
+ \section Contributors
+ \subsection SC Stefano Curtarolo
+    - __SC__
+    - Edmund T. Pratt, Jr. Distinguished Professor Materials Science, Electrical Engineering and Physics
+    - Director, Center for Autonomous Materials Design
+    - stefano@duke.edu
+    - 2000- (aflow)
+
+ \subsection DM Dane Morgan
+    - __DM__
+    - 2002-2004 (convasp)
+
+ \subsection WS Wahyu Setyawan
+    - __WS__
+    - 2007-2011 (--rsm --edos --kband --icsd)
+
+ \subsection RC Roman Chepulskyy
+    - __RC__
+    - 2008-2011 (--edos --kband  surfaces)
+
+ \subsection GH Gus Hart
+    - __GH__
+    - 2008 (lattice reductions - prototypes)
+
+ \subsection OL Ohad Levy
+     - __OL__
+     - 2009-2011 (prototypes)
+
+ \subsection MJ Michal Jahnatek
+     - __MJ__
+     - 2009-2010 (APL)
+
+ \subsection SW Shidong Wang
+     - __SW__
+     - 2010-2013 (cluster expansion)
+
+ \subsection RT Richard Taylor
+     - __RT__
+     - 2010-2013 (surfaces, apennsy)
+
+ \subsection JX Junkai Xue
+     - __JX__
+     - 2010-2013 (prototyper)
+
+ \subsection KY Kesong Yang
+     - __KY__
+     - 2010-2013 (findsym, frozsl, plotband/dos)
+
+ \subsection CT Cormac Toher
+     - __CT__
+     - 2013-2022 (AGL Debye-Gruneisen, AEL elastic)
+
+ \subsection FR Frisco Rose
+     - __FR__
+     - 2013-2022 (API, Aflux)
+
+ \subsection PN Pinku Nath
+     - __PN__
+     - 2013-2018 (Quasi-harmonic approximation)
+
+ \subsection JP Jose J. Plata
+     - __JP__
+     - 2013-2017 (AAPL, thermal cond.)
+
+ \subsection DX David Hicks
+     - __DX__
+     - david.hicks@duke.edu
+     - 2014-2021 (symmetry, structure comparison, prototypes)
+
+ \subsection CO Corey Oses
+     - __CO__
+     - corey.oses@jhu.edu
+     - 2014-2022 (Egap, bader, chull, APL, pocc)
+
+ \subsection DF Denise Ford
+     - __DF__
+     - 2016-2019 (GFA)
+
+ \subsection ME Marco Esters
+     - __ME__
+     - 2018-2022 (AAPL, thermal cond.)
+
+ \subsection RF Rico Friedrich
+     - __RF__
+     - r.friedrich@hzdr.de
+     - 2018-2020 (CCE)
+
+ \subsection HE Hagen Eckert
+    - __HE__
+    - hagen.eckert@duke.edu
+    - 2021-
+
+ \subsection SD Simon Divilov
+    - __SD__
+    - simon.divilov@duke.edu
+    - 2021-
+
+ \subsection AG Asa Guest
+    - __AG__
+    - asa.guest@duke.edu
+    - 2022 -
+
+ \subsection AZ Adam Zettel
+    - __AZ__
+    - adam.zettel@duke.edu
+    - 2022 -
+
+*/
+
+
+
+2021-
+2021-
