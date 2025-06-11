@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "configurePresets": [
+    {
+      "name": "MyConfigPreset",
+      "inherits": ["common", "vcpkg", "debug_setting"],
+      "environment": {
+        "VCPKG_ROOT": "/home/me/.vcpkg/vcpkg"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "MyBuildPreset",
+      "configurePreset": "MyConfigPreset",
+      "jobs": 8
+    }
+  ]
+}

@@ -1,0 +1,314 @@
+#!/usr/bin/perl -w
+
+# Takes the output of Harold Stokes frozsl_init and attempts to set
+#  up a set of VASP POSCAR files, one for each needed calculation
+
+# Started working on this on 5 November 2007
+
+########################################################################
+
+# Packages need:
+
+# use Cwd;  # directory manipulation
+
+########################################################################
+
+# Output will be a series of START/STOP POSCAR files in aflow.in format, one for each mode and
+#  amplitude, each in a POSCAR file labeled by represention, mode, and amplitude
+
+# Usage:
+
+# phvaspsetup < frozsl.lat
+
+# scale converts Bohr to Angstroms:
+
+$scale = 0.529177249;
+
+# where frozsl.lat is the output of the frozsl_init code for the given
+#  structure and k-point
+
+# The title of the calculation is on the fifth line.
+
+for ($i = 1; $i <= 4; $i++) { <> };
+
+$title = <>;
+chomp ($title);
+
+# Get rid of trailing spaces:
+
+$title =~ s/ *$//;
+
+# A couple of lines down are the number of amplitudes for each frozen mode:
+
+$dummy = <>;
+$dummy = <>;
+
+@nline = split(" ",<>);
+$amplitudes = $nline[3];
+
+# print $amplitudes," amplitudes per frozen mode\n";
+
+
+# Now look for the word BEGIN at the start of every line.  This
+# indicates the start of an irreducible representation
+
+open(AFLOWIN, ">/dev/stdout");
+print AFLOWIN "[AFLOW_MODE_POSTSCRIPT]rm -f aflow.frozsl_energies.out","\n";
+print AFLOWIN "[AFLOW_MODE_POSTSCRIPT]rm -f aflow.frozsl.out ","\n";
+
+while ($fnbgn = <>) {
+  
+  if ($fnbgn eq " BEGIN\n") {
+    
+    #       Found one.  The next has the actual irrep.
+    
+    @line = split(" ",<>);
+    $irrep = $line[1];
+
+    #	We want to do a calculation here, so set the mode number
+    #	 to zero and the amplitude number to zero:
+
+    $mode = 0;
+    $ampnum = 0;
+
+    #	Instead of creating a subdirectory, we'll create a series of extensions:
+
+    $subdir = $irrep . "m$mode" . "a$ampnum";
+
+    #	print $subdir,"\n";
+
+    #	Open the AFLOWIN file in the appropriate directory:
+
+    #	open(AFLOWIN, "> AFLOWIN.$subdir");
+#    open(AFLOWIN, ">/dev/stdout");
+    print AFLOWIN "[AFLOW] *************************************************************","\n";
+#    print AFLOWIN "[AFLOW_MODE_POSTSCRIPT]rm -f aflow.frozsl.out ",
+    print AFLOWIN "[AFLOW] *************************************************************","\n";
+    print AFLOWIN "[VASP_POSCAR_MODE_EXPLICIT]START",".$subdir","\n";
+    print AFLOWIN $title," -- ",$irrep," -- Mode ",$mode," -- Amplitude ",$ampnum,"\n";
+    #	Need scale factor printed out:
+
+    print AFLOWIN $scale,"   \# Converts Bohr to Angstroms\n";
+
+    #       Now look for the lattice parameters
+
+    while () {
+      @nextline = split(" ",<>);
+      #
+      #           We're looking for the line
+      #           vectors defining superlattice (cartesian)
+      #
+      if ( $nextline[0] eq "vectors" && $nextline[3] eq "(cartesian)" ) {
+	last;
+      }
+      ;
+    }
+    ;
+
+    #       Get the primitive lattice vectors for this unit cell.
+    #       Note that they will stay around for a while, and that
+    #        we might as well keep that carriage returns:
+
+    $a1 = <>;
+    $a2 = <>;
+    $a3 = <>;
+
+    print AFLOWIN $a1, $a2, $a3;
+
+    #       The number of atoms is two lines down:
+
+    $dummy = <>;
+    $numatom = <>;
+    #	print $numatom;
+    $numatom = $numatom + 0;
+
+    #       Next get the type of each atom:
+
+    $dummy = <>;
+
+    #       There are only 25 atoms per line, so we'll have to do multiple
+    #        reads:
+
+    $aline = "";
+    for ($i = 1; $i <= $numatom; $i = $i + 25) {
+      $dummy = <>;
+      chomp ($dummy);
+      $aline = $aline." ".$dummy;
+    }
+    ;
+    @atomtype = split(" ",$aline);
+
+    #       We'll eventually switch this to the number of atoms of each type:
+
+    #	print $numatom," ",@atomtype,"\n";
+
+    #       How many atomic species are there?
+    #	Note that here, "species" == number of Wyckoff positions in
+    #	primitive cell.  Different "species" may represent atoms of the
+    #	same atomic number.
+
+    $nspecies = $atomtype[$numatom-1];
+
+    for ($i = 1; $i <= $nspecies; $i++) {
+      $mspecies[$i]=0;
+    }
+    ;
+
+    for ($i = 0; $i < $numatom; $i++) {
+      $mspecies[$atomtype[$i]] = $mspecies[$atomtype[$i]] + 1;
+    }
+    ;
+
+    for ($i = 1; $i <= $nspecies; $i++) {
+      printf AFLOWIN "%4i", $mspecies[$i];
+    }
+    print AFLOWIN "\n";
+
+    #       Skip the dimensionless coordinates
+
+    for ($i = 0; $i <= $numatom+1; $i++) {
+      <>;
+    }
+    ;
+
+    #       Print out the atoms, with the appropriate atom type and tags,
+    #	 and note that the coordinates are Cartesian:
+
+    print AFLOWIN "Cartesian\n";
+    for ($i = 0; $i < $numatom; $i++) {
+      $location = <>;
+      chomp ($location);
+      #
+      #           The Cartesian coordinates are printed out in
+      #           Fortran with format
+      #                           (1x,3f20.15)
+      #           This can cause problems, so we must parse the string:
+      #
+      $pos1 = substr($location,1,20);
+      $pos2 = substr($location,21,20);
+      $pos3 = substr($location,41,20);
+      #
+      printf AFLOWIN "%22.15f%22.15f%22.15f\n",$pos1,$pos2,$pos3;
+    }
+    ;
+
+    #	That's all we need to write here:
+
+    print AFLOWIN "[VASP_POSCAR_MODE_EXPLICIT]STOP",".$subdir","\n";
+ #AFLOWDELETE   print AFLOWIN "[AFLOW_MODE_POSTSCRIPT]echo \"","$subdir","\" \"  :  \" `bzgrep \"H=\" ./ARUN.","$subdir","/aflow.qmvasp.out.bz2` ","\n";
+    print AFLOWIN "[AFLOW_MODE_POSTSCRIPT]echo \"","$subdir","\" \"  :  \" `bzgrep \"H=\" ./ARUN.","$subdir","/aflow.qmvasp.out.bz2` >> aflow.frozsl.out ","\n";
+    #	close AFLOWIN;
+    
+    #       Now look for the number of frozen modes in this irrep:
+
+    while () {
+      @nextline = split(" ",<>);
+      #
+      #           The line we are searching for syas "number of frozen modes"
+      #
+      if ( $nextline[0] eq "number" && $nextline[2] eq "frozen" ) {
+	last;
+      }
+      ;
+    }
+
+    $nummode = <>;
+    $nummode = $nummode + 0;
+
+    #	print $nummode," frozen modes\n";
+
+    #       Scroll thorough modes and amplitudes:
+
+    for ($i = 0; $i < $nummode ; $i++) {
+      $mode = $i+1;
+      for ($j = 0; $j < $amplitudes; $j++) {
+	$ampnum = $j+1;
+
+	#		Again, treat this as an extension, not a subdirectory:
+
+	$subdir = $irrep . "m$mode" . "a$ampnum";
+
+	#		Open the AFLOWIN file in the appropriate directory:
+
+	#		open(AFLOWIN, "> AFLOWIN.$subdir");
+#	open(AFLOWIN, ">/dev/stdout");
+	print AFLOWIN "[AFLOW] *************************************************************","\n";
+	print AFLOWIN "[VASP_POSCAR_MODE_EXPLICIT]START",".$subdir","\n";
+
+	#               Look for the string "amplitude" and read the next line:
+
+	while () {
+	  @nextline = split(" ",<>);
+	  if ($nextline[0] eq "amplitude") {
+	    last;
+	  }
+	}
+
+	$ampval = <>;
+	$ampval = $ampval + 0;
+
+	#		printf "%10.5f\n",$ampval;
+
+	#               Title for next calculation:
+
+	print AFLOWIN $title," -- ",$irrep," -- Mode ",$mode," -- Amplitude ",$ampnum,"\n";
+	print AFLOWIN $scale,"   \# Converts Bohr to Angstroms\n";
+
+	#               Primitive lattice vectors and scale factors:
+
+	print AFLOWIN $a1, $a2, $a3;
+
+	#               Look for the Cartesian positions of the atoms:
+	#               The line to look for says
+	#               atomic positions (cartesian)
+	#
+	while () {
+	  @nextline = split(" ",<>);
+	  if ( $nextline[0] eq "atomic" && $nextline[2] eq "(cartesian)" ) {
+	    last;
+	  }
+	  ;
+	}
+	;
+
+	#		Number of atoms of each species:
+
+	for ($k = 1; $k <= $nspecies; $k++) {
+	  printf AFLOWIN "%4i", $mspecies[$k];
+	}
+	;
+	print AFLOWIN "\n";
+
+	#               Read and print that atom location:
+
+	print AFLOWIN "Cartesian\n";
+	for ($k = 0; $k < $numatom; $k++) {
+	  $location = <>;
+	  chomp ($location);
+
+	  $pos1 = substr($location,1,20);
+	  $pos2 = substr($location,21,20);
+	  $pos3 = substr($location,41,20);
+
+	  printf AFLOWIN "%22.15f%22.15f%22.15f\n",$pos1,$pos2,$pos3;
+	}
+	;
+
+	# close AFLOWIN;
+	print AFLOWIN "[VASP_POSCAR_MODE_EXPLICIT]STOP",".$subdir","\n";
+#        print AFLOWIN "[AFLOW_MODE_POSTSCRIPT]echo \"","$subdir","\" \"  :  \" `bzgrep \"H=\" ./ARUN.","$subdir","/aflow.qmvasp.out.bz2` ","\n";
+	print AFLOWIN "[AFLOW_MODE_POSTSCRIPT]echo \"","$subdir","\" \"  :  \" `bzgrep \"H=\" ./ARUN.","$subdir","/aflow.qmvasp.out.bz2` >> aflow.frozsl.out ","\n";
+	print AFLOWIN "[AFLOW] *************************************************************","\n";
+		
+      }
+      ;			  # End of amplitude list for this frozen mode
+    }
+    ;			     #End of frozen mode search for this irrep
+	
+  }
+  ;	    # End of search through current irreducible representation
+    
+}
+; # End of search for irreducible representations, should be at end of file
+print AFLOWIN "[AFLOW_MODE_POSTSCRIPT]cat aflow.frozsl.out | aflow --frozsl_analyze >>  aflow.frozsl_energies.out ","\n";
+print AFLOWIN "[AFLOW_MODE_POSTSCRIPT]aflow --frozsl_output ","\n";

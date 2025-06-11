@@ -1,0 +1,67 @@
+---
+Language: Cpp
+BasedOnStyle: Google
+AccessModifierOffset: -2
+AlignArrayOfStructures: Right
+AlignTrailingComments:
+  Kind: Leave
+AllowShortBlocksOnASingleLine: Empty
+AllowShortCaseExpressionOnASingleLine: true
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortEnumsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortLambdasOnASingleLine: All
+AllowShortLoopsOnASingleLine: true
+BinPackParameters: OnePerLine
+BreakBeforeBraces: Attach
+BreakConstructorInitializers: AfterColon
+BreakTemplateDeclarations: MultiLine
+ColumnLimit: 210
+SortIncludes: CaseSensitive
+IncludeBlocks: Regroup
+IncludeCategories:
+  # <> no extension
+  - Regex: '^<([A-Za-z0-9\/-_])+>'
+    Priority: 1
+    SortPriority: 1
+  # <> with specific libs
+  - Regex: '^<(archive|curl|openssl)'
+    Priority: 2
+    SortPriority: 2
+  # <> with extension
+  - Regex: '^<([A-Za-z0-9.\/-_])+>'
+    Priority: 3
+    SortPriority: 3
+  # <> with anything
+  - Regex: '^<.*'
+    Priority: 4
+    SortPriority: 4
+  # "" with specific libs
+  - Regex: '^"(AUROSTD|aurostd)'
+    Priority: 5
+    SortPriority: 5
+  # "" with anything
+  - Regex: '^".*'
+    Priority: 6
+    SortPriority: 6
+  # anything
+  - Regex: '.*'
+    Priority: 7
+    SortPriority: 7
+IncludeIsMainRegex: '(_test)?$'
+InsertNewlineAtEOF: true
+QualifierAlignment: Left
+SpacesInParens: Never
+SpaceAfterCStyleCast: true
+SpacesBeforeTrailingComments: 1
+SpacesInParentheses: false
+Standard: c++17
+IndentWidth: 2
+TabWidth: 2
+NamespaceIndentation: All
+FixNamespaceComments: true
+PenaltyExcessCharacter: 1
+PenaltyBreakAssignment: 20
+PenaltyBreakString: 6
+...

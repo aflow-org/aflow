@@ -1,0 +1,97 @@
+{
+  "version": 2,
+  "configurePresets": [
+    {
+      "name": "common",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/../build/${presetName}"
+    },
+    {
+      "name": "vcpkg",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+      }
+    },
+    {
+      "name": "debug_setting",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "release_setting",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {"name": "coverage_setting",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_CXX_FLAGS": "--coverage",
+        "CMAKE_C_FLAGS": "--coverage"
+      }
+    },
+    {
+      "name": "release",
+      "displayName": "Release",
+      "inherits": ["common", "release_setting"],
+      "description": "Default release build using Ninja generator"
+    },
+    {
+      "name": "debug",
+      "displayName": "Debug",
+      "inherits": ["common", "debug_setting"],
+      "description": "Default debug build using Ninja generator"
+    },
+    {
+      "name": "coverage",
+      "displayName": "Coverage",
+      "inherits": ["common", "debug_setting", "coverage_setting"],
+      "description": "Default coverage build using Ninja generator"
+    },
+    {
+      "name": "release_vcpkg",
+      "displayName": "Release (vcpkg)",
+      "description": "Release build using Ninja generator and vcpkg manager",
+      "inherits": ["common", "vcpkg", "release_setting"]
+    },
+    {
+      "name": "debug_vcpkg",
+      "displayName": "Debug (vcpkg)",
+      "description": "Debug build using Ninja generator and vcpkg manager",
+      "inherits": ["common", "vcpkg", "debug_setting"]
+    },
+    {
+      "name": "coverage_vcpkg",
+      "displayName": "Debug (vcpkg)",
+      "description": "Debug build using Ninja generator and vcpkg manager",
+      "inherits": ["common", "vcpkg", "debug_setting", "coverage_setting"]
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "release",
+      "displayName": "Release",
+      "configurePreset": "release"
+    },
+    {
+      "name": "debug",
+      "displayName": "Debug",
+      "configurePreset": "debug"
+    },
+    {
+      "name": "release_vcpkg",
+      "displayName": "Release (vcpkg)",
+      "configurePreset": "release_vcpkg"
+    },
+    {
+      "name": "debug_vcpkg",
+      "displayName": "Debug (vcpkg)",
+      "configurePreset": "debug_vcpkg"
+    }
+  ]
+}
