@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 
 # set the project name and version
-project(aflow VERSION 4.0.4)
+project(aflow VERSION 4.0.5)
 # specify the C++ standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -15,19 +15,23 @@ endif()
 find_package(Git QUIET)
 set(AFLOW_VERSION "${CMAKE_PROJECT_VERSION}")
 set(AFLOW_PACK_VERSION "${CMAKE_PROJECT_VERSION}")
-if(GIT_FOUND)
-    execute_process(
-            COMMAND git log -1 --pretty=format:%h
-            OUTPUT_VARIABLE GIT_HASH
-            RESULT_VARIABLE GIT_CHECK
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-            ERROR_QUIET
-    )
-    if(${GIT_CHECK} EQUAL "0")
-        set(AFLOW_VERSION "${CMAKE_PROJECT_VERSION}-${GIT_HASH}")
-        set(AFLOW_PACK_VERSION "${AFLOW_VERSION}")
-    endif ()
-endif()
+if ($ENV{AFLOW_RELEASE} AND $ENV{AFLOW_RELEASE} STREQUAL "true")
+    message("Building release packages - skipping git hash")
+else ()
+    if(GIT_FOUND)
+        execute_process(
+                COMMAND git log -1 --pretty=format:%h
+                OUTPUT_VARIABLE GIT_HASH
+                RESULT_VARIABLE GIT_CHECK
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+                ERROR_QUIET
+        )
+        if(${GIT_CHECK} EQUAL "0")
+            set(AFLOW_VERSION "${CMAKE_PROJECT_VERSION}-${GIT_HASH}")
+            set(AFLOW_PACK_VERSION "${AFLOW_VERSION}")
+        endif ()
+    endif()
+endif ()
 add_compile_definitions(AFLOW_VERSION="${AFLOW_VERSION}")
 add_compile_definitions(AFLOW_VERSION_SHORT="${CMAKE_PROJECT_VERSION}")
 message("Preparing AFLOW ${AFLOW_VERSION}")

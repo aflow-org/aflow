@@ -117,6 +117,9 @@ namespace aflowlib {
     std::sort(stoichiometry_reduced.begin(), stoichiometry_reduced.end(), std::greater<>());
     const std::string stoichiometry_key = aurostd::joinWDelimiter(stoichiometry_reduced, ":");
     const anrl::ProtoData pd = anrl::ProtoData::get();
+    if (pd.lookup["stoichiometry"].find(stoichiometry_key) == pd.lookup["stoichiometry"].end()) {
+      return {};
+    }
     return pd.lookup["stoichiometry"][stoichiometry_key];
   }
 } // namespace aflowlib
@@ -127,6 +130,9 @@ namespace aflowlib {
   std::set<string> GetPrototypesBySymmetry(const vector<uint> &stoichiometry, const uint space_group_number, const vector<GroupedWyckoffPosition> &grouped_Wyckoff_positions, const uint setting, const string &library) {
     const anrl::ProtoData pd = anrl::ProtoData::get();
     const std::set<std::string> vuid_stoichiometry = GetPrototypesByStoichiometry(stoichiometry, library);
+    if (pd.lookup["space_group_number"].find(std::to_string(space_group_number)) == pd.lookup["space_group_number"].end()) {
+       return {};
+    }
     const std::set<std::string> vuid_space_group = pd.lookup["space_group_number"][std::to_string(space_group_number)];
     std::vector<std::string> vuid_symmetry_temp;
     std::set_intersection(vuid_stoichiometry.begin(), vuid_stoichiometry.end(), vuid_space_group.begin(), vuid_space_group.end(), std::back_inserter(vuid_symmetry_temp));

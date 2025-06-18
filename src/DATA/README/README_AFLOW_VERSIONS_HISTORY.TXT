@@ -20,7 +20,7 @@
         -- added import capabilities of LAMMPS data (SD)
         -- added export for IAP generation (SD)
         -- added unit tests for kpath (AZ)
-	-- added unit tests for surface geometry (ST)
+        -- added unit tests for surface geometry (ST)
         -- implemented the xyzf format for the ChIMES code (SD)
         -- switched to cmake build system (HE)
 

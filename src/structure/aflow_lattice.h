@@ -68,10 +68,10 @@ namespace LATTICE {
       {"MCLC3", "C-centered monoclinic kgamma < 90, bcos(alpha)/c+(bsin(alpha)/a)^2<1"},
       {"MCLC4", "C-centered monoclinic kgamma < 90, bcos(alpha)/c+(bsin(alpha)/a)^2=1"},
       {"MCLC5", "C-centered monoclinic kgamma < 90, bcos(alpha)/c+(bsin(alpha)/a)^2>1"},
-      {"TRI1a",                                                            "triclinic"},
-      {"TRI1b",                                                            "triclinic"},
-      {"TRI2a",                                                            "triclinic"},
-      {"TRI2b",                                                            "triclinic"}
+      {"TRI1A",                                                            "triclinic"},
+      {"TRI1B",                                                            "triclinic"},
+      {"TRI2A",                                                            "triclinic"},
+      {"TRI2B",                                                            "triclinic"}
   };
   // AZ20231027 END
   bool Lattice(const aurostd::xmatrix<double>& lattice,

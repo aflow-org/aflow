@@ -11079,13 +11079,13 @@ namespace LATTICE {
   ///
   /// @authors
   /// @mod{AZ,20240223,created}
-  void kpath2stream(stringstream& oss, string lattice_type, bool isVASP, bool isQE, vector<vector<_kpoint*>> kpath, double grid, uint& nkpoint) {
+  void kpath2stream(stringstream& oss, const string& lattice_type, bool isVASP, bool isQE, const vector<vector<_kpoint*>>& kpath, double grid, uint nkpoint) {
     if (isQE) {
       oss << "K_POINTS (crystal_b) ! ";
     }
     string kps;
     kpath2kpathString(kps, kpath);
-    oss << lattice_type << " (" << lattice_names.at(lattice_type) << ") " << kps << endl;
+    oss << lattice_type << " (" << lattice_names.at(aurostd::toupper(lattice_type)) << ") " << kps << endl;
     if (isVASP && grid > 0) {
       oss << round(grid) << "   ! " << round(grid) << " grids " << endl;
     }

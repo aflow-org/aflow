@@ -24,8 +24,7 @@ The easiest way to install `aflow` is to utilize our binary releases via the dif
 ### Linux
 
 #### snap
-
-[Snap packages](https://snapcraft.io/) are a modern package format designed for Linux, developed by Canonical. They
+[Snap packages](https://snapcraft.io/aflow) are a modern package format designed for Linux, developed by Canonical. They
 encapsulate software and all its dependencies, making it easy to install applications without worrying about system-wide
 conflicts or missing libraries. It ensures also that `aflow` is kept up to date. Snaps are secure by default, running in
 isolated environments (sandboxes), and they work across various Linux distributions. The drawback is that `aflow` can
@@ -38,21 +37,20 @@ snap install aflow
 #### .deb (Ubuntu & Debian)
 
 `.deb` packages are the standard software package format for Debian-based Linux distributions. They contain precompiled
-binaries. We pre-build `.deb` packages for different systems, and they can be downloaded from the [GitHub Release]() page. 
+binaries. We pre-build `.deb` packages for different systems, and they can be downloaded from the [GitHub Release](https://github.com/aflow-org/aflow/releases/) page. 
 
 They can either be installed by double-clicking on an Ubuntu desktop system or using `dpkg` on the commandline.
 ```shell
-curl -O https://github.com/aflow-org/AFLOW/archive/refs/tags/aflow_4.0.4.deb #TODO update
-sudo dpkg -i ./aflow_4.0.4.deb
+curl -O https://github.com/aflow-org/aflow/releases/download/v4.0.5/aflow-4.0.5-ubuntu24-amd64.deb
+sudo dpkg -i ./aflow-4.0.5-ubuntu24-amd64.deb
 ```
-
-#### .rpm (RedHat & CentOS) 
 
 #### .sh (Self-extracting installer script)
 
 This self-extracting installer allows for an interactive installation experience by simply running the following:
 ```shell
-sh aflow-4.0.4-Linux.sh # TODO update
+curl -O https://github.com/aflow-org/aflow/releases/download/v4.0.5/aflow-4.0.5-ubuntu24-amd64.sh
+sh aflow-4.0.5-ubuntu24-amd64.sh
 ```
 Use the `--help` option to see available installation options.
 
@@ -66,6 +64,25 @@ brew tap aflow-org/aflow
 brew install aflow
 ```
 
+## Optional dependencies
+
+To use all export functionality of `aflow` some optional dependencies need to be installed.
+These are [gnuplot](https://www.gnuplot.info), [TeXLive](https://www.tug.org/texlive/), and 
+[imagemagick](https://imagemagick.org).
+
+On Debian based systems they can be installed with:
+```shell
+sudo apt update
+sudo apt install gnuplot imagemagick texlive-full
+```
+
+and under macOS using [Homebrew](https://brew.sh).
+```shell
+brew install gnuplot imagemagick
+brew install --cask mactex
+```
+
+
 ## Installing from source
 
 `aflow` can also be built directly from source. This method allows users to modify the source code and is recommended 
@@ -73,14 +90,14 @@ for the best possible performance.
 
 ### Get the source code
 
-If `git` is available it is recommended to download the source code directly from GitHub.
+If `git` is available, it is recommended to download the source code directly from GitHub.
 ```
-git clone --recurse-submodules https://github.com/aflow-org/AFLOW.git
+git clone --recurse-submodules https://github.com/aflow-org/aflow.git
 ```
-Otherwise, the full source can be downloaded on the [GitHub Release]() page.
+Otherwise, the full source can be downloaded on the [GitHub Release](https://github.com/aflow-org/aflow/releases/) page.
 ```shell
-curl -O https://github.com/aflow-org/AFLOW/archive/refs/tags/aflow_4.0.4.orig.tar.xz #TODO update
-tar -xzmf aflow_4.0.4.orig.tar.xz
+curl -O https://github.com/aflow-org/aflow/archive/refs/tags/aflow_4.0.5.orig.tar.xz
+tar -xzmf aflow_4.0.5.orig.tar.xz
 ```
 
 ### Build tools
@@ -92,7 +109,7 @@ sudo apt update
 sudo apt install build-essential cmake ninja-build pkg-config
 ```
 In case the available versions of the build tools provided by your operating system are too old, install the tools locally 
-from the [cmake](https://github.com/Kitware/CMake/releases) or [ninjia](https://github.com/ninja-build/ninja/releases) release pages. 
+from the [cmake](https://github.com/Kitware/CMake/releases) or [ninja](https://github.com/ninja-build/ninja/releases) release pages. 
 
 
 On macOS, the C/C++ compiler is provided by the _Xcode Command Line Tools_, which are installed with [Homebrew](https://brew.sh).
@@ -115,14 +132,14 @@ The following libraries are used:
   - for hashing function
   - for SSL & TLS connections
 - [libcurl](https://curl.se/libcurl/)
-  - for querying AFLOW API
+  - for querying __AFLOW__ API
 
-Install dependencies system-wide on Debian based systems:
+To install dependencies system-wide on Debian based systems:
 ```shell
 sudo apt update
 sudo apt install libarchive libssl-dev libcurl4-openssl-dev
 ```
-Install dependencies system-wide on macOS:
+To install dependencies system-wide on macOS:
 ```shell
 brew update
 brew install libarchive openssl@3 curl
@@ -133,23 +150,23 @@ It is important that [vcpkg](https://vcpkg.io/en/) is initialized and the `VCPKG
 
 ### Building and installing aflow
 First the buildsystem needs to prepare the system. Different presets are available that already cover most needed cases.
-- all available presets can be listed with `cmake -S src --list-presets`
+- all available presets can be listed with: `cmake -S src --list-presets`
 - presets including `release` are optimized builds intended for production use, while `debug` should be used during development
-- presets with `vcpkg` will build a static linked version of `aflow` that can be helpful for clustered systems, or where libraries can't be easy installed or requested by users
+- presets with `vcpkg` will build a static linked version of `aflow` that can be helpful for computer clusters, or where libraries can't be easy installed or requested by users
   - for all `vcpkg` presets the environment variable `VCPKG_ROOT` needs to be set
 - customized presets can be added to a `CMakeUserPresets.json` (see [CMakeUserPresets.example.json](src/CMakeUserPresets.example.json) for an example)
 
 To generate `aflow` using shared libraries follow these steps:
-- create and set up the build folder with
+- create and set up the build folder with:
   - `cmake -S src --preset release`
   - this step configures the build environment with the available tools (compilers, linkers ...)
   - it will inform you if there are missing dependencies
-- build the `aflow` executable in parallel with 8 threads
+- build the `aflow` executable in parallel with 8 threads:
   - `cmake --build build/release --parallel 8`
-- `aflow` can then be executed
+- `aflow` can then be executed:
   - `build/release/aflow --version`
   - `ctest --test-dir build/release/ -L quick --parallel 8`
-- if the binary works as expected it can be installed with:
+- if the binary works as expected, it can be installed with:
   - `sudo cmake --install build/release/` 
 
 To generate `aflow` alongside the needed libraries use the `release_vcpkg` preset:
@@ -163,9 +180,9 @@ sudo cmake --install build/release_vcpkg/
 
 ### Troubleshooting
 - if the vcpkg build fails due to problems with an external library:
-  - remove the binary cache of vcpkg `rm -rf ~/.cache/vcpkg/archives/`
-  - remove the build folder `rm -rf build/release_vcpkg`
-  - rerun the cmake preparation step `cmake --preset release_vcpkg`
+  - remove the binary cache of vcpkg: `rm -rf ~/.cache/vcpkg/archives/`
+  - remove the build folder: `rm -rf build/release_vcpkg`
+  - rerun the cmake preparation step: `cmake --preset release_vcpkg`
   - note: this problem can happen if the compiler or base libraries on an HPC machine changes
 - Make sure you have no spaces in the path to vcpkg or the project. Vcpkg will complain and not work.
 
@@ -178,8 +195,8 @@ available: `ctest -L quick --parallel 8`, while `ctest -E 'ut.structure_gen.prot
 should be used for a detailed test run. If a test failed, `ctest --rerun-failed --parallel 8 --extra-verbose` reruns only 
 the failed test with more details.
 
-If aflow is installed from a binary release, a subset of tests can be run by using  `aflow --unit_test`. A common quick 
-test would be `aflow --unit_test aurostd`.
+If aflow is installed from a binary release, a subset of tests can be run by using:  `aflow --unit_test`. A common quick 
+test would be: `aflow --unit_test aurostd`.
 
 ## Documentation
 The usage of `aflow` is described in multiple peer-reviewed publications. These should also be cited if `aflow` is used
@@ -190,6 +207,7 @@ in any scientific context.
 > N. Hotz, X. Campilongo, A. Calzolari, and S. Curtarolo  
 > *High Entropy Alloys & Materials*  (2025)  
 > [DOI: 10.1007/s44210-025-00058-2](https://doi.org/10.1007/s44210-025-00058-2)
+> | [BibTeX](https://materials.duke.edu/auro/AUROARTICULA/BIBITEMS/curtarolo:art221.txt)
 
 > **aflow++: A C++ framework for autonomous materials design**  
 > C. Oses, M. Esters, D. Hicks, S. Divilov, H. Eckert, R. Friedrich, M.J. Mehl, A. Smolyanyuk, X. Campilongo,
@@ -197,14 +215,15 @@ in any scientific context.
 > C. Toher, and S. Curtarolo  
 > *Computational Materials Science* **217**, 111889 (2023).  
 > [DOI: 10.1016/j.commatsci.2022.111889](https://doi.org/10.1016/j.commatsci.2022.111889)
-> | [BibTeX](http://materials.duke.edu/auro/AUROARTICULA/BIBITEMS/curtarolo:art191.txt) 
+> | [BibTeX](https://materials.duke.edu/auro/AUROARTICULA/BIBITEMS/curtarolo:art191.txt) 
 
 > **The AFLOW standard for high-throughput materials science calculations**  
 > C.E. Calderon, J.J. Plata, C. Toher, C. Oses, O. Levy, M. Fornari, A. Natan, M. J. Mehl,
 > G. Hart, M.B. Nardelli, and S. Curtarolo  
 > *Computational Materials Science* **108A**, 233-238 (2015).  
 > [DOI: 10.1016/j.commatsci.2015.07.019](https://doi.org/10.1016/j.commatsci.2015.07.019)
-> | [BibTeX](http://materials.duke.edu/auro/AUROARTICULA/BIBITEMS/curtarolo:art104.txt)
+> | [BibTeX](https://materials.duke.edu/auro/AUROARTICULA/BIBITEMS/curtarolo:art104.txt)
 
 To document the inner working of `aflow` [doxygen](https://doxygen.nl/) is used. Details on how to build the code documentation and 
-style are described in [docs/README.md](docs/README.md).
+style are described in [docs/README.md](docs/README.md). An online version of this documentation is available at 
+[aflow.org/aflow-documentation/](https://aflow.org/aflow-documentation/).
