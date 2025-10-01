@@ -1876,7 +1876,8 @@ namespace slab {
     }
 
     const int In_Plane_Multiplication[3] = {0, 1, 1};    // In_Plane_Multiplication^2 = number of plane unit cells in slab unit cell
-    vector<int> NumAtomsForElementUC(2, 0);
+    //vector<int> NumAtomsForElementUC(str_in.num_each_type.size(), 0);
+    NumAtomsForElementUC(str_in.num_each_type.size(), 0);  //Adaptive array sizing based on number of unique elements in input POSCAR
     vector<vector<vector<double>>> AtomDirCoords;
     vector<vector<vector<int>>> LayerSitesDirCoords;
 
