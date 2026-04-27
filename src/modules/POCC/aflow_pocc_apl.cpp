@@ -59,6 +59,8 @@ using std::string;
 using std::stringstream;
 using std::vector;
 
+using aurostd::xoption;
+
 static const string _POCC_APL_MODULE_ = "POCC-APL";
 static const double _FREQ_WARNING_THRESHOLD_ = 1e-3;
 

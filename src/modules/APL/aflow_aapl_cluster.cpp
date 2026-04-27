@@ -16,13 +16,17 @@
 // See aflow_apl.h for descriptions of the class members, and for the structs
 // structs _cluster and _ineq_distortions.
 
+#include "config.h"
+
 #include <cstddef>
 #include <cstdlib>
+#include <fstream>
 #include <iomanip>
 #include <ios>
 #include <iostream>
 #include <ostream>
 #include <sstream>
+#include <string>
 #include <vector>
 
 #include "AUROSTD/aurostd.h"
@@ -42,9 +46,16 @@
 #include "flow/aflow_xclasses.h"
 #include "modules/SYM/aflow_symmetry.h"
 
+using std::ofstream;
+using std::ostream;
+using std::string;
+using std::stringstream;
+using std::vector;
+
 using aurostd::xcombos;
 using aurostd::xerror;
-using std::vector;
+using aurostd::xmatrix;
+using aurostd::xvector;
 
 #define _DEBUG_AAPL_CLUSTERS_ false
 
@@ -52,82 +63,19 @@ using std::vector;
 
 namespace apl {
 
-  // Constructors//////////////////////////////////////////////////////////////
-  //  Default constructor
-  ClusterSet::ClusterSet(ostream& oss) : xStream(oss) {
-    free();
-    directory = "./";
-  }
-
-  ClusterSet::ClusterSet(ofstream& mf, ostream& oss) : xStream(mf, oss) {
-    free();
-    directory = "./";
-  }
-
-  ClusterSet::ClusterSet(const Supercell& supercell, int _order, int cut_shell, double cut_rad, const string& dir, ofstream& mf, ostream& oss) : xStream(mf, oss) {
-    free();
-    directory = dir;
+  ClusterSet::ClusterSet(const Supercell& supercell, int _order, int cut_shell, double cut_rad, const string& dir, ofstream& mf, ostream& oss) : xStream(mf, oss), directory(dir) {
     initialize(supercell, _order, cut_shell, cut_rad);
   }
 
   // From file
-  ClusterSet::ClusterSet(const string& filename, const Supercell& supercell, int _order, int cut_shell, double cut_rad, const string& dir, ofstream& mf, ostream& oss) : xStream(mf, oss) {
-    free();  // Clear old vectors
-    directory = dir;
+  ClusterSet::ClusterSet(const string& filename, const Supercell& supercell, int _order, int cut_shell, double cut_rad, const string& dir, ofstream& mf, ostream& oss) : xStream(mf, oss), directory(dir) {
     initialize(supercell, _order, cut_shell, cut_rad);
     readClusterSetFromFile(filename);
   }
 
-  // Copy Constructors/////////////////////////////////////////////////////////
-  ClusterSet::ClusterSet(const ClusterSet& that) : xStream(*that.getOFStream(), *that.getOSS()) {
-    if (this != &that) {
-      free();
-    }
-    copy(that);
-  }
-
-  const ClusterSet& ClusterSet::operator=(const ClusterSet& that) {
-    if (this != &that) {
-      free();
-    }
-    copy(that);
-    return *this;
-  }
-
-  void ClusterSet::copy(const ClusterSet& that) {
-    if (this == &that) {
-      return;
-    }
-    xStream::copy(that);
-    clusters = that.clusters;
-    coordination_shells = that.coordination_shells;
-    cutoff = that.cutoff;
-    directory = that.directory;
-    distortion_vectors = that.distortion_vectors;
-    higher_order_ineq_distortions = that.higher_order_ineq_distortions;
-    ineq_clusters = that.ineq_clusters;
-    ineq_distortions = that.ineq_distortions;
-    linear_combinations = that.linear_combinations;
-    nifcs = that.nifcs;
-    order = that.order;
-    pcell = that.pcell;
-    pc2scMap = that.pc2scMap;
-    permutations = that.permutations;
-    scell = that.scell;
-    sc2pcMap = that.sc2pcMap;
-    sc_dim = that.sc_dim;
-    symmetry_map = that.symmetry_map;
-  }
-
-  // Destructor////////////////////////////////////////////////////////////////
-  ClusterSet::~ClusterSet() {
-    xStream::free();
-    free();
-  }
-
-  // free//////////////////////////////////////////////////////////////////////
+  // clear//////////////////////////////////////////////////////////////////////
   //  Clears all vectors and resets all values.
-  void ClusterSet::free() {
+  void ClusterSet::clear() {
     clusters.clear();
     coordination_shells.clear();
     cutoff = 0.0;
@@ -146,12 +94,6 @@ namespace apl {
     sc_dim.clear();
     sc2pcMap.clear();
     symmetry_map.clear();
-  }
-
-  // clear/////////////////////////////////////////////////////////////////////
-  //  Creates an empty ClusterSet object.
-  void ClusterSet::clear() {
-    free();
   }
 
   // initialize////////////////////////////////////////////////////////////////
@@ -271,7 +213,7 @@ namespace apl {
 
       for (uint fg = 0; fg < fgsize; fg++) {
         // Scale the translation vector to supercell dimensions
-        const xvector<double> ftau_scaled(3);
+        xvector<double> ftau_scaled(3);
         xvector<double> fpos_scaled(3);
         for (int i = 1; i < 4; i++) {
           ftau_scaled[i] = pcell.fgroup[fg].ftau[i] / sc_dim[i];
@@ -1758,7 +1700,7 @@ namespace apl {
         }
         line = vlines[line_count++];
         if (line.find("varray name=\"pcell lattice\"") != string::npos) {
-          const xmatrix<double> latt(3, 3);
+          xmatrix<double> latt(3, 3);
           for (int i = 1; i < 4; i++) {
             line = vlines[line_count++];
             if (line_count == vsize) {
@@ -1811,7 +1753,7 @@ namespace apl {
               // Extract positions
               t = line.find_first_of(">") + 1;
               aurostd::string2tokens(line.substr(t, line.find_last_of("<") - t), tokens, string(" "));
-              const xvector<double> fpos(3);
+              xvector<double> fpos(3);
               for (int i = 1; i < 4; i++) {
                 fpos(i) = aurostd::string2utype<double>(tokens[i - 1]);
               }
@@ -1863,7 +1805,7 @@ namespace apl {
           line = vlines[line_count++];
           t = line.find_first_of(">") + 1;
           aurostd::string2tokens(line.substr(t, line.find_last_of("<") - t), tokens, string(" "));
-          const xvector<int> sc(3);
+          xvector<int> sc(3);
           for (int i = 1; i < 4; i++) {
             sc(i) = aurostd::string2utype<double>(tokens[i - 1]);
           }

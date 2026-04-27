@@ -16,6 +16,8 @@
 #include <iomanip>
 #include <ios>
 #include <ostream>
+#include <sstream>
+#include <string>
 #include <vector>
 
 #include "AUROSTD/aurostd.h"
@@ -48,6 +50,9 @@ using aurostd::xcomplex;
 using aurostd::xerror;
 using aurostd::xmatrix;
 using aurostd::xvector;
+using std::ostream;
+using std::string;
+using std::stringstream;
 using std::vector;
 using namespace std::placeholders;
 
@@ -55,75 +60,12 @@ using namespace std::placeholders;
 
 namespace apl {
 
-  // Constructor///////////////////////////////////////////////////////////////
-  TCONDCalculator::TCONDCalculator() {
-    free();
-  }
-
-  TCONDCalculator::TCONDCalculator(PhononCalculator& pc, const aurostd::xoption& opts) {
-    _pc = &pc;
-    _qm = &_pc->getQMesh();  // This pointer is only defined to make the code more readable
-    _pc_set = true;
+  TCONDCalculator::TCONDCalculator(PhononCalculator& pc, const aurostd::xoption& opts) : _pc(&pc), _qm(&pc.getQMesh()), _pc_set(true) {
     initialize(opts);
   }
 
-  // Copy Constructor//////////////////////////////////////////////////////////
-  TCONDCalculator::TCONDCalculator(const TCONDCalculator& that) {
-    if (this != &that) {
-      free();
-    }
-    copy(that);
-  }
-
-  TCONDCalculator& TCONDCalculator::operator=(const TCONDCalculator& that) {
-    if (this != &that) {
-      free();
-    }
-    copy(that);
-    return *this;
-  }
-
-  void TCONDCalculator::copy(const TCONDCalculator& that) {
-    if (this == &that) {
-      return;
-    }
-    boundary_grain_size = that.boundary_grain_size;
-    calc_boundary = that.boundary_grain_size;
-    calc_cumulative = that.calc_cumulative;
-    calc_isotope = that.calc_isotope;
-    calc_rta_only = that.calc_rta_only;
-    eigenvectors = that.eigenvectors;
-    freq = that.freq;
-    grueneisen_avg = that.grueneisen_avg;
-    grueneisen_mode = that.grueneisen_mode;
-    gvel = that.gvel;
-    _initialized = that._initialized;
-    intr_trans_probs = that.intr_trans_probs;
-    intr_trans_probs_iso = that.intr_trans_probs_iso;
-    nBranches = that.nBranches;
-    nIQPs = that.nIQPs;
-    nQPs = that.nQPs;
-    _pc = that._pc;
-    _pc_set = that._pc_set;
-    phase_space = that.phase_space;
-    processes = that.processes;
-    processes_iso = that.processes_iso;
-    _qm = that._qm;
-    scattering_rates_anharm = that.scattering_rates_anharm;
-    scattering_rates_boundary = that.scattering_rates_boundary;
-    scattering_rates_isotope = that.scattering_rates_isotope;
-    scattering_rates_total = that.scattering_rates_total;
-    temperatures = that.temperatures;
-    thermal_conductivity = that.thermal_conductivity;
-  }
-
-  // Destructor////////////////////////////////////////////////////////////////
-  TCONDCalculator::~TCONDCalculator() {
-    free();
-  }
-
   // free//////////////////////////////////////////////////////////////////////
-  void TCONDCalculator::free() {
+  void TCONDCalculator::clear() {
     boundary_grain_size = 0.0;
     calc_boundary = false;
     calc_cumulative = false;
@@ -156,7 +98,7 @@ namespace apl {
 
   // clear/////////////////////////////////////////////////////////////////////
   void TCONDCalculator::clear(PhononCalculator& pc) {
-    free();
+    clear();
     _pc = &pc;
     _qm = &_pc->getQMesh();
     _pc_set = true;
@@ -358,7 +300,7 @@ namespace apl {
     const uint natoms_sc = scell_xstr.atoms.size();
     vector<vector<xvector<double>>> min_dist(natoms, vector<xvector<double>>(natoms_sc));
     for (int i = 0; i < natoms; i++) {
-      const xvector<double>& iat_cpos = scell_xstr.atoms[scell.pc2scMap(i)].cpos;
+      const xvector<double> iat_cpos = scell_xstr.atoms[scell.pc2scMap(i)].cpos;
       for (uint j = 0; j < natoms_sc; j++) {
         min_dist[i][j] = SYM::minimizeDistanceCartesianMethod(scell_xstr.atoms[j].cpos, iat_cpos, scell_xstr.lattice);
       }
@@ -550,7 +492,7 @@ namespace apl {
     xvector<double> min_vec(3);
     for (uint iat = 0; iat < niatoms; iat++) {
       iat_sc = pc2scMap[iat];
-      const xvector<double>& iat_cpos = scell.atoms[iat_sc].cpos;
+      const xvector<double> iat_cpos = scell.atoms[iat_sc].cpos;
       for (uint at = 0; at < natoms; at++) {
         min_vec = SYM::minimizeDistanceCartesianMethod(scell.atoms[at].cpos, iat_cpos, scell.lattice);
         at_eq = sc2pcMap[at];
@@ -1309,7 +1251,7 @@ namespace apl {
     const xvector<double> xvec(3);
     int iq = -1;
     for (int q = 0; q < nQPs; q++) {
-      const xmatrix<double>& Uc = pgroup[_qm->getQPoint(q).symop].Uc;
+      const xmatrix<double> Uc = pgroup[_qm->getQPoint(q).symop].Uc;
       iq = _qm->getIbzqpt(q);
       for (int br = 0; br < nBranches; br++) {
         if (rates[iq][br] > 0.0) {

@@ -50,7 +50,8 @@ namespace aurostd {
     xmatrix<utype>& operator=(const xmatrix<utype>&);                   // assignment
     xmatrix<utype>& operator=(const std::initializer_list<std::initializer_list<utype>>); // initializer_list assignment //HE20220616
     ~xmatrix();                                                        // default destructor
-    utype* operator[](int) const;                                       // indicize i,j
+    utype* operator[](int);                                             // indicize i,j
+    const utype* operator[](int) const;                                 // indicize i,j const
     xvector<utype> operator()(int) const;                               // indicize i
     [[nodiscard]] xvector<utype> getcol(int) const;                                   // return column i  //CO20191110
     [[nodiscard]] xvector<utype> getdiag(int k = 0, int _lrows = 1) const;                 // return diagonal, k=0 is main diagonal, k>0 is above diagonal //CO20191201
@@ -63,8 +64,10 @@ namespace aurostd {
     void setcol(const xvector<utype>& col, int icol = 1);                  // set col of matrix //CO20190808
     void setmat(const xmatrix<utype>& mat, int irow = 1, int icol = 1);       // set submat  //CO20190808
     void setmat(const xvector<utype>& xv, int icol = 1, bool col = true);     // set submat  //CO20190808
-    utype& operator()(int, int) const;                                   // indicize i,j
-    utype& operator()(int, int, bool) const;                              // indicize boundary conditions
+    utype& operator()(int, int);                                              // indicize i,j
+    const utype& operator()(int, int) const;                                  // indicize i,j
+    utype& operator()(int, int, bool);                                        // indicize boundary conditions
+    const utype& operator()(int, int, bool) const;                            // indicize boundary conditions
         // xmatrix operator()(int,int,int,int) const;                       // indicize i1,j1,i2,j2
         // math operators
     xmatrix<utype>& operator+=(const xmatrix<utype>&);
@@ -176,82 +179,80 @@ namespace aurostd {
 
   template <class utype> xmatrix<utype> operator-(const xmatrix<utype>&) __xprototype;
 
-  template <class utype> bool identical(const xmatrix<utype>&, const xmatrix<utype>&, const double&, const char& _mode_) __xprototype;
+  template <class utype> [[nodiscard]] bool identical(const xmatrix<utype>&, const xmatrix<utype>&, const double&, const char& _mode_) __xprototype;
 
-  template <class utype> bool identical(const xmatrix<utype>&, const xmatrix<utype>&, const double&) __xprototype;
+  template <class utype> [[nodiscard]] bool identical(const xmatrix<utype>&, const xmatrix<utype>&, const double&) __xprototype;
 
-  template <class utype> bool rel_identical(const xmatrix<utype>&, const xmatrix<utype>&, const double&) __xprototype;
+  template <class utype> [[nodiscard]] bool rel_identical(const xmatrix<utype>&, const xmatrix<utype>&, const double&) __xprototype;
 
-  template <class utype> bool abs_identical(const xmatrix<utype>&, const xmatrix<utype>&, const double&) __xprototype;
+  template <class utype> [[nodiscard]] bool abs_identical(const xmatrix<utype>&, const xmatrix<utype>&, const double&) __xprototype;
 
-  template <class utype> bool identical(const xmatrix<utype>&, const xmatrix<utype>&) __xprototype;
+  template <class utype> [[nodiscard]] bool identical(const xmatrix<utype>&, const xmatrix<utype>&) __xprototype;
 
-  template <class utype> bool operator==(const xmatrix<utype>&, const xmatrix<utype>&) __xprototype;
+  template <class utype> [[nodiscard]] [[nodiscard]] bool operator==(const xmatrix<utype>&, const xmatrix<utype>&) __xprototype;
 
-  template <class utype> bool isdifferent(const xmatrix<utype>&, const xmatrix<utype>&, const double&) __xprototype;
+  template <class utype> [[nodiscard]] bool isdifferent(const xmatrix<utype>&, const xmatrix<utype>&, const double&) __xprototype;
 
-  template <class utype> bool isdifferent(const xmatrix<utype>&, const xmatrix<utype>&) __xprototype;
+  template <class utype> [[nodiscard]] bool isdifferent(const xmatrix<utype>&, const xmatrix<utype>&) __xprototype;
 
-  template <class utype> bool isequal(const xmatrix<utype>&, const xmatrix<utype>&, const double&) __xprototype;
+  template <class utype> [[nodiscard]] bool isequal(const xmatrix<utype>&, const xmatrix<utype>&, const double&) __xprototype;
 
-  template <class utype> bool isequal(const xmatrix<utype>&, const xmatrix<utype>&) __xprototype;
+  template <class utype> [[nodiscard]] bool isequal(const xmatrix<utype>&, const xmatrix<utype>&) __xprototype;
 
   template <class utype> bool operator!=(const xmatrix<utype>&, const xmatrix<utype>&) __xprototype;
 
   // ME20190814 - xcomplex versions
-  template <class utype> bool identical(const xmatrix<xcomplex<utype>>&, const xmatrix<xcomplex<utype>>&, const double&, const char& _mode_) __xprototype;
+  template <class utype> [[nodiscard]] bool identical(const xmatrix<xcomplex<utype>>&, const xmatrix<xcomplex<utype>>&, const double&, const char& _mode_) __xprototype;
 
-  template <class utype> bool identical(const xmatrix<xcomplex<utype>>&, const xmatrix<xcomplex<utype>>&, const double&) __xprototype;
+  template <class utype> [[nodiscard]] bool identical(const xmatrix<xcomplex<utype>>&, const xmatrix<xcomplex<utype>>&, const double&) __xprototype;
 
-  template <class utype> bool rel_identical(const xmatrix<xcomplex<utype>>&, const xmatrix<xcomplex<utype>>&, const double&) __xprototype;
+  template <class utype> [[nodiscard]] bool rel_identical(const xmatrix<xcomplex<utype>>&, const xmatrix<xcomplex<utype>>&, const double&) __xprototype;
 
-  template <class utype> bool abs_identical(const xmatrix<xcomplex<utype>>&, const xmatrix<xcomplex<utype>>&, const double&) __xprototype;
+  template <class utype> [[nodiscard]] bool abs_identical(const xmatrix<xcomplex<utype>>&, const xmatrix<xcomplex<utype>>&, const double&) __xprototype;
 
-  template <class utype> bool identical(const xmatrix<xcomplex<utype>>&, const xmatrix<xcomplex<utype>>&) __xprototype;
+  template <class utype> [[nodiscard]] bool identical(const xmatrix<xcomplex<utype>>&, const xmatrix<xcomplex<utype>>&) __xprototype;
 
-  template <class utype> bool operator==(const xmatrix<xcomplex<utype>>&, const xmatrix<xcomplex<utype>>&) __xprototype;
+  template <class utype> [[nodiscard]] bool operator==(const xmatrix<xcomplex<utype>>&, const xmatrix<xcomplex<utype>>&) __xprototype;
 
-  template <class utype> bool isdifferent(const xmatrix<xcomplex<utype>>&, const xmatrix<xcomplex<utype>>&, const double&) __xprototype;
+  template <class utype> [[nodiscard]] bool isdifferent(const xmatrix<xcomplex<utype>>&, const xmatrix<xcomplex<utype>>&, const double&) __xprototype;
 
-  template <class utype> bool isdifferent(const xmatrix<xcomplex<utype>>&, const xmatrix<xcomplex<utype>>&) __xprototype;
+  template <class utype> [[nodiscard]] bool isdifferent(const xmatrix<xcomplex<utype>>&, const xmatrix<xcomplex<utype>>&) __xprototype;
 
-  template <class utype> bool isequal(const xmatrix<xcomplex<utype>>&, const xmatrix<xcomplex<utype>>&, const double&) __xprototype;
+  template <class utype> [[nodiscard]] bool isequal(const xmatrix<xcomplex<utype>>&, const xmatrix<xcomplex<utype>>&, const double&) __xprototype;
 
-  template <class utype> bool isequal(const xmatrix<xcomplex<utype>>&, const xmatrix<xcomplex<utype>>&) __xprototype;
+  template <class utype> [[nodiscard]] bool isequal(const xmatrix<xcomplex<utype>>&, const xmatrix<xcomplex<utype>>&) __xprototype;
 
   template <class utype> bool operator!=(const xmatrix<xcomplex<utype>>&, const xmatrix<xcomplex<utype>>&) __xprototype;
 
-  // CO START
-  template <class utype> bool isidentity(const xmatrix<utype>&) __xprototype;
-  // CO END
+  template <class utype> [[nodiscard]] bool isidentity(const xmatrix<utype>&) __xprototype;
 
-  template <class utype> bool isdiagonal(const xmatrix<utype>&, const utype& _eps_ = (utype) _AUROSTD_XMATRIX_TOLERANCE_IDENTITY_) __xprototype; // DX20171025
+  template <class utype> [[nodiscard]] bool isdiagonal(const xmatrix<utype>&, const utype& _eps_ = (utype) _AUROSTD_XMATRIX_TOLERANCE_IDENTITY_) __xprototype; // DX20171025
 
-  template <class utype> bool isinteger(const xmatrix<utype>&, const utype& tol = (utype) 0.01) __xprototype;
+  template <class utype> [[nodiscard]] bool isinteger(const xmatrix<utype>&, const utype& tol = (utype) 0.01) __xprototype;
 
-  template <class utype> bool issymmetric(const xmatrix<utype>&) __xprototype;
+  template <class utype> [[nodiscard]] bool issymmetric(const xmatrix<utype>&) __xprototype;
 
-  template <class utype> bool isantisymmetric(const xmatrix<utype>&) __xprototype;
+  template <class utype> [[nodiscard]] bool isantisymmetric(const xmatrix<utype>&) __xprototype;
 
-  template <class utype> bool ishermitian(const xmatrix<utype>&) __xprototype;
+  template <class utype> [[nodiscard]] bool ishermitian(const xmatrix<utype>&) __xprototype;
 
-  template <class utype> bool isantihermitian(const xmatrix<utype>&) __xprototype;
+  template <class utype> [[nodiscard]] bool isantihermitian(const xmatrix<utype>&) __xprototype;
 
 } // namespace aurostd
 
 // ----------------------------------------------------------- xmatrix constrtuction
 namespace aurostd {
-  template <class utype> xmatrix<utype> reshape(const xvector<utype>& vec, int rows, int cols = 0) __xprototype;  // ME20210505
+  template <class utype> [[nodiscard]] xmatrix<utype> reshape(const xvector<utype>& vec, int rows, int cols = 0) __xprototype;  // ME20210505
 
-  template <class utype> xmatrix<utype> reshape(const xvector<utype>&) __xprototype;
+  template <class utype> [[nodiscard]] xmatrix<utype> reshape(const xvector<utype>&) __xprototype;
 
-  template <class utype> xmatrix<utype> reshape_cols(const xvector<utype>& vec) __xprototype;
+  template <class utype> [[nodiscard]] xmatrix<utype> reshape_cols(const xvector<utype>& vec) __xprototype;
 
-  template <class utype> xmatrix<utype> reshape_rows(const xvector<utype>& vec) __xprototype;
+  template <class utype> [[nodiscard]] xmatrix<utype> reshape_rows(const xvector<utype>& vec) __xprototype;
 
-  template <class utype> xmatrix<utype> hstack(const std::vector<xvector<utype>>& vec_list) __xprototype;
+  template <class utype> [[nodiscard]] xmatrix<utype> hstack(const std::vector<xvector<utype>>& vec_list) __xprototype;
 
-  template <class utype> xmatrix<utype> vstack(const std::vector<xvector<utype>>& vec_list) __xprototype;
+  template <class utype> [[nodiscard]] xmatrix<utype> vstack(const std::vector<xvector<utype>>& vec_list) __xprototype;
 
 } // namespace aurostd
 
@@ -264,25 +265,25 @@ namespace aurostd {
 
 // ----------------------------------------------------------- xmatrix cast
 namespace aurostd {
-  template <class utype> xmatrix<long double> xlongdouble(const xmatrix<utype>&) __xprototype;
+  template <class utype> [[nodiscard]] xmatrix<long double> xlongdouble(const xmatrix<utype>&) __xprototype;
 
-  template <class utype> xmatrix<double> xdouble(const xmatrix<utype>&) __xprototype;
+  template <class utype> [[nodiscard]] xmatrix<double> xdouble(const xmatrix<utype>&) __xprototype;
 
-  template <class utype> xmatrix<float> xfloat(const xmatrix<utype>&) __xprototype;
+  template <class utype> [[nodiscard]] xmatrix<float> xfloat(const xmatrix<utype>&) __xprototype;
 
-  template <class utype> xmatrix<long int> xlongint(const xmatrix<utype>&) __xprototype;
+  template <class utype> [[nodiscard]] xmatrix<long int> xlongint(const xmatrix<utype>&) __xprototype;
 
-  template <class utype> xmatrix<int> xint(const xmatrix<utype>&) __xprototype;
+  template <class utype> [[nodiscard]] xmatrix<int> xint(const xmatrix<utype>&) __xprototype;
 
-  template <class utype> xmatrix<char> xchar(const xmatrix<utype>&) __xprototype;
+  template <class utype> [[nodiscard]] xmatrix<char> xchar(const xmatrix<utype>&) __xprototype;
 
-  template <class utype> std::vector<std::vector<utype>> xmatrix2vectorvector(const xmatrix<utype>& xmat) __xprototype;
+  template <class utype> [[nodiscard]] std::vector<std::vector<utype>> xmatrix2vectorvector(const xmatrix<utype>& xmat) __xprototype;
 
-  template <class utype> xmatrix<utype> vectorvector2xmatrix(const std::vector<std::vector<utype>>&, int lrows = 1, int lcols = 1) __xprototype;
-  template <class utype> xmatrix<utype> vectorvector2xmatrix(const std::vector<std::vector<std::string>>&, int lrows = 1, int lcols = 1) __xprototype;
+  template <class utype> [[nodiscard]] xmatrix<utype> vectorvector2xmatrix(const std::vector<std::vector<utype>>&, int lrows = 1, int lcols = 1) __xprototype;
+  template <class utype> [[nodiscard]] xmatrix<utype> vectorvector2xmatrix(const std::vector<std::vector<std::string>>&, int lrows = 1, int lcols = 1) __xprototype;
 
-  template <class utype> xmatrix<double> xmatrixutype2double(const xmatrix<utype>& a); // CO20191201
-  template <class utype> xmatrix<utype> xmatrixdouble2utype(const xmatrix<double>& a, bool check_int = true); // CO20191201
+  template <class utype> [[nodiscard]] xmatrix<double> xmatrixutype2double(const xmatrix<utype>& a); // CO20191201
+  template <class utype> [[nodiscard]] xmatrix<utype> xmatrixdouble2utype(const xmatrix<double>& a, bool check_int = true); // CO20191201
 } // namespace aurostd
 
 // ----------------------------------------------------------- xmatrix functions
@@ -296,70 +297,74 @@ namespace aurostd {
   //  template<class utype>
   //  xvector<utype> vector(const xmatrix<utype>&) __xprototype;
 
-  template <class utype> utype det(const xmatrix<utype>&) __xprototype;
+  template <class utype> [[nodiscard]] utype det(const xmatrix<utype>&) __xprototype;
 
-  template <class utype> utype determinant(const xmatrix<utype>&) __xprototype;
+  template <class utype> [[nodiscard]] utype determinant(const xmatrix<utype>&) __xprototype;
 
   template <class utype> void submatrixInPlace(const xmatrix<utype>&, xmatrix<utype>&, int, int) __xprototype; // CO20191201 - IN PLACE
 
-  template <class utype> xmatrix<utype> submatrix(const xmatrix<utype>&, int, int) __xprototype;
+  template <class utype> [[nodiscard]] xmatrix<utype> submatrix(const xmatrix<utype>&, int, int) __xprototype;
 
-  template <class utype> utype minordet(const xmatrix<utype>&, const int&, const int&) __xprototype;
+  template <class utype> [[nodiscard]] utype minordet(const xmatrix<utype>&, const int&, const int&) __xprototype;
 
-  template <class utype> utype minordeterminant(const xmatrix<utype>&, const int&, const int&) __xprototype;
+  template <class utype> [[nodiscard]] utype minordeterminant(const xmatrix<utype>&, const int&, const int&) __xprototype;
 
   template <class utype> void adjointInPlace(const xmatrix<utype>&, xmatrix<utype>&) __xprototype;  // CO20191201
 
-  template <class utype> xmatrix<utype> adjoint(const xmatrix<utype>&) __xprototype;  // CO20191201
+  template <class utype> [[nodiscard]] xmatrix<utype> adjoint(const xmatrix<utype>&) __xprototype;  // CO20191201
 
-  template <class utype> xmatrix<utype> inverseByAdjoint(const xmatrix<utype>&) __xprototype;  // CO20191201
+  template <class utype> [[nodiscard]] xmatrix<utype> inverseByAdjoint(const xmatrix<utype>&) __xprototype;  // CO20191201
 
-  template <class utype> xmatrix<utype> inverse(const xmatrix<utype>&) __xprototype;
+  template <class utype> [[nodiscard]] xmatrix<utype> inverse(const xmatrix<utype>&) __xprototype;
 
-  template <class utype> xmatrix<aurostd::xcomplex<utype>> inverse(const xmatrix<aurostd::xcomplex<utype>>&) __xprototype;
+  template <class utype> [[nodiscard]] xmatrix<aurostd::xcomplex<utype>> inverse(const xmatrix<aurostd::xcomplex<utype>>&) __xprototype;
+
+  template <class utype> [[nodiscard]] xmatrix<utype> pseudoinverse(const xmatrix<utype>&) __xprototype;
 
   template <class utype> bool isNonInvertible(const xmatrix<utype>&, xmatrix<utype>&) __xprototype; // RETURN ERROR if non invertible
 
-  template <class utype> xmatrix<utype> inverseByQR(const xmatrix<utype>&) __xprototype;  // SD20220426
+  template <class utype> [[nodiscard]] xmatrix<utype> inverseByQR(const xmatrix<utype>&) __xprototype;  // SD20220426
 
   template <class utype>
   void LUPDecomposition(const xmatrix<utype>& A, xmatrix<double>& LU, xmatrix<double>& P, utype tol = (utype) _AUROSTD_XMATRIX_TOLERANCE_IDENTITY_) __xprototype; // SD20220426  //CO20230313 - utype clang warnings
   template <class utype>
   void LUPDecomposition(const xmatrix<utype>& A, xmatrix<double>& L, xmatrix<double>& U, xmatrix<double>& P, utype tol = (utype) _AUROSTD_XMATRIX_TOLERANCE_IDENTITY_) __xprototype; // SD20220426 //CO20230313 - utype clang warnings
 
-  template <class utype> xmatrix<utype> inverseByLUP(const xmatrix<utype>&) __xprototype; // SD20220426
+  template <class utype> [[nodiscard]] xmatrix<utype> inverseByLUP(const xmatrix<utype>&) __xprototype; // SD20220426
 
-  template <class utype> utype condition_number(const xmatrix<utype>&) __xprototype; // SD20220425
+  template <class utype> [[nodiscard]] utype condition_number(const xmatrix<utype>&) __xprototype; // SD20220425
 
   template <class utype>
+  [[nodiscard]]
   xmatrix<utype> // clear values too small
   roundoff(const xmatrix<utype>&, utype) __xprototype; // claar values too small
 
   template <class utype>
+  [[nodiscard]]
   xmatrix<utype> // clear values too small
   roundoff(const xmatrix<utype>&) __xprototype; // clear values too small
 
-  template <class utype> utype modulus(const xmatrix<utype>&) __xprototype; // CO20191110
+  template <class utype> [[nodiscard]] utype modulus(const xmatrix<utype>&) __xprototype; // CO20191110
 
-  template <class utype> utype modulussquare(const xmatrix<utype>&) __xprototype; // CO20191110
+  template <class utype> [[nodiscard]] utype modulussquare(const xmatrix<utype>&) __xprototype; // CO20191110
 
-  template <class utype> utype modulus2(const xmatrix<utype>&) __xprototype; // CO20191110
+  template <class utype> [[nodiscard]] utype modulus2(const xmatrix<utype>&) __xprototype; // CO20191110
 
-  template <class utype> utype sum(const xmatrix<utype>&) __xprototype;
+  template <class utype> [[nodiscard]] utype sum(const xmatrix<utype>&) __xprototype;
 
-  template <class utype> xvector<utype> sum_column(const xmatrix<utype>&) __xprototype;
+  template <class utype> [[nodiscard]] xvector<utype> sum_column(const xmatrix<utype>&) __xprototype;
 
-  template <class utype> xvector<utype> mean_column(const xmatrix<utype>&) __xprototype;
+  template <class utype> [[nodiscard]] xvector<utype> mean_column(const xmatrix<utype>&) __xprototype;
 
-  template <class utype> xvector<utype> sum_row(const xmatrix<utype>&) __xprototype;
+  template <class utype> [[nodiscard]] xvector<utype> sum_row(const xmatrix<utype>&) __xprototype;
 
-  template <class utype> xvector<utype> mean_row(const xmatrix<utype>&) __xprototype;
+  template <class utype> [[nodiscard]] xvector<utype> mean_row(const xmatrix<utype>&) __xprototype;
 
-  template <class utype> utype min(const xmatrix<utype>&) __xprototype;
+  template <class utype> [[nodiscard]] utype min(const xmatrix<utype>&) __xprototype;
 
   template <class utype> utype min(const xmatrix<utype>&, int&, int&) __xprototype;
 
-  template <class utype> utype max(const xmatrix<utype>&) __xprototype;
+  template <class utype> [[nodiscard]] utype max(const xmatrix<utype>&) __xprototype;
 
   template <class utype> utype max(const xmatrix<utype>&, int&, int&) __xprototype;
 
@@ -367,17 +372,17 @@ namespace aurostd {
   utype // DX20180115 - double to utype
   trace(const xmatrix<utype>&) __xprototype; // DX20180115 - double to utype
 
-  template <class utype> xmatrix<utype> HadamardProduct(const xmatrix<utype>&, const xmatrix<utype>&) __xprototype; // SD20220422
+  template <class utype> [[nodiscard]] xmatrix<utype> HadamardProduct(const xmatrix<utype>&, const xmatrix<utype>&) __xprototype; // SD20220422
 
-  template <class utype> xmatrix<utype> KroneckerProduct(const xmatrix<utype>&, const xmatrix<utype>&) __xprototype; // ME20180614
+  template <class utype> [[nodiscard]] xmatrix<utype> KroneckerProduct(const xmatrix<utype>&, const xmatrix<utype>&) __xprototype; // ME20180614
 
-  template <class utype> xmatrix<utype> shift_left(const xmatrix<utype>&) __xprototype;
+  template <class utype> void shift_left(const xmatrix<utype>&) __xprototype;
 
-  template <class utype> xmatrix<utype> shift_right(const xmatrix<utype>&) __xprototype;
+  template <class utype> void shift_right(const xmatrix<utype>&) __xprototype;
 
-  template <class utype> xmatrix<utype> shift_up(const xmatrix<utype>&) __xprototype;
+  template <class utype> void shift_up(const xmatrix<utype>&) __xprototype;
 
-  template <class utype> xmatrix<utype> shift_down(const xmatrix<utype>&) __xprototype;
+  template <class utype> void shift_down(const xmatrix<utype>&) __xprototype;
 
   template <class utype>
   void // swap_cols
@@ -391,14 +396,15 @@ namespace aurostd {
   void // swap_rows
   swap_rows(xmatrix<utype>&, const int&, const int&) __xprototype; // swap_rows
 
-  template <class utype> xmatrix<utype> identity(const xmatrix<utype>&) __xprototype;
+  template <class utype> [[nodiscard]] xmatrix<utype> identity(const xmatrix<utype>&) __xprototype;
 
   // template<class utype> xmatrix<utype>
   //  identity(const int&,const int&,utype) __xprototype;
 
-  template <class utype> xmatrix<utype> identity(const utype&, int, int = 1); // ME20200123
+  template <class utype> [[nodiscard]] xmatrix<utype> identity(const utype&, int, int = 1); // ME20200123
 
   template <class utype>
+  [[nodiscard]]
   xmatrix<utype> // conjugate
   conj(const xmatrix<utype>&) __xprototype; // ME20180904
 
@@ -415,86 +421,96 @@ namespace aurostd {
   traspInPlace(xmatrix<utype>&, bool = true) __xprototype; // CO20191201
 
   template <class utype>
+  [[nodiscard]]
   xmatrix<utype> // transpose
   trasp(const xmatrix<utype>&, bool = true) __xprototype; // 25 january 2000, ME20190813 - modified, bool is conjugate (true == trasp with conjugate)
 
   template <class utype>
+  [[nodiscard]]
   xmatrix<utype> // transpose
   trasp(const xvector<utype>&, bool = true) __xprototype; // 5 febrary 2000, ME20190813 - modified, bool is conjugate (true == trasp with conjugate)
 
   // Mathematical operations
 
   template <class utype>
+  [[nodiscard]]
   xmatrix<utype> // 10 Aug 2007
   abs(const xmatrix<utype>&) __xprototype;
 
   template <class utype>
+  [[nodiscard]]
   xmatrix<utype> // 10 Oct 2007
   mabs(const xmatrix<utype>&) __xprototype;
 
   template <class utype>
+  [[nodiscard]]
   xmatrix<utype> // Sept 2008
   sign(const xmatrix<utype>&) __xprototype;
 
   template <class utype>
+  [[nodiscard]]
   xmatrix<utype> // Sept 2008
   nint(const xmatrix<utype>&) __xprototype;
 
   template <class utype>
+  [[nodiscard]]
   xmatrix<utype> // Oct 2014
   floor(const xmatrix<utype>&) __xprototype;
 
   template <class utype>
+  [[nodiscard]]
   xmatrix<utype> // Oct 2014
   trunc(const xmatrix<utype>&) __xprototype;
 
   template <class utype>
+  [[nodiscard]]
   xmatrix<utype> // Oct 2014
   round(const xmatrix<utype>&) __xprototype;
 
   template <class utype>
+  [[nodiscard]]
   xmatrix<utype> // Oct 2014
   ceil(const xmatrix<utype>&) __xprototype;
 
-  template <class utype> xmatrix<utype> exp(const xmatrix<utype>&) __xprototype; // 31 july 1999, fix 10 Aug 2007
+  template <class utype> [[nodiscard]] xmatrix<utype> exp(const xmatrix<utype>&) __xprototype; // 31 july 1999, fix 10 Aug 2007
 
-  template <class utype> xmatrix<utype> log(const xmatrix<utype>&) __xprototype; // MISSING, probably never
+  template <class utype> [[nodiscard]] xmatrix<utype> log(const xmatrix<utype>&) __xprototype; // MISSING, probably never
 
-  template <class utype> xmatrix<utype> log10(const xmatrix<utype>&) __xprototype; // MISSING
+  template <class utype> [[nodiscard]] xmatrix<utype> log10(const xmatrix<utype>&) __xprototype; // MISSING
 
-  template <class utype> xmatrix<utype> sin(const xmatrix<utype>&) __xprototype; // 10 august 1999
+  template <class utype> [[nodiscard]] xmatrix<utype> sin(const xmatrix<utype>&) __xprototype; // 10 august 1999
 
-  template <class utype> xmatrix<utype> asin(const xmatrix<utype>&) __xprototype; // MISSING
+  template <class utype> [[nodiscard]] xmatrix<utype> asin(const xmatrix<utype>&) __xprototype; // MISSING
 
-  template <class utype> xmatrix<utype> cos(const xmatrix<utype>&) __xprototype; // 10 august 1999
+  template <class utype> [[nodiscard]] xmatrix<utype> cos(const xmatrix<utype>&) __xprototype; // 10 august 1999
 
-  template <class utype> xmatrix<utype> sec(const xmatrix<utype>&) __xprototype; // MISSING
+  template <class utype> [[nodiscard]] xmatrix<utype> sec(const xmatrix<utype>&) __xprototype; // MISSING
 
-  template <class utype> xmatrix<utype> cosec(const xmatrix<utype>&) __xprototype; // MISSING
+  template <class utype> [[nodiscard]] xmatrix<utype> cosec(const xmatrix<utype>&) __xprototype; // MISSING
 
-  template <class utype> xmatrix<utype> asec(const xmatrix<utype>&) __xprototype; // MISSING
+  template <class utype> [[nodiscard]] xmatrix<utype> asec(const xmatrix<utype>&) __xprototype; // MISSING
 
-  template <class utype> xmatrix<utype> acosec(const xmatrix<utype>&) __xprototype; // MISSING
+  template <class utype> [[nodiscard]] xmatrix<utype> acosec(const xmatrix<utype>&) __xprototype; // MISSING
 
-  template <class utype> xmatrix<utype> acos(const xmatrix<utype>&) __xprototype; // MISSING
+  template <class utype> [[nodiscard]] xmatrix<utype> acos(const xmatrix<utype>&) __xprototype; // MISSING
 
-  template <class utype> xmatrix<utype> tan(const xmatrix<utype>&) __xprototype; // MISSING
+  template <class utype> [[nodiscard]] xmatrix<utype> tan(const xmatrix<utype>&) __xprototype; // MISSING
 
-  template <class utype> xmatrix<utype> atan(const xmatrix<utype>&) __xprototype; // MISSING
+  template <class utype> [[nodiscard]] xmatrix<utype> atan(const xmatrix<utype>&) __xprototype; // MISSING
 
-  template <class utype> xmatrix<utype> sinh(const xmatrix<utype>&) __xprototype; // 12 august 1999
+  template <class utype> [[nodiscard]] xmatrix<utype> sinh(const xmatrix<utype>&) __xprototype; // 12 august 1999
 
-  template <class utype> xmatrix<utype> asinh(const xmatrix<utype>&) __xprototype; // MISSING
+  template <class utype> [[nodiscard]] xmatrix<utype> asinh(const xmatrix<utype>&) __xprototype; // MISSING
 
-  template <class utype> xmatrix<utype> cosh(const xmatrix<utype>&) __xprototype; // 12 august 1999
+  template <class utype> [[nodiscard]] xmatrix<utype> cosh(const xmatrix<utype>&) __xprototype; // 12 august 1999
 
-  template <class utype> xmatrix<utype> acosh(const xmatrix<utype>&) __xprototype; // MISSING
+  template <class utype> [[nodiscard]] xmatrix<utype> acosh(const xmatrix<utype>&) __xprototype; // MISSING
 
-  template <class utype> xmatrix<utype> tanh(const xmatrix<utype>&) __xprototype; // MISSING
+  template <class utype> [[nodiscard]] xmatrix<utype> tanh(const xmatrix<utype>&) __xprototype; // MISSING
 
-  template <class utype> xmatrix<utype> atanh(const xmatrix<utype>&) __xprototype; // MISSING
+  template <class utype> [[nodiscard]] xmatrix<utype> atanh(const xmatrix<utype>&) __xprototype; // MISSING
 
-  template <class utype> xvector<utype> LinearLeastSquares(const xmatrix<utype>&, const xvector<utype>&) __xprototype; // SD20220426
+  template <class utype> [[nodiscard]] xvector<utype> LinearLeastSquares(const xmatrix<utype>& A, const xvector<utype>& b, const bool svd = false) __xprototype; // SD20220426
 
   template <class utype> // 25 april 2007
   void GaussJordan(xmatrix<utype>&, xmatrix<utype>&) __xprototype;
@@ -536,12 +552,10 @@ namespace aurostd {
   // AS20200512 END
 
   // DX20210111 - added polarDecomposition() function
-  template <class utype> void polarDecomposition(const xmatrix<utype>& transformation_matrix, xmatrix<utype>& rotation, xmatrix<utype>& deformation, bool check_orthogonal_rotation = true);
-  __xprototype;
+  template <class utype> void polarDecomposition(const xmatrix<utype>& transformation_matrix, xmatrix<utype>& rotation, xmatrix<utype>& deformation, bool check_orthogonal_rotation = true) __xprototype;
 
   template <class utype>
-  void equilibrateMatrix(const xmatrix<utype>& A_orig, xmatrix<utype>& A, xmatrix<utype>& R, xmatrix<utype>& C, uint niter = 100, utype tol = (utype) _AUROSTD_XMATRIX_TOLERANCE_IDENTITY_);
-  __xprototype; // SD20220425  //CO20230313 - utype clang warnings
+  void equilibrateMatrix(const xmatrix<utype>& A_orig, xmatrix<utype>& A, xmatrix<utype>& R, xmatrix<utype>& C, uint niter = 100, utype tol = (utype) _AUROSTD_XMATRIX_TOLERANCE_IDENTITY_) __xprototype; // SD20220425  //CO20230313 - utype clang warnings
 
 } // namespace aurostd
 
@@ -579,9 +593,11 @@ namespace aurostd {
   void QRDecomposition_HouseHolder_TB(const xmatrix<utype>& mat, xmatrix<utype>& Q, xmatrix<utype>& R, double tol = _AUROSTD_XMATRIX_TOLERANCE_IDENTITY_); // CO20191110  //CO20230313 - utype clang warnings
   // general Householder, mat is mxn, m>=n
   // See Numerical Linear Algebra, Trefethen and Bau, pg. 73
+  template <class utype>
+  void SVDecomposition_Jacobi(const xmatrix<utype>& mat, xmatrix<utype>& U, xmatrix<utype>& S, xmatrix<utype>& S_inv, xmatrix<utype>& V, const long double tol = 1e-12);
   template <class utype> void getEHermite(utype a, utype b, xmatrix<utype>& ehermite); // CO+YL20191201
   template <class utype>
-  void getSmithNormalForm(const xmatrix<utype>& A, xmatrix<utype>& U, xmatrix<utype>& V, xmatrix<utype>& S, double tol = (double) _AUROSTD_XMATRIX_TOLERANCE_IDENTITY_); // CO+YL20191201 //CO20230313 - utype clang warnings
+  void getSmithNormalForm(const xmatrix<utype>& A, xmatrix<utype>& U, xmatrix<utype>& V, xmatrix<utype>& S, double tol = _AUROSTD_XMATRIX_TOLERANCE_IDENTITY_); // CO+YL20191201 //CO20230313 - utype clang warnings
   template <class utype> void tred2(const xmatrix<utype>& a, xvector<utype>& d, xvector<utype>& e) __xprototype;
   // Householder reduction of a real, symmetric matrix a[1..n][1..n].
   // On output, a is replaced by the orthogonal matrix Q eﬀecting the

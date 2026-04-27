@@ -7,9 +7,6 @@
 // Stefano Curtarolo - 2007 Duke
 // fixed for xz - 2008 (SC)
 
-#ifndef _AFLOW_IVASP_CPP
-#define _AFLOW_IVASP_CPP
-
 #include "flow/aflow_ivasp.h"
 
 #include <cmath>
@@ -69,6 +66,8 @@ using std::ostringstream;
 using std::string;
 using std::stringstream;
 using std::vector;
+
+using aurostd::xvector;
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------
 // INPUT
@@ -166,7 +165,7 @@ namespace KBIN {
       return false;
     }
     for (size_t i = 0; i < vppAUIDs.size(); i++) {
-      vWRITE.push_back(vppAUIDs[i] + " " + aurostd::PaddedPOST(KBIN::VASP_PseudoPotential_CleanName(species.at(i)), 3));
+      vWRITE.push_back(vppAUIDs[i] + " " + aurostd::PaddedPOST(aurostd::VASP_PseudoPotential_CleanName(species.at(i)), 3));
     }
     aurostd::vectorstring2file(vWRITE, directory + "/" + DEFAULT_AFLOW_PSEUDOPOTENTIAL_AUID_OUT);
     return true;
@@ -258,22 +257,6 @@ namespace KBIN {
 } // namespace KBIN
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------
-// PseudoPotential_CleanName
-// gets rid of all junk in the name
-namespace KBIN {
-  string VASP_PseudoPotential_CleanName(const string& speciesIN) { // CO20190712
-    // the old function assumed only a single species input
-    // now, the species input can be a full species string: Mn_pvPt, etc.
-    // need to remove ALL instances of pp info
-    // no longer need for loops
-    // also, this new function leverages InPlace substitution, instead of creating new strings every time (FASTER)
-
-    string species = speciesIN;
-    aurostd::VASP_PseudoPotential_CleanName_InPlace(species);
-    return species;
-  }
-} // namespace KBIN
-
 namespace KBIN {
   bool VASP_PseudoPotential_CleanName_TEST() { // CO20190712
     const bool LDEBUG = (true || XHOST.DEBUG);
@@ -408,13 +391,13 @@ namespace KBIN {
               suffix = "_" + aurostd::joinWDelimiter(_element_parts, "_");
             }
             element = element_parts[0];
-            element = KBIN::VASP_PseudoPotential_CleanName(element);  // clean H1.25
+            element = aurostd::VASP_PseudoPotential_CleanName(element);  // clean H1.25
             if (LDEBUG) {
               cerr << __AFLOW_FUNC__ << " element=\"" << element << "\", suffix=\"" << suffix << "\"" << endl;
             }
-            element_clean = KBIN::VASP_PseudoPotential_CleanName(element_raw);
+            element_clean = aurostd::VASP_PseudoPotential_CleanName(element_raw);
             if (element != element_clean) { // idempotent
-              message << "\"" << element << "\" != \"" << element_clean << "\" == KBIN::VASP_PseudoPotential_CleanName(\"" << element_raw << "\")";
+              message << "\"" << element << "\" != \"" << element_clean << "\" == aurostd::VASP_PseudoPotential_CleanName(\"" << element_raw << "\")";
               pflow::logger(__AFLOW_FILE__, __AFLOW_FUNC__, message, aflags, FileMESSAGE, oss, _LOGGER_ERROR_);
               return false;
             }
@@ -445,7 +428,7 @@ namespace KBIN {
 
 namespace KBIN {
   bool VASP_SplitAlloySpecies(string alloy_in, string& speciesA, string& speciesB) {
-    string alloy = KBIN::VASP_PseudoPotential_CleanName(KBIN::VASP_PseudoPotential_CleanName(alloy_in));
+    string alloy = aurostd::VASP_PseudoPotential_CleanName(aurostd::VASP_PseudoPotential_CleanName(alloy_in));
     speciesA = "";
     speciesB = "";
     int speciesN = 0;
@@ -468,7 +451,7 @@ namespace KBIN {
 
 namespace KBIN {
   bool VASP_SplitAlloySpecies(string alloy_in, string& speciesA, string& speciesB, string& speciesC) {
-    string alloy = KBIN::VASP_PseudoPotential_CleanName(KBIN::VASP_PseudoPotential_CleanName(alloy_in));
+    string alloy = aurostd::VASP_PseudoPotential_CleanName(aurostd::VASP_PseudoPotential_CleanName(alloy_in));
     speciesA = "";
     speciesB = "";
     speciesC = "";
@@ -866,10 +849,18 @@ namespace KBIN {
     }
 
     // with KBIN_VASP_FORCE_OPTION_NBANDS_EQUAL.isentry && KBIN_VASP_FORCE_OPTION_NBANDS_EQUAL.content_int
-    if (Krun && vflags.KBIN_VASP_FORCE_OPTION_NOTUNE.isentry == false && vflags.KBIN_VASP_FORCE_OPTION_NBANDS_EQUAL.isentry && vflags.KBIN_VASP_FORCE_OPTION_NBANDS_EQUAL.content_int > 0) { /*************** INCAR **************/
-      aus << "00000  MESSAGE-OPTION  [VASP_FORCE_OPTION]NBANDS=" << vflags.KBIN_VASP_FORCE_OPTION_NBANDS_EQUAL.content_int << " - " << Message(__AFLOW_FILE__, aflags) << endl;
+    if (Krun && vflags.KBIN_VASP_FORCE_OPTION_NOTUNE.isentry == false && vflags.KBIN_VASP_FORCE_OPTION_NBANDS_EQUAL.isentry) { /*************** INCAR **************/
+      aus << "00000  MESSAGE-OPTION  [VASP_FORCE_OPTION]NBANDS=" << vflags.KBIN_VASP_FORCE_OPTION_NBANDS_EQUAL.content_string << " - " << Message(__AFLOW_FILE__, aflags) << endl;
       aurostd::PrintMessageStream(FileMESSAGE, aus, XHOST.QUIET);
-      KBIN::XVASP_INCAR_PREPARE_GENERIC("NBANDS", xvasp, vflags, "", vflags.KBIN_VASP_FORCE_OPTION_NBANDS_EQUAL.content_int, 0.0, false);
+      if (aurostd::toupper(vflags.KBIN_VASP_FORCE_OPTION_NBANDS_EQUAL.content_string) == "VASP") {
+        // use the vasp value
+        KBIN::XVASP_INCAR_PREPARE_GENERIC("NBANDS", xvasp, vflags, "", -1, 0.0, false);
+      } else if (aurostd::toupper(vflags.KBIN_VASP_FORCE_OPTION_NBANDS_EQUAL.content_string) == "AFLOW3") {
+        // use the old value
+        KBIN::XVASP_INCAR_PREPARE_GENERIC("NBANDS", xvasp, vflags, "", KBIN::XVASP_INCAR_GetNBANDS_AFLOW3(xvasp, aflags, vflags.KBIN_VASP_FORCE_OPTION_SPIN.option), 0.0, false);
+      } else {
+        KBIN::XVASP_INCAR_PREPARE_GENERIC("NBANDS", xvasp, vflags, "", vflags.KBIN_VASP_FORCE_OPTION_NBANDS_EQUAL.content_int, 0.0, false);
+      }
       xvasp.aopts.flag("FLAG::XVASP_INCAR_changed", true);
     }
 
@@ -1509,9 +1500,9 @@ namespace KBIN {
             atomX.push_back(atomABC[isp]);
             volumeX.push_back(GetAtomVolume(atomABC[isp]));
           } // CO20181129
-          //[CO20181106]for(uint isp=0;isp<=1;isp++) {atomX.push_back(atomABC[isp]);volumeX.push_back(GetAtomVolume(KBIN::VASP_PseudoPotential_CleanName(atomABC[isp])));}
+          //[CO20181106]for(uint isp=0;isp<=1;isp++) {atomX.push_back(atomABC[isp]);volumeX.push_back(GetAtomVolume(aurostd::VASP_PseudoPotential_CleanName(atomABC[isp])));}
           xvasp.str = aflowlib::PrototypeLibraries(FileMESSAGE, label, "", atomX, volumeX, -1.0, LIBRARY_MODE_HTQC);
-          // xvasp.str=aflowlib::PrototypeLibraries(FileMESSAGE,label,parameters,atomABC[0],GetAtomVolume(KBIN::VASP_PseudoPotential_CleanName(atomABC[0])),atomABC[1],GetAtomVolume(KBIN::VASP_PseudoPotential_CleanName(atomABC[1])),-1.0); // OLD WAY
+          // xvasp.str=aflowlib::PrototypeLibraries(FileMESSAGE,label,parameters,atomABC[0],GetAtomVolume(aurostd::VASP_PseudoPotential_CleanName(atomABC[0])),atomABC[1],GetAtomVolume(aurostd::VASP_PseudoPotential_CleanName(atomABC[1])),-1.0); // OLD WAY
         }
         if (atomABC.size() == 2 && volumeABC.size() == 1) {
           done = true;
@@ -2397,7 +2388,8 @@ namespace KBIN {
           LOCAL_KBIN_VASP_KPOINTS_KSHIFT_isentry = vflags.KBIN_VASP_KPOINTS_DIELECTRIC_KSHIFT.isentry;
           LOCAL_KBIN_VASP_KPOINTS_KSHIFT_content_string = vflags.KBIN_VASP_KPOINTS_DIELECTRIC_KSHIFT.content_string;
           aus << "00000  MESSAGE " << STRING_KPOINTS_TO_SHOW << "_KSHIFT overrides KPOINTS_KSHIFT generation IMPLICIT file from " << _AFLOWIN_ << " " << Message(__AFLOW_FILE__, aflags) << endl;
-          aus << "00000  MESSAGE " << STRING_KPOINTS_TO_SHOW << "_KSHIFT: LOCAL_KBIN_VASP_KPOINTS_KSHIFT_isentry=" << vflags.KBIN_VASP_KPOINTS_DIELECTRIC_KSHIFT.isentry << " - " << Message(__AFLOW_FILE__, aflags) << endl;
+          aus << "00000  MESSAGE " << STRING_KPOINTS_TO_SHOW << "_KSHIFT: LOCAL_KBIN_VASP_KPOINTS_KSHIFT_isentry=" << vflags.KBIN_VASP_KPOINTS_DIELECTRIC_KSHIFT.isentry << " - "
+              << Message(__AFLOW_FILE__, aflags) << endl;
           aus << "00000  MESSAGE " << STRING_KPOINTS_TO_SHOW << "_KSHIFT: LOCAL_KBIN_VASP_KPOINTS_KSHIFT_content_string=" << vflags.KBIN_VASP_KPOINTS_DIELECTRIC_KSHIFT.content_string << " - "
               << Message(__AFLOW_FILE__, aflags) << endl;
           aurostd::PrintMessageStream(FileMESSAGE, aus, XHOST.QUIET);
@@ -2411,7 +2403,8 @@ namespace KBIN {
           LOCAL_KBIN_VASP_KPOINTS_KMODE_content_int = vflags.KBIN_VASP_KPOINTS_STATIC_KMODE.content_int;
           aus << "00000  MESSAGE " << STRING_KPOINTS_TO_SHOW << "_KMODE overrides KPOINTS_KMODE generation IMPLICIT file from " << _AFLOWIN_ << " " << Message(__AFLOW_FILE__, aflags) << endl;
           aus << "00000  MESSAGE " << STRING_KPOINTS_TO_SHOW << "_KMODE: LOCAL_KBIN_VASP_KPOINTS_KMODE_isentry=" << vflags.KBIN_VASP_KPOINTS_STATIC_KMODE.isentry << " - " << Message(__AFLOW_FILE__, aflags) << endl;
-          aus << "00000  MESSAGE " << STRING_KPOINTS_TO_SHOW << "_KMODE: LOCAL_KBIN_VASP_KPOINTS_KMODE_content_int=" << vflags.KBIN_VASP_KPOINTS_STATIC_KMODE.content_int << " - " << Message(__AFLOW_FILE__, aflags) << endl;
+          aus << "00000  MESSAGE " << STRING_KPOINTS_TO_SHOW << "_KMODE: LOCAL_KBIN_VASP_KPOINTS_KMODE_content_int=" << vflags.KBIN_VASP_KPOINTS_STATIC_KMODE.content_int << " - "
+              << Message(__AFLOW_FILE__, aflags) << endl;
           aurostd::PrintMessageStream(FileMESSAGE, aus, XHOST.QUIET);
         }
         if (vflags.KBIN_VASP_KPOINTS_STATIC_KPPRA.isentry) {
@@ -2427,7 +2420,8 @@ namespace KBIN {
           LOCAL_KBIN_VASP_KPOINTS_KSCHEME_isentry = vflags.KBIN_VASP_KPOINTS_STATIC_KSCHEME.isentry;
           LOCAL_KBIN_VASP_KPOINTS_KSCHEME_content_string = vflags.KBIN_VASP_KPOINTS_STATIC_KSCHEME.content_string;
           aus << "00000  MESSAGE " << STRING_KPOINTS_TO_SHOW << "_KSCHEME overrides KPOINTS_KSCHEME generation IMPLICIT file from " << _AFLOWIN_ << " " << Message(__AFLOW_FILE__, aflags) << endl;
-          aus << "00000  MESSAGE " << STRING_KPOINTS_TO_SHOW << "_KSCHEME: LOCAL_KBIN_VASP_KPOINTS_KSCHEME_isentry=" << vflags.KBIN_VASP_KPOINTS_STATIC_KSCHEME.isentry << " - " << Message(__AFLOW_FILE__, aflags) << endl;
+          aus << "00000  MESSAGE " << STRING_KPOINTS_TO_SHOW << "_KSCHEME: LOCAL_KBIN_VASP_KPOINTS_KSCHEME_isentry=" << vflags.KBIN_VASP_KPOINTS_STATIC_KSCHEME.isentry << " - "
+              << Message(__AFLOW_FILE__, aflags) << endl;
           aus << "00000  MESSAGE " << STRING_KPOINTS_TO_SHOW << "_KSCHEME: LOCAL_KBIN_VASP_KPOINTS_KSCHEME_content_string=" << vflags.KBIN_VASP_KPOINTS_STATIC_KSCHEME.content_string << " - "
               << Message(__AFLOW_FILE__, aflags) << endl;
           aurostd::PrintMessageStream(FileMESSAGE, aus, XHOST.QUIET);
@@ -2604,7 +2598,7 @@ namespace KBIN {
     if (IMPLICIT == false) {
       KBIN::XVASP_KPOINTS_string2numbers(xvasp);
     }
-    xvasp.str.kpoints_kmax = max(xvasp.str.kpoints_k1, xvasp.str.kpoints_k2, xvasp.str.kpoints_k3);
+    xvasp.str.kpoints_kmax = aurostd::max(xvasp.str.kpoints_k1, xvasp.str.kpoints_k2, xvasp.str.kpoints_k3);
     xvasp.str.kpoints_kppra = xvasp.str.kpoints_k1 * xvasp.str.kpoints_k2 * xvasp.str.kpoints_k3 * xvasp.str.atoms.size();
     // KPOINTS done
     xvasp.KPOINTS_orig << xvasp.KPOINTS.str();
@@ -2620,21 +2614,20 @@ namespace KBIN {
 
     if (Krun && vflags.KBIN_VASP_FORCE_OPTION_NOTUNE.isentry == false && vflags.KBIN_VASP_FORCE_OPTION_KPOINTS.flag("KEEPK") == false && false) { /*************** KPOINTS **************/
       vflags.KBIN_VASP_WRITE_KPOINTS = true;
-      if (_isodd(xvasp.str.kpoints_k1)) {
+      if (aurostd::_isodd(xvasp.str.kpoints_k1)) {
         xvasp.str.kpoints_k1++;
       }
-      if (_isodd(xvasp.str.kpoints_k2)) {
+      if (aurostd::_isodd(xvasp.str.kpoints_k2)) {
         xvasp.str.kpoints_k2++;
       }
-      if (_isodd(xvasp.str.kpoints_k3)) {
+      if (aurostd::_isodd(xvasp.str.kpoints_k3)) {
         xvasp.str.kpoints_k3++;
       }
-      xvasp.str.kpoints_kmax = max(xvasp.str.kpoints_k1, xvasp.str.kpoints_k2, xvasp.str.kpoints_k3);
+      xvasp.str.kpoints_kmax = aurostd::max(xvasp.str.kpoints_k1, xvasp.str.kpoints_k2, xvasp.str.kpoints_k3);
       xvasp.str.kpoints_kppra = xvasp.str.kpoints_k1 * xvasp.str.kpoints_k2 * xvasp.str.kpoints_k3 * xvasp.str.atoms.size();
       KBIN::XVASP_KPOINTS_numbers2string(xvasp);
       xvasp.aopts.flag("FLAG::XVASP_KPOINTS_changed", true);
-      aus << "00000  MESSAGE KPOINTS Option Tune - K=[" << xvasp.str.kpoints_k1 << " " << xvasp.str.kpoints_k2 << " " << xvasp.str.kpoints_k3 << " " << xvasp.str.kpoints_kmax << "] - "
-          << Message(__AFLOW_FILE__, aflags) << endl;
+      aus << "00000  MESSAGE KPOINTS Option Tune - K=[" << xvasp.str.kpoints_k1 << " " << xvasp.str.kpoints_k2 << " " << xvasp.str.kpoints_k3 << " " << xvasp.str.kpoints_kmax << "] - " << Message(__AFLOW_FILE__, aflags) << endl;
       aurostd::PrintMessageStream(FileMESSAGE, aus, XHOST.QUIET);
     }
 
@@ -2664,16 +2657,14 @@ namespace KBIN {
       /*************** KPOINTS **************/ // CO20210315 - the 'GAMMA' here is not appropriate unless 'Gamma' is set below, shifting the even by 0.5 puts it on the same 'grid' as Gamma, see https://www.vasp.at/wiki/index.php/KPOINTS#Monkhorst-Pack, not changing for legacy
       aus << "00000  MESSAGE-OPTION  [VASP_FORCE_OPTION]KPOINTS=KSHIFT_GAMMA_EVEN - " << Message(__AFLOW_FILE__, aflags) << endl;
       aurostd::PrintMessageStream(FileMESSAGE, aus, XHOST.QUIET);
-      KBIN::XVASP_KPOINTS_OPERATION(
-          xvasp, "Xevenshift,Yevenshift,Zevenshift"); // KBIN::XVASP_KPOINTS_Kshift_Gamma_EVEN(_xvasp& xvasp); //CO20210315 - 'Gamma' should be set here, see https://www.vasp.at/wiki/index.php/KPOINTS#Monkhorst-Pack, not changing for legacy
+      KBIN::XVASP_KPOINTS_OPERATION(xvasp, "Xevenshift,Yevenshift,Zevenshift"); // KBIN::XVASP_KPOINTS_Kshift_Gamma_EVEN(_xvasp& xvasp); //CO20210315 - 'Gamma' should be set here, see https://www.vasp.at/wiki/index.php/KPOINTS#Monkhorst-Pack, not changing for legacy
       xvasp.aopts.flag("FLAG::XVASP_KPOINTS_changed", true);
     }
     if (Krun && vflags.KBIN_VASP_FORCE_OPTION_NOTUNE.isentry == false && vflags.KBIN_VASP_FORCE_OPTION_KPOINTS.flag("KSHIFT_GAMMA_ODD")) {
       /*************** KPOINTS **************/ // CO20210315 - the 'GAMMA' here is not appropriate unless 'Gamma' is set below, shifting the odd by 0.5 offsets it from the Gamma 'grid', see https://www.vasp.at/wiki/index.php/KPOINTS#Monkhorst-Pack, not changing for legacy
       aus << "00000  MESSAGE-OPTION  [VASP_FORCE_OPTION]KPOINTS=KSHIFT_GAMMA_ODD - " << Message(__AFLOW_FILE__, aflags) << endl;
       aurostd::PrintMessageStream(FileMESSAGE, aus, XHOST.QUIET);
-      KBIN::XVASP_KPOINTS_OPERATION(
-          xvasp, "Xoddshift,Yoddshift,Zoddshift"); // KBIN::XVASP_KPOINTS_Kshift_Gamma_ODD(xvasp); //CO20210315 - 'Gamma' should be set here, see https://www.vasp.at/wiki/index.php/KPOINTS#Monkhorst-Pack, not changing for legacy
+      KBIN::XVASP_KPOINTS_OPERATION(xvasp, "Xoddshift,Yoddshift,Zoddshift"); // KBIN::XVASP_KPOINTS_Kshift_Gamma_ODD(xvasp); //CO20210315 - 'Gamma' should be set here, see https://www.vasp.at/wiki/index.php/KPOINTS#Monkhorst-Pack, not changing for legacy
       xvasp.aopts.flag("FLAG::XVASP_KPOINTS_changed", true);
     }
     if (Krun && vflags.KBIN_VASP_FORCE_OPTION_NOTUNE.isentry == false && vflags.KBIN_VASP_FORCE_OPTION_KPOINTS.flag("KSCHEME_MONKHORST_PACK")) { /*************** KPOINTS **************/
@@ -2708,12 +2699,22 @@ namespace KBIN {
       xvasp.str.kpoints_k1 = 1;
       xvasp.str.kpoints_k2 = 1;
       xvasp.str.kpoints_k3 = 1;
-      xvasp.str.kpoints_kmax = max(xvasp.str.kpoints_k1, xvasp.str.kpoints_k2, xvasp.str.kpoints_k3);
+      xvasp.str.kpoints_kmax = aurostd::max(xvasp.str.kpoints_k1, xvasp.str.kpoints_k2, xvasp.str.kpoints_k3);
       xvasp.str.kpoints_kppra = xvasp.str.kpoints_k1 * xvasp.str.kpoints_k2 * xvasp.str.kpoints_k3 * xvasp.str.atoms.size();
       KBIN::XVASP_KPOINTS_numbers2string(xvasp);
       xvasp.aopts.flag("FLAG::XVASP_KPOINTS_changed", true);
-      aus << "00000  MESSAGE-OPTION  [VASP_FORCE_OPTION]KPOINTS=GAMMA - K=[" << xvasp.str.kpoints_k1 << " " << xvasp.str.kpoints_k2 << " " << xvasp.str.kpoints_k3 << " " << xvasp.str.kpoints_kmax << "] - "
-          << Message(__AFLOW_FILE__, aflags) << endl;
+      aus
+          << "00000  MESSAGE-OPTION  [VASP_FORCE_OPTION]KPOINTS=GAMMA - K=["
+          << xvasp.str.kpoints_k1
+          << " "
+          << xvasp.str.kpoints_k2
+          << " "
+          << xvasp.str.kpoints_k3
+          << " "
+          << xvasp.str.kpoints_kmax
+          << "] - "
+          << Message(__AFLOW_FILE__, aflags)
+          << endl;
       aurostd::PrintMessageStream(FileMESSAGE, aus, XHOST.QUIET);
     }
     if (vflags.KBIN_VASP_FORCE_OPTION_KPOINTS.flag("IBZKPT")) {
@@ -3006,7 +3007,7 @@ namespace KBIN {
       }
       if (vflags.KBIN_VASP_FORCE_OPTION_AUTO_PSEUDOPOTENTIALS.isentry) {
         for (size_t i = 0; i < FilePotcars.size(); i++) {
-          string cleanname = KBIN::VASP_PseudoPotential_CleanName(FilePotcars[i]);
+          string cleanname = aurostd::VASP_PseudoPotential_CleanName(FilePotcars[i]);
           aurostd::StringSubstInPlace(cleanname, "/POTCAR", "");
           vector<string> tokens;
           aurostd::string2tokens(cleanname, tokens, "/");
@@ -3703,7 +3704,8 @@ namespace KBIN {
           aurostd::substring2bool(strline, "IBRION=1", true) || aurostd::substring2bool(strline, "#IBRION=1", true) || // quasi-newton algo to relax ions
           aurostd::substring2bool(strline, "IBRION=2", true) || aurostd::substring2bool(strline, "#IBRION=2", true) || // conj-grad algo to relax
           aurostd::substring2bool(strline, "IBRION=3", true) || aurostd::substring2bool(strline, "#IBRION=3", true) || // damping-factor algo to relax
-          aurostd::substring2bool(strline, "NSW", true) || aurostd::substring2bool(strline, "#NSW", true) || aurostd::substring2bool(strline, "LORBIT", true) || aurostd::substring2bool(strline, "#LORBIT", true) || // CO20180130 get spinD
+          aurostd::substring2bool(strline, "NSW", true) || aurostd::substring2bool(strline, "#NSW", true) || aurostd::substring2bool(strline, "LORBIT", true) ||
+          aurostd::substring2bool(strline, "#LORBIT", true) || // CO20180130 get spinD
           (aurostd::substring2bool(strline, "LAECHG", true) && vflags.KBIN_VASP_FORCE_OPTION_BADER.isentry) || (aurostd::substring2bool(strline, "#LAECHG", true) && vflags.KBIN_VASP_FORCE_OPTION_BADER.isentry) ||
           (aurostd::substring2bool(strline, "LELF", true) && vflags.KBIN_VASP_FORCE_OPTION_ELF.isentry) || (aurostd::substring2bool(strline, "#LELF", true) && vflags.KBIN_VASP_FORCE_OPTION_ELF.isentry) ||
           aurostd::substring2bool(strline, "IALGO", true) || aurostd::substring2bool(strline, "#IALGO", true) || // SC from ICSD
@@ -3955,6 +3957,7 @@ namespace KBIN {
 // KBIN::XVASP_INCAR_Dielectric_ON
 namespace KBIN {
   void XVASP_INCAR_Dielectric_ON(_xvasp& xvasp, _vflags& vflags, _aflags& aflags) {
+    int dielectric_step_modifier = 2;
     string FileContent;
     string strline;
     FileContent = xvasp.INCAR.str();
@@ -3963,10 +3966,11 @@ namespace KBIN {
     const size_t imax = aurostd::GetNLinesString(FileContent);
     for (size_t i = 1; i <= imax; i++) {
       strline = aurostd::GetLineString(FileContent, i);
-      if (aurostd::substring2bool(strline, "ALGO", true) || aurostd::substring2bool(strline, "#ALGO", true) || aurostd::substring2bool(strline, "LOPTICS", true) || aurostd::substring2bool(strline, "#LOPTICS", true) ||
-          aurostd::substring2bool(strline, "NEDOS", true) || aurostd::substring2bool(strline, "#NEDOS", true) || aurostd::substring2bool(strline, "ISMEAR", true) ||
-          aurostd::substring2bool(strline, "#ISMEAR", true) || aurostd::substring2bool(strline, "SIGMA", true) || aurostd::substring2bool(strline, "#SIGMA", true) || aurostd::substring2bool(strline, "EDIFF", true) ||
-          aurostd::substring2bool(strline, "#EDIFF", true) || aurostd::substring2bool(strline, "NBANDS", true) || aurostd::substring2bool(strline, "#NBANDS", true)) {
+      if (aurostd::substring2bool(strline, "ALGO", true) || aurostd::substring2bool(strline, "#ALGO", true) || aurostd::substring2bool(strline, "LOPTICS", true) ||
+          aurostd::substring2bool(strline, "#LOPTICS", true) || aurostd::substring2bool(strline, "NEDOS", true) || aurostd::substring2bool(strline, "#NEDOS", true) ||
+          aurostd::substring2bool(strline, "ISMEAR", true) || aurostd::substring2bool(strline, "#ISMEAR", true) || aurostd::substring2bool(strline, "SIGMA", true) ||
+          aurostd::substring2bool(strline, "#SIGMA", true) || aurostd::substring2bool(strline, "EDIFF", true) || aurostd::substring2bool(strline, "#EDIFF", true) ||
+          aurostd::substring2bool(strline, "NBANDS", true) || aurostd::substring2bool(strline, "#NBANDS", true)) {
         if (vflags.KBIN_VASP_INCAR_VERBOSE) {
           xvasp.INCAR << "# " << strline << " # AFLOW REMOVED (KBIN::XVASP_INCAR_Dielectric_ON)" << endl;
         }
@@ -3978,19 +3982,13 @@ namespace KBIN {
     }
     xvasp.INCAR << aurostd::PaddedPOST("ALGO=EXACT", _incarpad_) << " # Performing DIELECTRIC" << endl;
     xvasp.INCAR << aurostd::PaddedPOST("LOPTICS=.true.", _incarpad_) << " # Performing DIELECTRIC" << endl;
-    xvasp.INCAR << aurostd::PaddedPOST("CSHIFT=0.1", _incarpad_) << " # Performing DIELECTRIC" << endl;
+    xvasp.INCAR << aurostd::PaddedPOST("CSHIFT=0.20", _incarpad_) << " # Performing DIELECTRIC" << endl;
     xvasp.INCAR << aurostd::PaddedPOST("OMEGAMAX=40", _incarpad_) << " # Performing DIELECTRIC" << endl;
     xvasp.INCAR << aurostd::PaddedPOST("NEDOS=40000", _incarpad_) << " # Performing DIELECTRIC" << endl;
-    xvasp.INCAR << aurostd::PaddedPOST("NBNDS=" + aurostd::utype2string<int>(2.0 * XVASP_INCAR_GetNBANDS(xvasp, aflags)), _incarpad_) << " # Performing DIELECTRIC" << endl;
-
-    xOUTCAR xout;
-    if (xout.GetPropertiesFile(xvasp.Directory + "/OUTCAR.static") && xout.GetBandGap(xout.Efermi) && std::regex_match(xout.Egap_type_net, std::regex(".*metal.*"))) {
-      xvasp.INCAR << aurostd::PaddedPOST("ISMEAR=0", _incarpad_) << " # Performing DIELECTRIC" << endl;
-      xvasp.INCAR << aurostd::PaddedPOST("SIGMA=0.01", _incarpad_) << " # Performing DIELECTRIC" << endl;
-      xvasp.INCAR << aurostd::PaddedPOST("EDIFF=1E-8", _incarpad_) << " # Performing DIELECTRIC" << endl;
-    } else {
-      xvasp.INCAR << aurostd::PaddedPOST("ISMEAR=-5", _incarpad_) << " # Performing DIELECTRIC" << endl;
-    }
+    xvasp.INCAR << aurostd::PaddedPOST("NBANDS=" + aurostd::utype2string<int>(XVASP_INCAR_GetNBANDS(xvasp, aflags) * dielectric_step_modifier), _incarpad_) << " # Performing DIELECTRIC" << endl;
+    xvasp.INCAR << aurostd::PaddedPOST("ISMEAR=0", _incarpad_) << " # Performing DIELECTRIC" << endl;
+    xvasp.INCAR << aurostd::PaddedPOST("SIGMA=0.01", _incarpad_) << " # Performing DIELECTRIC" << endl;
+    xvasp.INCAR << aurostd::PaddedPOST("EDIFF=1E-8", _incarpad_) << " # Performing DIELECTRIC" << endl;
 
     if (vflags.KBIN_VASP_INCAR_VERBOSE) {
       xvasp.INCAR << "#adjusting ALGO,LOPTICS,CSHIFT,OMEGAMAX,NEDOS,NBANDS,ISMEAR,SIGMA,EDIFF" << endl;
@@ -4474,7 +4472,7 @@ namespace KBIN {
 // ***************************************************************************
 // KBIN::XVASP_INCAR_GetNBANDS
 namespace KBIN {
-  int XVASP_INCAR_GetNBANDS(const _xvasp& xvasp, const _aflags& aflags, bool ispin) {
+  int XVASP_INCAR_GetNBANDS_AFLOW3(const _xvasp& xvasp, const _aflags& aflags, bool ispin) {
     vector<double> vZVAL;
     const double ZVAL = GetZVAL(xvasp.POTCAR, vZVAL);
     int nbands = 0;
@@ -4482,11 +4480,22 @@ namespace KBIN {
     int NPAR = 0;
     int NCORE = 1;
     KBIN::XVASP_Get_NPAR_NCORE(xvasp, aflags, NPAR, NCORE); // CO20210315
-    nbands = GetNBANDS((int) ZVAL, (int) xvasp.str.atoms.size(), 5, ispin, NPAR);
+    nbands = GetNBANDS_AFLOW3((int) ZVAL, (int) xvasp.str.atoms.size(), 5, ispin, NPAR);
     if (!XHOST.QUIET) {
       cout << XPID << "00000  MESSAGE-OPTION  [VASP_FORCE_OPTION]NBANDS  = " << nbands << endl;
     }
     return nbands;
+  }
+
+  int XVASP_INCAR_GetNBANDS(const _xvasp& xvasp, const _aflags& aflags, bool ispin) {
+    vector<double> vZVAL;
+    GetZVAL(xvasp.POTCAR, vZVAL);
+    xstructure str_(xvasp.str);
+    int electrons = str_.GetZVAL(vZVAL);
+    int NPAR = 0;
+    int NCORE = 1;
+    KBIN::XVASP_Get_NPAR_NCORE(xvasp, aflags, NPAR, NCORE);
+    return GetNBANDS_VASP_SERIAL_spineach(electrons, xvasp.str.atoms.size(), 5, ispin);
   }
 } // namespace KBIN
 
@@ -5769,8 +5778,8 @@ namespace KBIN {
     const size_t imax = aurostd::GetNLinesString(FileContent);
     for (size_t i = 1; i <= imax; i++) {
       strline = aurostd::GetLineString(FileContent, i);
-      if (!aurostd::substring2bool(strline, "SYSTEM", true) && (aurostd::substring2bool(strline, "LDAU", true) || aurostd::substring2bool(strline, "#LDAU", true) ||
-                                                                aurostd::substring2bool(strline, "LMAXMIX", true) || aurostd::substring2bool(strline, "#LMAXMIX", true))) {
+      if (!aurostd::substring2bool(strline, "SYSTEM", true) &&
+          (aurostd::substring2bool(strline, "LDAU", true) || aurostd::substring2bool(strline, "#LDAU", true) || aurostd::substring2bool(strline, "LMAXMIX", true) || aurostd::substring2bool(strline, "#LMAXMIX", true))) {
         if (VERBOSE) {
           xvasp.INCAR << "# " << strline << " # AFLOW REMOVED (KBIN::XVASP_INCAR_LDAU_OFF)" << endl;
         }
@@ -5856,7 +5865,7 @@ namespace KBIN {
           throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, "xvasp.str.species.size() != nspecies=tokens.size()", _INDEX_MISMATCH_); // CO20200624
         }
         for (size_t i = 0; i < xvasp.str.species.size(); i++) {
-          AVASP_Get_LDAU_Parameters(aurostd::CleanStringASCII(KBIN::VASP_PseudoPotential_CleanName(tokens.at(i))), LDAU, vLDAUspecies, vLDAUtype, vLDAUL, vLDAUU, vLDAUJ); // parameters for LDAU2
+          AVASP_Get_LDAU_Parameters(aurostd::CleanStringASCII(aurostd::VASP_PseudoPotential_CleanName(tokens.at(i))), LDAU, vLDAUspecies, vLDAUtype, vLDAUL, vLDAUU, vLDAUJ); // parameters for LDAU2
         }
       }
     } else { // get them from PARAMETERS
@@ -6424,9 +6433,10 @@ namespace KBIN {
       return true; // Gamma with no shift ensures Gamma
     }
     // otherwise, check that we have an odd scheme with no shift, this is also Gamma-centered
-    if (!xvasp.str.kpoints_kscheme.empty() && (aurostd::toupper(xvasp.str.kpoints_kscheme[0]) == 'G' || aurostd::toupper(xvasp.str.kpoints_kscheme[0]) == 'M') &&
-        (_isodd(xvasp.str.kpoints_k1) && _isodd(xvasp.str.kpoints_k2) && _isodd(xvasp.str.kpoints_k3)) &&
-        (aurostd::isequal(xvasp.str.kpoints_s1, 0.0) && aurostd::isequal(xvasp.str.kpoints_s2, 0.0) && aurostd::isequal(xvasp.str.kpoints_s3, 0.0))) {
+    if (!xvasp.str.kpoints_kscheme.empty()
+        && (aurostd::toupper(xvasp.str.kpoints_kscheme[0]) == 'G' || aurostd::toupper(xvasp.str.kpoints_kscheme[0]) == 'M')
+        && (aurostd::_isodd(xvasp.str.kpoints_k1) && aurostd::_isodd(xvasp.str.kpoints_k2) && aurostd::_isodd(xvasp.str.kpoints_k3))
+        && (aurostd::isequal(xvasp.str.kpoints_s1, 0.0) && aurostd::isequal(xvasp.str.kpoints_s2, 0.0) && aurostd::isequal(xvasp.str.kpoints_s3, 0.0))) {
       return true;
     }
     return false;
@@ -6559,7 +6569,7 @@ namespace KBIN {
     } // CO20210315
     // ieven: make ki even (if not already) AND si=0 (if not already)
     if (operation.find("XEVEN") != string::npos) {
-      if (_isodd(xvasp.str.kpoints_k1)) {
+      if (aurostd::_isodd(xvasp.str.kpoints_k1)) {
         xvasp.str.kpoints_k1++;
         nchanges_made++;
         if (LDEBUG) {
@@ -6575,7 +6585,7 @@ namespace KBIN {
       }
     }
     if (operation.find("YEVEN") != string::npos) {
-      if (_isodd(xvasp.str.kpoints_k2)) {
+      if (aurostd::_isodd(xvasp.str.kpoints_k2)) {
         xvasp.str.kpoints_k2++;
         nchanges_made++;
         if (LDEBUG) {
@@ -6591,7 +6601,7 @@ namespace KBIN {
       }
     }
     if (operation.find("ZEVEN") != string::npos) {
-      if (_isodd(xvasp.str.kpoints_k3)) {
+      if (aurostd::_isodd(xvasp.str.kpoints_k3)) {
         xvasp.str.kpoints_k3++;
         nchanges_made++;
         if (LDEBUG) {
@@ -6608,7 +6618,7 @@ namespace KBIN {
     }
     // iodd: make ki odd (if not already) AND si=0 (if not already)
     if (operation.find("XODD") != string::npos) {
-      if (_iseven(xvasp.str.kpoints_k1)) {
+      if (aurostd::_iseven(xvasp.str.kpoints_k1)) {
         xvasp.str.kpoints_k1++;
         nchanges_made++;
         if (LDEBUG) {
@@ -6624,7 +6634,7 @@ namespace KBIN {
       }
     }
     if (operation.find("YODD") != string::npos) {
-      if (_iseven(xvasp.str.kpoints_k2)) {
+      if (aurostd::_iseven(xvasp.str.kpoints_k2)) {
         xvasp.str.kpoints_k2++;
         nchanges_made++;
         if (LDEBUG) {
@@ -6640,7 +6650,7 @@ namespace KBIN {
       }
     }
     if (operation.find("ZODD") != string::npos) {
-      if (_iseven(xvasp.str.kpoints_k3)) {
+      if (aurostd::_iseven(xvasp.str.kpoints_k3)) {
         xvasp.str.kpoints_k3++;
         nchanges_made++;
         if (LDEBUG) {
@@ -6657,7 +6667,7 @@ namespace KBIN {
     }
     //
     // CO20210315 - below here, do not change _k* (only for MAX)
-    xvasp.str.kpoints_kmax = max(xvasp.str.kpoints_k1, xvasp.str.kpoints_k2, xvasp.str.kpoints_k3);
+    xvasp.str.kpoints_kmax = aurostd::max(xvasp.str.kpoints_k1, xvasp.str.kpoints_k2, xvasp.str.kpoints_k3);
     // imax: set ki to kmax (if not already)
     if (operation.find("XMAX") != string::npos) {
       if (xvasp.str.kpoints_k1 != xvasp.str.kpoints_kmax) {
@@ -6688,7 +6698,7 @@ namespace KBIN {
     }
     // ievenshift: even ki get si=0.5 and odd k1 si=0 (if not already)
     if (operation.find("XEVENSHIFT") != string::npos) {
-      if (_iseven(xvasp.str.kpoints_k1)) {
+      if (aurostd::_iseven(xvasp.str.kpoints_k1)) {
         if (!aurostd::isequal(xvasp.str.kpoints_s1, 0.5)) {
           xvasp.str.kpoints_s1 = 0.5;
           nchanges_made++;
@@ -6707,7 +6717,7 @@ namespace KBIN {
       }
     }
     if (operation.find("YEVENSHIFT") != string::npos) {
-      if (_iseven(xvasp.str.kpoints_k2)) {
+      if (aurostd::_iseven(xvasp.str.kpoints_k2)) {
         if (!aurostd::isequal(xvasp.str.kpoints_s2, 0.5)) {
           xvasp.str.kpoints_s2 = 0.5;
           nchanges_made++;
@@ -6726,7 +6736,7 @@ namespace KBIN {
       }
     }
     if (operation.find("ZEVENSHIFT") != string::npos) {
-      if (_iseven(xvasp.str.kpoints_k3)) {
+      if (aurostd::_iseven(xvasp.str.kpoints_k3)) {
         if (!aurostd::isequal(xvasp.str.kpoints_s3, 0.5)) {
           xvasp.str.kpoints_s3 = 0.5;
           nchanges_made++;
@@ -6746,7 +6756,7 @@ namespace KBIN {
     }
     // ioddshift: odd ki get si=0.5 and even k1 si=0 (if not already)
     if (operation.find("XODDSHIFT") != string::npos) {
-      if (_isodd(xvasp.str.kpoints_k1)) {
+      if (aurostd::_isodd(xvasp.str.kpoints_k1)) {
         if (!aurostd::isequal(xvasp.str.kpoints_s1, 0.5)) {
           xvasp.str.kpoints_s1 = 0.5;
           nchanges_made++;
@@ -6765,7 +6775,7 @@ namespace KBIN {
       }
     }
     if (operation.find("YODDSHIFT") != string::npos) {
-      if (_isodd(xvasp.str.kpoints_k2)) {
+      if (aurostd::_isodd(xvasp.str.kpoints_k2)) {
         if (!aurostd::isequal(xvasp.str.kpoints_s2, 0.5)) {
           xvasp.str.kpoints_s2 = 0.5;
           nchanges_made++;
@@ -6784,7 +6794,7 @@ namespace KBIN {
       }
     }
     if (operation.find("ZODDSHIFT") != string::npos) {
-      if (_isodd(xvasp.str.kpoints_k3)) {
+      if (aurostd::_isodd(xvasp.str.kpoints_k3)) {
         if (!aurostd::isequal(xvasp.str.kpoints_s3, 0.5)) {
           xvasp.str.kpoints_s3 = 0.5;
           nchanges_made++;
@@ -6864,7 +6874,7 @@ namespace KBIN {
       cerr << __AFLOW_FUNC__ << " xvasp.str.kpoints_k*=(" << xvasp.str.kpoints_k1 << "," << xvasp.str.kpoints_k2 << "," << xvasp.str.kpoints_k3 << ")" << endl;
       cerr << __AFLOW_FUNC__ << " xvasp.str.kpoints_s*=(" << xvasp.str.kpoints_s1 << "," << xvasp.str.kpoints_s2 << "," << xvasp.str.kpoints_s3 << ")" << endl;
     }
-    xvasp.str.kpoints_kmax = max(xvasp.str.kpoints_k1, xvasp.str.kpoints_k2, xvasp.str.kpoints_k3);
+    xvasp.str.kpoints_kmax = aurostd::max(xvasp.str.kpoints_k1, xvasp.str.kpoints_k2, xvasp.str.kpoints_k3);
     xvasp.str.kpoints_kppra = xvasp.str.kpoints_k1 * xvasp.str.kpoints_k2 * xvasp.str.kpoints_k3 * xvasp.str.atoms.size();
     KBIN::XVASP_KPOINTS_KPOINTS(xvasp);
     return (nchanges_made > 0);
@@ -9400,11 +9410,11 @@ namespace KBIN {
 // KBIN::ExtractAtomicSpecies
 // ***************************************************************************//
 namespace KBIN {
-  vector<string> ExtractAtomicSpecies(const string& directory, ostream& oss) {
+  vector<string> ExtractAtomicSpecies(const string& directory) {
     ofstream FileMESSAGE;
-    return ExtractAtomicSpecies(directory, FileMESSAGE, oss);
+    return ExtractAtomicSpecies(directory, FileMESSAGE);
   } // CO20200404 - added ofstream
-  vector<string> ExtractAtomicSpecies(const string& directory, ofstream& FileMESSAGE, ostream& oss) { // CO20200404 - added ofstream
+  vector<string> ExtractAtomicSpecies(const string& directory, ofstream& FileMESSAGE) { // CO20200404 - added ofstream
     const bool LDEBUG = (false || XHOST.DEBUG);
 
     if (LDEBUG) {
@@ -9822,8 +9832,6 @@ namespace KBIN {
   }
 
 } // namespace KBIN
-
-#endif
 
 // ***************************************************************************
 // *                                                                         *

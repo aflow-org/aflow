@@ -3,6 +3,7 @@ Language: Cpp
 BasedOnStyle: Google
 AccessModifierOffset: -2
 AlignArrayOfStructures: Right
+AlignOperands: AlignAfterOperator
 AlignTrailingComments:
   Kind: Leave
 AllowShortBlocksOnASingleLine: Empty
@@ -13,42 +14,50 @@ AllowShortFunctionsOnASingleLine: Inline
 AllowShortIfStatementsOnASingleLine: WithoutElse
 AllowShortLambdasOnASingleLine: All
 AllowShortLoopsOnASingleLine: true
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
 BinPackParameters: OnePerLine
+BreakBeforeBinaryOperators: All
 BreakBeforeBraces: Attach
+BreakBinaryOperations: RespectPrecedence
 BreakConstructorInitializers: AfterColon
 BreakTemplateDeclarations: MultiLine
 ColumnLimit: 210
 SortIncludes: CaseSensitive
 IncludeBlocks: Regroup
 IncludeCategories:
-  # <> no extension
-  - Regex: '^<([A-Za-z0-9\/-_])+>'
+  # the config.h
+  - Regex: 'config\.h'
     Priority: 1
     SortPriority: 1
-  # <> with specific libs
-  - Regex: '^<(archive|curl|openssl)'
+  # <> no extension
+  - Regex: '^<([A-Za-z0-9\/-_])+>'
     Priority: 2
     SortPriority: 2
-  # <> with extension
-  - Regex: '^<([A-Za-z0-9.\/-_])+>'
+  # <> with specific libs
+  - Regex: '^<(archive|curl|openssl)'
     Priority: 3
     SortPriority: 3
-  # <> with anything
-  - Regex: '^<.*'
+  # <> with extension
+  - Regex: '^<([A-Za-z0-9.\/-_])+>'
     Priority: 4
     SortPriority: 4
-  # "" with specific libs
-  - Regex: '^"(AUROSTD|aurostd)'
+  # <> with anything
+  - Regex: '^<.*'
     Priority: 5
     SortPriority: 5
-  # "" with anything
-  - Regex: '^".*'
+  # "" with specific libs
+  - Regex: '^"(AUROSTD|aurostd)'
     Priority: 6
     SortPriority: 6
-  # anything
-  - Regex: '.*'
+  # "" with anything
+  - Regex: '^".*'
     Priority: 7
     SortPriority: 7
+  # anything
+  - Regex: '.*'
+    Priority: 8
+    SortPriority: 8
 IncludeIsMainRegex: '(_test)?$'
 InsertNewlineAtEOF: true
 QualifierAlignment: Left
@@ -61,7 +70,12 @@ IndentWidth: 2
 TabWidth: 2
 NamespaceIndentation: All
 FixNamespaceComments: true
-PenaltyExcessCharacter: 1
-PenaltyBreakAssignment: 20
+PenaltyExcessCharacter: 2
+PenaltyBreakAssignment: 100
 PenaltyBreakString: 6
+PenaltyBreakOpenParenthesis: 2000
+PenaltyBreakComment: 600
+ReflowComments: false
+PenaltyIndentedWhitespace: 1
+PenaltyReturnTypeOnItsOwnLine: 1000
 ...

@@ -6,15 +6,13 @@
 // this file contains the routines to run VASP in KBIN
 // Stefano Curtarolo - 2007-2011 Duke
 
-#ifndef _AFLOW_KALIEN_CPP
-#define _AFLOW_KALIEN_CPP
-
 #include <fstream>
 #include <ios>
 #include <iostream>
 #include <istream>
 #include <ostream>
 #include <sstream>
+#include <string>
 
 #include "AUROSTD/aurostd.h"
 #include "AUROSTD/aurostd_xfile.h"
@@ -25,7 +23,6 @@
 #include "aflow_xhost.h"
 #include "flow/aflow_xclasses.h"
 
-using std::cout;
 using std::endl;
 using std::ifstream;
 using std::istream;
@@ -33,10 +30,11 @@ using std::istringstream;
 using std::ofstream;
 using std::ostream;
 using std::ostringstream;
+using std::string;
 using std::stringstream;
 
 namespace ALIEN {
-  _alienflags Get_Alienflags_from_AflowIN(string &AflowIn) {
+  _alienflags Get_Alienflags_from_AflowIN(string& AflowIn) {
     _alienflags alienflags;
     // what to run
     alienflags.KBIN_ALIEN_COMMAND_BINARY_START_STOP_FLAG = aurostd::substring2bool(AflowIn, "[ALIEN_COMMAND]START", true) && aurostd::substring2bool(AflowIn, "[ALIEN_COMMAND]STOP", true);
@@ -217,8 +215,6 @@ namespace ALIEN {
     return Krun;
   }
 } // namespace ALIEN
-
-#endif
 
 // ***************************************************************************
 // *                                                                         *

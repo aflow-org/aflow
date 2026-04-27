@@ -5,6 +5,9 @@
       "name": "common",
       "hidden": true,
       "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      },
       "binaryDir": "${sourceDir}/../build/${presetName}"
     },
     {

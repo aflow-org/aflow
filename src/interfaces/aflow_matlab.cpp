@@ -6,9 +6,6 @@
 // Stefano Curtarolo
 // contains routines to extract MATLAB information from _AFLOWIN_
 
-#ifndef _AFLOW_MATLAB_CPP
-#define _AFLOW_MATLAB_CPP
-
 #include <fstream>
 #include <ios>
 #include <iostream>
@@ -414,8 +411,6 @@ bool KBIN_MATLAB_Directory(ofstream &FileMESSAGE, _aflags &aflags, _kflags &kfla
   FileAFLOWIN.close();
   return Krun;
 }
-
-#endif  // _AFLOW_MATLAB_MODE_CPP
 
 // **************************************************************************
 // *                                                                        *

@@ -4,6 +4,9 @@
     {
       "name": "MyConfigPreset",
       "inherits": ["common", "vcpkg", "debug_setting"],
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      },
       "environment": {
         "VCPKG_ROOT": "/home/me/.vcpkg/vcpkg"
       }

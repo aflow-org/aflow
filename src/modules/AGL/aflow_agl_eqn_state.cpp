@@ -6,8 +6,6 @@
 // ***************************************************************************
 // Written by Cormac Toher
 // cormac.toher@duke.edu
-#ifndef _AFLOW_AGL_EQN_STATE_CPP
-#define _AFLOW_AGL_EQN_STATE_CPP
 
 #include <algorithm>
 #include <cmath>
@@ -1351,7 +1349,6 @@ namespace AGL_functions {
 //  End of AFLOW AGL Eqn of State
 // **************************************************************************
 
-#endif // _AFLOW_AGL_EQN_STATE_CPP
 // ***************************************************************************
 // *                                                                         *
 // *           Aflow STEFANO CURTAROLO - Duke University 2003-2024           *

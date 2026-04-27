@@ -14,6 +14,7 @@
 #include <istream>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <ostream>
 #include <regex>
 #include <set>
@@ -68,22 +69,6 @@ const std::string VASP_KEYWORD_EXECUTION = " Executing: ";
 // definitions for projects
 extern uint LIBRARY_AUID, LIBRARY_ICSD, LIBRARY_LIB0, LIBRARY_LIB1, LIBRARY_LIB2, LIBRARY_LIB3, LIBRARY_LIB4, LIBRARY_LIB5, LIBRARY_LIB6, LIBRARY_LIB7, LIBRARY_LIB8, LIBRARY_LIB9; // not in order.. will be nailed by init.cpp
 
-using aurostd::_iscomplex;
-using aurostd::_iseven;
-using aurostd::_isfloat;
-using aurostd::_isodd;
-using aurostd::clear;
-using aurostd::max;
-using aurostd::min;
-using aurostd::mod;
-using aurostd::nint;
-using aurostd::sign;
-using aurostd::xcombos;
-using aurostd::xcomplex;
-using aurostd::xmatrix;
-using aurostd::xoption;
-using aurostd::xvector;
-
 // --------------------------------------------------------------------------
 // aflow_arguments
 uint PflowARGs(std::vector<std::string>& argv, std::vector<std::string>& cmds, aurostd::xoption& vpflow); // called inside Init::InitMachine coded in aflow_pflow_main.cpp
@@ -117,15 +102,19 @@ std::string GetSpaceGroupSchoenflies(int spacegroupnumber, const std::string& di
 std::string GetSpaceGroupHall(int spacegroupnumber, int setting = SG_SETTING_1, const std::string& directory = ""); // DX20170901 //DX20180526 - add directory //DX20180806 - added setting
 std::string GetLaueLabel(std::string& point_group); // DX20170901 //DX20180526 - add directory
 
-xmatrix<double> MetricTensor(const xstructure& a); // CO20180409
-xmatrix<double> MetricTensor(const xmatrix<double>& lattice, double scale = 1.0); // CO20180409
-xmatrix<double> ReciprocalLattice(const xstructure& a); // CO20180409
-xmatrix<double> ReciprocalLattice(const xmatrix<double>& rlattice, double scale = 1.0); // CO20180409
-std::string KPPRA(int& k1, int& k2, int& k3, const xmatrix<double>& rlattice, const int& NK);
+aurostd::xmatrix<double> MetricTensor(const xstructure& a); // CO20180409
+aurostd::xmatrix<double> MetricTensor(const aurostd::xmatrix<double>& lattice, double scale = 1.0); // CO20180409
+aurostd::xmatrix<double> ReciprocalLattice(const xstructure& a); // CO20180409
+aurostd::xmatrix<double> ReciprocalLattice(const aurostd::xmatrix<double>& rlattice, double scale = 1.0); // CO20180409
+std::string KPPRA(int& k1, int& k2, int& k3, const aurostd::xmatrix<double>& rlattice, const int& NK);
 std::string KPPRA(xstructure& str, const int& _NK);
-std::string KPPRA_DELTA(int& k1, int& k2, int& k3, const xmatrix<double>& rlattice, const double& DK);
+std::string KPPRA_DELTA(int& k1, int& k2, int& k3, const aurostd::xmatrix<double>& rlattice, const double& DK);
 std::string KPPRA_DELTA(xstructure& str, const double& DK);
-int GetNBANDS(int electrons, int nions, int spineach, bool ispin = true, int NPAR = 1); // CO20210315 - spin==true is safer, added NPAR
+[[deprecated("Use GetNBANDS_VASP_SERIAL for a more appropriate estimate.")]]
+int GetNBANDS_AFLOW3(int electrons, int nions, int spineach, bool ispin = true, int NPAR = 1); // CO20210315 - spin==true is safer, added NPAR
+int GetNBANDS_VASP_SERIAL_spineach(int electrons, int nions, int spineach, bool ispin);
+int GetNBANDS_VASP_SERIAL(int electrons, int nions, const std::vector<int>& spins, bool ispin);
+int GetNBANDS_VASP(int electrons, int nions, int spineach, bool ispin, int NPAR = 1);
 double GetZVAL(const std::stringstream& sss, std::vector<double>& vZVAL);
 double GetZVAL(const _xvasp& xvasp, std::vector<double>& vZVAL);
 double GetZVAL(const std::string& directory, std::vector<double>& vZVAL);
@@ -136,65 +125,64 @@ double GetPOMASS(const _xvasp& xvasp, std::vector<double>& vPOMASS);
 double GetPOMASS(const std::string& directory, std::vector<double>& vPOMASS);
 double GetCellAtomPOMASS(const std::stringstream& sss, std::vector<double>& vPOMASS, const std::stringstream& sstr, std::vector<double>& sPOMASS, std::string mode); // sss sstr returns POMASS cell, VAL and sPOMASS
 double GetCellAtomPOMASS(const std::string& directory, std::vector<double>& vPOMASS, std::vector<double>& sPOMASS, std::string mode); // from directory POT/POS returns total POMASS cell, vPOMASS and sPOMASS
-double GetVol(const xmatrix<double>& lat);
-double det(const xvector<double>& v1, const xvector<double>& v2, const xvector<double>& v3);
-double GetVol(const xvector<double>& v1, const xvector<double>& v2, const xvector<double>& v3);
+double GetVol(const aurostd::xmatrix<double>& lat);
+double det(const aurostd::xvector<double>& v1, const aurostd::xvector<double>& v2, const aurostd::xvector<double>& v3);
+double GetVol(const aurostd::xvector<double>& v1, const aurostd::xvector<double>& v2, const aurostd::xvector<double>& v3);
 double det(const double&, const double&, const double&, const double&, const double&, const double&, const double&, const double&, const double&);
-// double getcos(const xvector<double>& a,const xvector<double>& b);  // removed and put in aurostd_xvector.h as cos(xvector,xvector) and sin(xvector,xvector)
-xvector<double> Getabc_angles(const xmatrix<double>& lat, int mode);
-xvector<long double> Getabc_angles(const xmatrix<long double>& lat, int mode);
-xvector<double> Getabc_angles(const xmatrix<double>& lat, const xvector<int>& permut, int mode);
-xvector<double> Getabc_angles(const xvector<double>& r1, const xvector<double>& r2, const xvector<double>& r3, int mode);
-xvector<double> Getabc_angles(const xvector<double>& r1, const xvector<double>& r2, const xvector<double>& r3, const xvector<int>& permut, int mode);
+aurostd::xvector<double> Getabc_angles(const aurostd::xmatrix<double>& lat, int mode);
+aurostd::xvector<long double> Getabc_angles(const aurostd::xmatrix<long double>& lat, int mode);
+aurostd::xvector<double> Getabc_angles(const aurostd::xmatrix<double>& lat, const aurostd::xvector<int>& permut, int mode);
+aurostd::xvector<double> Getabc_angles(const aurostd::xvector<double>& r1, const aurostd::xvector<double>& r2, const aurostd::xvector<double>& r3, int mode);
+aurostd::xvector<double> Getabc_angles(const aurostd::xvector<double>& r1, const aurostd::xvector<double>& r2, const aurostd::xvector<double>& r3, const aurostd::xvector<int>& permut, int mode);
 #define _Getabc_angles Getabc_angles
 // #define _Getabc_angles __NO_USE_Sortabc_angles
-xvector<double> Sortabc_angles(const xmatrix<double>& lat, int mode);
-xmatrix<double> GetClat(const xvector<double>& abc_angles);
-xmatrix<double> GetClat(const double& a, const double& b, const double& c, const double& alpha, const double& beta, const double& gamma);
+aurostd::xvector<double> Sortabc_angles(const aurostd::xmatrix<double>& lat, int mode);
+aurostd::xmatrix<double> GetClat(const aurostd::xvector<double>& abc_angles);
+aurostd::xmatrix<double> GetClat(const double& a, const double& b, const double& c, const double& alpha, const double& beta, const double& gamma);
 xstructure GetIntpolStr(xstructure strA, xstructure strB, const double& f, const std::string& path_flag);
-double RadiusSphereLattice(const xmatrix<double>& lattice, double scale = 1.0); // CO20180409
-xvector<int> LatticeDimensionSphere(const xmatrix<double>& lattice, double radius, double scale = 1.0); // CO20180409
-xvector<int> LatticeDimensionSphere(const xstructure& str, double radius);
-void resetLatticeDimensions(const xmatrix<double>& lattice,
+double RadiusSphereLattice(const aurostd::xmatrix<double>& lattice, double scale = 1.0); // CO20180409
+aurostd::xvector<int> LatticeDimensionSphere(const aurostd::xmatrix<double>& lattice, double radius, double scale = 1.0); // CO20180409
+aurostd::xvector<int> LatticeDimensionSphere(const xstructure& str, double radius);
+void resetLatticeDimensions(const aurostd::xmatrix<double>& lattice,
                             double radius,
-                            xvector<int>& dims,
-                            std::vector<xvector<double>>& l1,
-                            std::vector<xvector<double>>& l2,
-                            std::vector<xvector<double>>& l3,
+                            aurostd::xvector<int>& dims,
+                            std::vector<aurostd::xvector<double>>& l1,
+                            std::vector<aurostd::xvector<double>>& l2,
+                            std::vector<aurostd::xvector<double>>& l3,
                             std::vector<int>& a_index,
                             std::vector<int>& b_index,
                             std::vector<int>& c_index); // DX20191122
-xvector<double> F2C(const double& scale, const xmatrix<double>& lattice, const xvector<double>& fpos); // fpos are F components per COLUMS !
-xvector<double> F2C(const xmatrix<double>& lattice, const xvector<double>& fpos); // fpos are F components per COLUMS !
-xvector<double> C2F(const double& scale, const xmatrix<double>& lattice, const xvector<double>& cpos); // cpos are C components per COLUMS !
-xvector<double> C2F(const xmatrix<double>& lattice, const xvector<double>& cpos); // cpos are C components per COLUMS !
-xmatrix<double> F2C(const double& scale, const xmatrix<double>& lattice, const xmatrix<double>& fpos); // fpos are F components per COLUMS !
-xmatrix<double> F2C(const xmatrix<double>& lattice, const xmatrix<double>& fpos); // fpos are F components per COLUMS !
-xmatrix<double> C2F(const double& scale, const xmatrix<double>& lattice, const xmatrix<double>& cpos); // cpos are C components per COLUMS !
-xmatrix<double> C2F(const xmatrix<double>& lattice, const xmatrix<double>& cpos); // cpos are C components per COLUMS !
-_atom F2C(const double& scale, const xmatrix<double>& lattice, const _atom& iatom); // atom.fpos are F components per COLUMS !
+aurostd::xvector<double> F2C(const double& scale, const aurostd::xmatrix<double>& lattice, const aurostd::xvector<double>& fpos); // fpos are F components per COLUMS !
+aurostd::xvector<double> F2C(const aurostd::xmatrix<double>& lattice, const aurostd::xvector<double>& fpos); // fpos are F components per COLUMS !
+aurostd::xvector<double> C2F(const double& scale, const aurostd::xmatrix<double>& lattice, const aurostd::xvector<double>& cpos); // cpos are C components per COLUMS !
+aurostd::xvector<double> C2F(const aurostd::xmatrix<double>& lattice, const aurostd::xvector<double>& cpos); // cpos are C components per COLUMS !
+aurostd::xmatrix<double> F2C(const double& scale, const aurostd::xmatrix<double>& lattice, const aurostd::xmatrix<double>& fpos); // fpos are F components per COLUMS !
+aurostd::xmatrix<double> F2C(const aurostd::xmatrix<double>& lattice, const aurostd::xmatrix<double>& fpos); // fpos are F components per COLUMS !
+aurostd::xmatrix<double> C2F(const double& scale, const aurostd::xmatrix<double>& lattice, const aurostd::xmatrix<double>& cpos); // cpos are C components per COLUMS !
+aurostd::xmatrix<double> C2F(const aurostd::xmatrix<double>& lattice, const aurostd::xmatrix<double>& cpos); // cpos are C components per COLUMS !
+_atom F2C(const double& scale, const aurostd::xmatrix<double>& lattice, const _atom& iatom); // atom.fpos are F components per COLUMS !
 _atom F2C(const xstructure& str, const _atom& iatom); // atom.fpos are F components per COLUMS !
-_atom C2F(const double& scale, const xmatrix<double>& lattice, const _atom& iatom); // atom.cpos are C components per COLUMS !
-_atom C2F(const xmatrix<double>& lattice, const _atom& iatom); // atom.cpos are C components per COLUMS !
+_atom C2F(const double& scale, const aurostd::xmatrix<double>& lattice, const _atom& iatom); // atom.cpos are C components per COLUMS !
+_atom C2F(const aurostd::xmatrix<double>& lattice, const _atom& iatom); // atom.cpos are C components per COLUMS !
 _atom F2C(const double& scale, const xstructure& str, const _atom& iatom); // atom.fpos are F components per COLUMS !
 _atom F2C(const xstructure& str, const _atom& iatom); // atom.fpos are F components per COLUMS !
 _atom C2F(const double& scale, const xstructure& str, const _atom& iatom); // atom.fpos are F components per COLUMS !
 _atom C2F(const xstructure& str, const _atom& iatom); // atom.cpos are C components per COLUMS !
-xmatrix<double> FF2CC(const double& scale, const xmatrix<double>& lattice, const xmatrix<double>& fmat); // fmat is an operation in F coordinates
-xmatrix<double> FF2CC(const xmatrix<double>& lattice, const xmatrix<double>& fmat); // fmat is an operation in F coordinates
-xmatrix<double> CC2FF(const double& scale, const xmatrix<double>& lattice, const xmatrix<double>& cmat); // cmat is an operation in C coordinates
-xmatrix<double> CC2FF(const xmatrix<double>& lattice, const xmatrix<double>& cmat); // cmat is an operation in C coordinates
+aurostd::xmatrix<double> FF2CC(const double& scale, const aurostd::xmatrix<double>& lattice, const aurostd::xmatrix<double>& fmat); // fmat is an operation in F coordinates
+aurostd::xmatrix<double> FF2CC(const aurostd::xmatrix<double>& lattice, const aurostd::xmatrix<double>& fmat); // fmat is an operation in F coordinates
+aurostd::xmatrix<double> CC2FF(const double& scale, const aurostd::xmatrix<double>& lattice, const aurostd::xmatrix<double>& cmat); // cmat is an operation in C coordinates
+aurostd::xmatrix<double> CC2FF(const aurostd::xmatrix<double>& lattice, const aurostd::xmatrix<double>& cmat); // cmat is an operation in C coordinates
 // DX20190905 START
 // BringInCellInPlace() overloads
 void BringInCellInPlace(double&, double = _ZERO_TOL_, double = 1.0, double = 0.0); // ME+DX20190409
-void BringInCellInPlace(xvector<double>&, double = _ZERO_TOL_, double = 1.0, double = 0.0); // ME+DX20190409
-void BringInCellInPlace(_atom& atom_in, const xmatrix<double>& lattice, double tolerance = _ZERO_TOL_, double upper_bound = 1.0, double lower_bound = 0.0); // DX20190904
+void BringInCellInPlace(aurostd::xvector<double>&, double = _ZERO_TOL_, double = 1.0, double = 0.0); // ME+DX20190409
+void BringInCellInPlace(_atom& atom_in, const aurostd::xmatrix<double>& lattice, double tolerance = _ZERO_TOL_, double upper_bound = 1.0, double lower_bound = 0.0); // DX20190904
 void BringInCellInPlace(xstructure& xstr, double tolerance = _ZERO_TOL_, double upper_bound = 1.0, double lower_bound = 0.0); // DX20190904
 
 // BringInCell() overloads
 double BringInCell(double, double = _ZERO_TOL_, double = 1.0, double = 0.0); // ME+DX20190409
-xvector<double> BringInCell(const xvector<double>& fpos_in, double tolerance = _ZERO_TOL_, double upper_bound = 1.0, double lower_bound = 0.0); // DX20190904
-_atom BringInCell(const _atom& atom_in, const xmatrix<double>& lattice, double tolerance = _ZERO_TOL_, double upper_bound = 1.0, double lower_bound = 0.0); // DX20190904
+aurostd::xvector<double> BringInCell(const aurostd::xvector<double>& fpos_in, double tolerance = _ZERO_TOL_, double upper_bound = 1.0, double lower_bound = 0.0); // DX20190904
+_atom BringInCell(const _atom& atom_in, const aurostd::xmatrix<double>& lattice, double tolerance = _ZERO_TOL_, double upper_bound = 1.0, double lower_bound = 0.0); // DX20190904
 xstructure BringInCell(const xstructure& xstr_in, double tolerance = _ZERO_TOL_, double upper_bound = 1.0, double lower_bound = 0.0); // DX20190904
 
 // BringInCellFPOS overloads
@@ -208,32 +196,32 @@ xstructure IdenticalAtoms(const xstructure& a); // Make identical atoms
 // xstructure SwapCoordinates(const xstructure& str,const uint& i,const uint& j); // Permute Coordinates i with j
 // string SpeciesLabel(const xstructure& a,const uint& A);                        // Returns the Label of the specie A (if available)
 // string SpeciesString(const xstructure& a);                                           // Gives a string with the list of all the species
-bool GetNiggliCell(const xmatrix<double>& in_lat, xmatrix<double>& niggli_lat, xmatrix<double>& P, xmatrix<double>& Q);
+bool GetNiggliCell(const aurostd::xmatrix<double>& in_lat, aurostd::xmatrix<double>& niggli_lat, aurostd::xmatrix<double>& P, aurostd::xmatrix<double>& Q);
 // standard lattice reduction and type
-std::string GetLatticeType(xmatrix<double> lattice);
-std::string GetLatticeType(xvector<double> data);
+std::string GetLatticeType(aurostd::xmatrix<double> lattice);
+std::string GetLatticeType(aurostd::xvector<double> data);
 xstructure Standard_Primitive_UnitCellForm(const xstructure& a);
 xstructure GetStandardPrimitive(const xstructure& a);
-xmatrix<double> GetStandardPrimitive(xmatrix<double> lattice);
-xvector<double> GetStandardPrimitive(xvector<double> data);
+aurostd::xmatrix<double> GetStandardPrimitive(aurostd::xmatrix<double> lattice);
+aurostd::xvector<double> GetStandardPrimitive(aurostd::xvector<double> data);
 xstructure Standard_Conventional_UnitCellForm(const xstructure& a);
 xstructure GetStandardConventional(const xstructure& a);
-xmatrix<double> GetStandardConventional(xmatrix<double> lattice);
-xvector<double> GetStandardConventional(xvector<double> data);
+aurostd::xmatrix<double> GetStandardConventional(aurostd::xmatrix<double> lattice);
+aurostd::xvector<double> GetStandardConventional(aurostd::xvector<double> data);
 // niggli
 xstructure GetNiggliStr(const xstructure& in_str);
-xmatrix<double> GetNiggliStr(const xmatrix<double>& lattice);
+aurostd::xmatrix<double> GetNiggliStr(const aurostd::xmatrix<double>& lattice);
 xstructure NiggliUnitCellForm(const xstructure& a);
-xmatrix<double> NiggliUnitCellForm(const xmatrix<double>& lattice);
+aurostd::xmatrix<double> NiggliUnitCellForm(const aurostd::xmatrix<double>& lattice);
 // minkowsky
 xstructure MinkowskiBasisReduction(const xstructure& a);
-xmatrix<double> MinkowskiBasisReduction(const xmatrix<double>& lattice);
+aurostd::xmatrix<double> MinkowskiBasisReduction(const aurostd::xmatrix<double>& lattice);
 // optimal lattice reduction
 xstructure LatticeReduction(const xstructure& a);
-xmatrix<double> LatticeReduction(const xmatrix<double>& lattice);
+aurostd::xmatrix<double> LatticeReduction(const aurostd::xmatrix<double>& lattice);
 // CO20170807 START
-std::deque<_atom> foldAtomsInCell(const xstructure& a, const xmatrix<double>& lattice_new, bool skew, double tol, bool check_min_dists = true); // CO20190520 - removed pointers for bools and doubles, added const where possible //DX20190619 - added check_min_dists bool
-std::deque<_atom> foldAtomsInCell(const std::deque<_atom>& atoms, const xmatrix<double>& lattice_orig, const xmatrix<double>& lattice_new, bool skew, double tol, bool check_min_dists = true); // CO20190520 - removed pointers for bools and doubles, added const where possible //DX20190619 = added check_min_dists bool
+std::deque<_atom> foldAtomsInCell(const xstructure& a, const aurostd::xmatrix<double>& lattice_new, bool skew, double tol, bool check_min_dists = true); // CO20190520 - removed pointers for bools and doubles, added const where possible //DX20190619 - added check_min_dists bool
+std::deque<_atom> foldAtomsInCell(const std::deque<_atom>& atoms, const aurostd::xmatrix<double>& lattice_orig, const aurostd::xmatrix<double>& lattice_new, bool skew, double tol, bool check_min_dists = true); // CO20190520 - removed pointers for bools and doubles, added const where possible //DX20190619 = added check_min_dists bool
 xstructure GetPrimitiveVASP(const xstructure& a);
 xstructure GetPrimitiveVASP(const xstructure& a, double tol);
 // CO20170807 STOP
@@ -247,9 +235,9 @@ xstructure GetPrimitive(const xstructure& a, double tol);
 xstructure GetPrimitive1(const xstructure& a);
 xstructure GetPrimitive2(const xstructure& a);
 xstructure GetPrimitive3(const xstructure& a);
-bool isTranslationVector(const xstructure& xstr, const xvector<double>& vec, double tolerance = 0.5, bool is_frac = false); // DX20210316
-bool IsTranslationFVector(const xstructure& a, const xvector<double>& ftvec);
-bool IsTranslationCVector(const xstructure& a, const xvector<double>& ctvec);
+bool isTranslationVector(const xstructure& xstr, const aurostd::xvector<double>& vec, double tolerance = 0.5, bool is_frac = false); // DX20210316
+bool IsTranslationFVector(const xstructure& a, const aurostd::xvector<double>& ftvec);
+bool IsTranslationCVector(const xstructure& a, const aurostd::xvector<double>& ctvec);
 // other eggs
 xstructure ReScale(const xstructure& a, const double& in_scale);
 xstructure SetScale(const xstructure& a, const double& in_scale);
@@ -259,23 +247,44 @@ xstructure InflateVolume(const xstructure& a, const double& coefficient);
 double GetVolume(const xstructure& a);
 double Volume(const xstructure& a);
 // DX20180726 START
-_atom BringCloseToOrigin(_atom& atom, xmatrix<double>& f2c);
+_atom BringCloseToOrigin(_atom& atom, aurostd::xmatrix<double>& f2c);
 bool uniqueAtomInCell(_atom& atom, std::deque<_atom>& atoms);
 bool alreadyInCell(_atom& atom, std::deque<_atom> atoms);
 // DX20180726 END
 // DX+CO START
 bool atomInCell(const _atom& atom, double tolerance = _ZERO_TOL_, double upper_bound = 1.0, double lower_bound = 0.0); // DX20191125 //ME+DX20210203 - added bounds
-bool inCell(const xvector<double>& pos_vec, double tolerance = _ZERO_TOL_, double upper_bound = 1.0, double lower_bound = 0.0); // DX20191125 - added tolerance  // ME20210128 - added bounds
+bool inCell(const aurostd::xvector<double>& pos_vec, double tolerance = _ZERO_TOL_, double upper_bound = 1.0, double lower_bound = 0.0); // DX20191125 - added tolerance  // ME20210128 - added bounds
 // DX+CO END
-xstructure GetSuperCell(const xstructure& a, const xmatrix<double>& sc);
-xstructure GetSuperCell(const xstructure& a, const xvector<double>& sc);
-xstructure GetSuperCell(const xstructure& a, const xvector<int>& sc);
+xstructure GetSuperCell(const xstructure& a, const aurostd::xmatrix<double>& sc);
+xstructure GetSuperCell(const xstructure& a, const aurostd::xvector<double>& sc);
+xstructure GetSuperCell(const xstructure& a, const aurostd::xvector<int>& sc);
 xstructure GetSuperCell(const xstructure& a, const int& sc11, const int& sc12, const int& sc13, const int& sc21, const int& sc22, const int& sc23, const int& sc31, const int& sc32, const int& sc33);
 xstructure GetSuperCell(const xstructure& a, const int& sc1, const int& sc2, const int& sc3);
 // CO START
-xstructure GetSuperCell(const xstructure& a, const xmatrix<double>& sc, std::vector<int>& sc2pcMap, std::vector<int>& pc2scMap, bool get_symmetry, bool get_full_basis, bool force_supercell_matrix = false, bool force_strict_pc2scMap = false); // DX20190319 - added force_supercell_matrix //CO20190409 - added force_strict_pc2scMap
-xstructure GetSuperCell(const xstructure& a, const xvector<double>& sc, std::vector<int>& sc2pcMap, std::vector<int>& pc2scMap, bool get_symmetry, bool get_full_basis, bool force_supercell_matrix = false, bool force_strict_pc2scMap = false); // DX20190319 - added force_supercell_matrix //CO20190409 - added force_strict_pc2scMap
-xstructure GetSuperCell(const xstructure& a, const xvector<int>& sc, std::vector<int>& sc2pcMap, std::vector<int>& pc2scMap, bool get_symmetry, bool get_full_basis, bool force_supercell_matrix = false, bool force_strict_pc2scMap = false); // DX20190319 - added force_supercell_matrix  //CO20190409 - added force_strict_pc2scMap
+xstructure GetSuperCell(const xstructure& a,
+                        const aurostd::xmatrix<double>& sc,
+                        std::vector<int>& sc2pcMap,
+                        std::vector<int>& pc2scMap,
+                        bool get_symmetry,
+                        bool get_full_basis,
+                        bool force_supercell_matrix = false,
+                        bool force_strict_pc2scMap = false); // DX20190319 - added force_supercell_matrix //CO20190409 - added force_strict_pc2scMap
+xstructure GetSuperCell(const xstructure& a,
+                        const aurostd::xvector<double>& sc,
+                        std::vector<int>& sc2pcMap,
+                        std::vector<int>& pc2scMap,
+                        bool get_symmetry,
+                        bool get_full_basis,
+                        bool force_supercell_matrix = false,
+                        bool force_strict_pc2scMap = false); // DX20190319 - added force_supercell_matrix //CO20190409 - added force_strict_pc2scMap
+xstructure GetSuperCell(const xstructure& a,
+                        const aurostd::xvector<int>& sc,
+                        std::vector<int>& sc2pcMap,
+                        std::vector<int>& pc2scMap,
+                        bool get_symmetry,
+                        bool get_full_basis,
+                        bool force_supercell_matrix = false,
+                        bool force_strict_pc2scMap = false); // DX20190319 - added force_supercell_matrix  //CO20190409 - added force_strict_pc2scMap
 xstructure GetSuperCell(const xstructure& a,
                         const int& sc11,
                         const int& sc12,
@@ -334,37 +343,37 @@ void CalculateSymmetryPointGroupKPatterson(xstructure& str, bool ossverbose, std
 void CalculateSymmetryPointGroupKPatterson(xstructure& str, bool ossverbose, std::ostream& oss); // ME20200129
 void CalculateSymmetryPointGroupKPatterson(xstructure& str, bool ossverbose); // ME20200129
 void CalculateSymmetryPointGroupKPatterson(xstructure& str); // ME20200129
-xstructure Rotate(const xstructure& a, const xmatrix<double>& rm);
-xstructure GetLTCell(const xmatrix<double>& lt, const xstructure& str);
-xstructure GetLTFVCell(const xvector<double>& nvec, const double phi, const xstructure& str);
-xstructure ShiftPos(const xstructure& a, const xvector<double>& shift, bool is_frac); // DX20210111
-xstructure ShiftCPos(const xstructure& a, const xvector<double>& shift);
-xstructure ShiftFPos(const xstructure& a, const xvector<double>& shift);
+xstructure Rotate(const xstructure& a, const aurostd::xmatrix<double>& rm);
+xstructure GetLTCell(const aurostd::xmatrix<double>& lt, const xstructure& str);
+xstructure GetLTFVCell(const aurostd::xvector<double>& nvec, const double phi, const xstructure& str);
+xstructure ShiftPos(const xstructure& a, const aurostd::xvector<double>& shift, bool is_frac); // DX20210111
+xstructure ShiftCPos(const xstructure& a, const aurostd::xvector<double>& shift);
+xstructure ShiftFPos(const xstructure& a, const aurostd::xvector<double>& shift);
 double MaxStructureLattice(const xstructure& str);
 double MinStructureLattice(const xstructure& str);
 double AtomDist(const xstructure& str, const _atom& atom1, const _atom& atom2);
 bool SameAtom(const xstructure& str, const _atom& atom1, const _atom& atom2);
 bool SameAtom(const _atom& atom1, const _atom& atom2);
 bool DifferentAtom(const xstructure& str, const _atom& atom1, const _atom& atom2);
-xmatrix<double> GetDistMatrix(const xstructure& a); // CO20171025
+aurostd::xmatrix<double> GetDistMatrix(const xstructure& a); // CO20171025
 std::vector<double> GetNBONDXX(const xstructure& a);
 int GenerateGridAtoms(xstructure& str, int i1, int i2, int j1, int j2, int k1, int k2); // DX20191218 [ORIG]
 int GenerateGridAtoms(xstructure& str, double radius); // CO20200912 - double
 int GenerateGridAtoms(xstructure& str, int d);
 int GenerateGridAtoms(xstructure& str, int d1, int d2, int d3);
-int GenerateGridAtoms(xstructure& str, const xvector<int>& dims);
+int GenerateGridAtoms(xstructure& str, const aurostd::xvector<int>& dims);
 int GenerateGridAtoms(xstructure& str);
 
 void l2ijk(const xstructure& str, const int& l, int& i, int& j, int& k);
-void l2ijk(const xstructure& str, const int& l, xvector<int>& ijk);
-xvector<int> l2ijk(const xstructure& str, const int& l);
+void l2ijk(const xstructure& str, const int& l, aurostd::xvector<int>& ijk);
+aurostd::xvector<int> l2ijk(const xstructure& str, const int& l);
 void ijk2l(const xstructure& str, int& l, const int& i, const int& j, const int& k);
-void ijk2l(const xstructure& str, int& l, const xvector<int>& ijk);
+void ijk2l(const xstructure& str, int& l, const aurostd::xvector<int>& ijk);
 int ijk2l(const xstructure& str, const int& i, const int& j, const int& k);
-int ijk2l(const xstructure& str, const xvector<int>& ijk);
-xvector<double> r_lattice(const xstructure& str, const int& l);
-xvector<double> r_lattice(const xstructure& str, const int& i, const int& j, const int& k);
-xvector<double> r_lattice(const xstructure& str, const xvector<int>& ijk);
+int ijk2l(const xstructure& str, const aurostd::xvector<int>& ijk);
+aurostd::xvector<double> r_lattice(const xstructure& str, const int& l);
+aurostd::xvector<double> r_lattice(const xstructure& str, const int& i, const int& j, const int& k);
+aurostd::xvector<double> r_lattice(const xstructure& str, const aurostd::xvector<int>& ijk);
 xstructure input2AIMSxstr(std::istream& input);
 xstructure input2ABINITxstr(std::istream& input);
 xstructure input2QExstr(std::istream& input);
@@ -376,10 +385,10 @@ xstructure input2LMPxstr(std::istream& input); // SD20240111
 
 // ----------------------------------------------------------------------------
 // centroid functions for structures //DX20200728
-xvector<double> getCentroidOfStructure(const xstructure& xstr, bool use_cpos = true, bool use_atom_mass = false);
-xvector<double> getCentroidOfStructure(const std::deque<_atom>& atoms, bool use_cpos = true, bool use_atom_mass = false);
-xvector<double> getCentroidOfStructurePBC(const xstructure& xstr, bool use_cpos = true, bool use_atom_mass = false);
-xvector<double> getCentroidOfStructurePBC(const std::deque<_atom>& atoms, xmatrix<double> lattice, bool use_cpos = true, bool use_atom_mass = false);
+aurostd::xvector<double> getCentroidOfStructure(const xstructure& xstr, bool use_cpos = true, bool use_atom_mass = false);
+aurostd::xvector<double> getCentroidOfStructure(const std::deque<_atom>& atoms, bool use_cpos = true, bool use_atom_mass = false);
+aurostd::xvector<double> getCentroidOfStructurePBC(const xstructure& xstr, bool use_cpos = true, bool use_atom_mass = false);
+aurostd::xvector<double> getCentroidOfStructurePBC(const std::deque<_atom>& atoms, aurostd::xmatrix<double> lattice, bool use_cpos = true, bool use_atom_mass = false);
 
 // ----------------------------------------------------------------------------
 // functions related to AtomEnvironment - DX20191122
@@ -387,22 +396,22 @@ std::vector<AtomEnvironment> getAtomEnvironments(const xstructure& xstr, uint mo
 void writeAtomEnvironments(const std::vector<AtomEnvironment> environments, const std::map<std::string, std::string> meta_data = std::map<std::string, std::string>()); // HE20210723 add separate write function
 std::vector<AtomEnvironment> getLFAAtomEnvironments(const xstructure& xstr, const std::string& lfa, const std::vector<std::string>& LFAs, uint mode = ATOM_ENVIRONMENT_MODE_1);
 
-void minimumCoordinationShellLatticeOnly(const xmatrix<double>& lattice, double& min_dist, uint& frequency, std::vector<xvector<double>>& coordinates); // DX20191122
-void minimumCoordinationShellLatticeOnly(const xmatrix<double>& lattice, double& min_dist, uint& frequency, std::vector<xvector<double>>& coordinates, double radius); // DX20191122
-void minimumCoordinationShellLatticeOnly(const xmatrix<double>& lattice,
-                                         xvector<int>& dims,
-                                         std::vector<xvector<double>>& l1,
-                                         std::vector<xvector<double>>& l2,
-                                         std::vector<xvector<double>>& l3,
+void minimumCoordinationShellLatticeOnly(const aurostd::xmatrix<double>& lattice, double& min_dist, uint& frequency, std::vector<aurostd::xvector<double>>& coordinates); // DX20191122
+void minimumCoordinationShellLatticeOnly(const aurostd::xmatrix<double>& lattice, double& min_dist, uint& frequency, std::vector<aurostd::xvector<double>>& coordinates, double radius); // DX20191122
+void minimumCoordinationShellLatticeOnly(const aurostd::xmatrix<double>& lattice,
+                                         aurostd::xvector<int>& dims,
+                                         std::vector<aurostd::xvector<double>>& l1,
+                                         std::vector<aurostd::xvector<double>>& l2,
+                                         std::vector<aurostd::xvector<double>>& l3,
                                          std::vector<int>& a_index,
                                          std::vector<int>& b_index,
                                          std::vector<int>& c_index,
                                          double& min_dist,
                                          uint& frequency,
-                                         std::vector<xvector<double>>& coordinates,
+                                         std::vector<aurostd::xvector<double>>& coordinates,
                                          double radius); // DX20191122
-void minimumCoordinationShell(const xstructure& xstr, uint center_index, double& min_dist, uint& frequency, std::vector<xvector<double>>& coordinates); // DX20191122
-void minimumCoordinationShell(const xstructure& xstr, uint center_index, double& min_dist, uint& frequency, std::vector<xvector<double>>& coordinates, const std::string& type); // DX20191122
+void minimumCoordinationShell(const xstructure& xstr, uint center_index, double& min_dist, uint& frequency, std::vector<aurostd::xvector<double>>& coordinates); // DX20191122
+void minimumCoordinationShell(const xstructure& xstr, uint center_index, double& min_dist, uint& frequency, std::vector<aurostd::xvector<double>>& coordinates, const std::string& type); // DX20191122
 
 // makefile tests
 bool smithTest(std::ostream& oss = std::cout);
@@ -421,34 +430,33 @@ std::vector<double> NearestNeighbors(const xstructure& xstr); // DX20201230 - mo
 double NearestNeighborToAtom(const xstructure& xstr, uint k); // DX20201230 - moved from XtalFinder
 
 namespace aflowlib {
-  using std::deque;
-  using std::ostream;
-  using std::string;
-  using std::vector;
   struct _PROTO_PARAMS {
-    string label;
-    string parameters;
-    deque<string> vatomX;
-    deque<double> vvolumeX;
+    std::string label;
+    std::string parameters;
+    std::deque<std::string> vatomX;
+    std::deque<double> vvolumeX;
     double volume_in;
     int mode;
     bool flip_option;
   };
 
-  uint PrototypeLibrariesSpeciesNumber(const string& label); // CO20181226
-  std::set<string> GetPrototypesByStoichiometry(const vector<uint>& stoichiometry, const string& library = "all"); // DX20181009
-  std::set<string> GetPrototypesBySymmetry(
-      const vector<uint>& stoichiometry, uint space_group_number, const vector<GroupedWyckoffPosition>& grouped_Wyckoff_positions, uint setting, const string& library = "all"); // DX20181010
-  xstructure PrototypeLibraries(ostream& oss, const string& label, const string& parameters, int mode);
-  xstructure PrototypeLibraries(ostream& oss, const string& label, const string& parameters, deque<string>& vatomX, int mode);
-  xstructure PrototypeLibraries(ostream& oss, const string& label, const string& parameters, deque<string>& vatomX, deque<double>& vvolumeX, double volume_in, int mode); //=LIBRARY_MODE_HTQC);
-  xstructure PrototypeLibraries(ostream& oss, string label, string parameters, deque<string>& vatomX, deque<double>& vvolumeX, double volume_in, int mode, bool flip_option);
-  xstructure PrototypeLibraries(ostream& oss, _PROTO_PARAMS* PARAMS);
+  uint PrototypeLibrariesSpeciesNumber(const std::string& label); // CO20181226
+  std::set<std::string> GetPrototypesByStoichiometry(const std::vector<uint>& stoichiometry, const std::string& library = "all"); // DX20181009
+  std::set<std::string> GetPrototypesBySymmetry(const std::vector<uint>& stoichiometry,
+                                                uint space_group_number,
+                                                const std::vector<GroupedWyckoffPosition>& grouped_Wyckoff_positions,
+                                                uint setting,
+                                                const std::string& library = "all"); // DX20181010
+  xstructure PrototypeLibraries(std::ostream& oss, const std::string& label, const std::string& parameters, int mode);
+  xstructure PrototypeLibraries(std::ostream& oss, const std::string& label, const std::string& parameters, std::deque<std::string>& vatomX, int mode);
+  xstructure PrototypeLibraries(std::ostream& oss, const std::string& label, const std::string& parameters, std::deque<std::string>& vatomX, std::deque<double>& vvolumeX, double volume_in, int mode); //=LIBRARY_MODE_HTQC);
+  xstructure PrototypeLibraries(std::ostream& oss, std::string label, std::string parameters, std::deque<std::string>& vatomX, std::deque<double>& vvolumeX, double volume_in, int mode, bool flip_option);
+  xstructure PrototypeLibraries(std::ostream& oss, _PROTO_PARAMS* PARAMS);
 
-  string PrototypesHelp();
-  string PrototypesIcsdHelp(const string& options);
-  string CALCULATED();
-  string CALCULATED_ICSD_RANDOM();
+  std::string PrototypesHelp();
+  std::string PrototypesIcsdHelp(const std::string& options);
+  std::string CALCULATED();
+  std::string CALCULATED_ICSD_RANDOM();
 } // namespace aflowlib
 
 extern std::string PrototypeBinaryGUS_Cache_Library[];
@@ -456,7 +464,7 @@ extern std::string PrototypeBinaryGUS_Cache_Library[];
 // ----------------------------------------------------------------------------
 // Various prototypes to be moved somewhere sometime
 // PROTOTYPES
-// uint argsprint(vector<string> argv);
+// uint argsprint(std::vector<std::string> argv);
 // ----------------------------------------------------------------------------
 // aflow.cpp
 //[CO20200502 - DUPLICATE?]string aflow_get_time_string(void);
@@ -465,12 +473,11 @@ extern std::string PrototypeBinaryGUS_Cache_Library[];
 //[CO20200502 - DUPLICATE?]string strTID(void);  //CO20200502 - threadID
 int AFLOW_main(std::vector<std::string>& argv);
 namespace aflow {
-  using std::string;
-  string License_Preamble_aflow();
-  string Intro_aflow(string x);
-  string Intro_sflow(string x);
-  string Intro_HELP(string x);
-  string Banner(string type);
+  std::string License_Preamble_aflow();
+  std::string Intro_aflow(std::string x);
+  std::string Intro_sflow(std::string x);
+  std::string Intro_HELP(std::string x);
+  std::string Banner(std::string type);
 } // namespace aflow
 int VASP_Main(std::vector<std::string> argv);
 int GRND_Main(std::vector<std::string> argv);
@@ -495,39 +502,32 @@ namespace KBIN {
 // aflow_kbin.cpp
 // int KbinCheckInputFiles(string Directory,ofstream& FileERROR);
 namespace KBIN {
-  using std::cout;
-  using std::ifstream;
-  using std::ofstream;
-  using std::ostream;
-  using std::ostringstream;
-  using std::string;
-  using std::vector;
-  void MPI_Extract(string AflowIn, ofstream& FileMESSAGE, _aflags& aflags, _kflags& kflags);
+  void MPI_Extract(std::string AflowIn, std::ofstream& FileMESSAGE, _aflags& aflags, _kflags& kflags);
   void RUN_Directory(_aflags& aflags);
   void AFLOW_RUN_Directory(const _aflags& aflags);
-  void RUN_DirectoryScript(const _aflags& aflags, const string& script, const string& output);
-  bool CompressDirectory(const string& directory);
+  void RUN_DirectoryScript(const _aflags& aflags, const std::string& script, const std::string& output);
+  bool CompressDirectory(const std::string& directory);
   bool CompressDirectory(const _aflags& aflags);
-  bool DecompressDirectory(const string& directory);
+  bool DecompressDirectory(const std::string& directory);
   bool DecompressDirectory(const _aflags& aflags);
   void Clean(const _aflags& aflags);
-  void Clean(const string& directory);
+  void Clean(const std::string& directory);
   void Clean(const _aflags& aflags, const aurostd::xoption& opts_clean);
-  void Clean(const string& directory, const aurostd::xoption& opts_clean);
-  void XClean(string options);
+  void Clean(const std::string& directory, const aurostd::xoption& opts_clean);
+  void XClean(std::string options);
   void GenerateAflowinFromVASPDirectory(_aflags& aflags);
-  void StartStopCheck(const string& AflowIn, string str1, string str2, bool& flag, bool& flagS);
-  void StartStopCheck(const string& AflowIn, string str1, bool& flag, bool& flagS);
+  void StartStopCheck(const std::string& AflowIn, std::string str1, std::string str2, bool& flag, bool& flagS);
+  void StartStopCheck(const std::string& AflowIn, std::string str1, bool& flag, bool& flagS);
   bool Legitimate_krun(const _aflags& aflags, const bool osswrite, std::ostringstream& oss); // SD20220224
   bool Legitimate_krun(const _aflags& aflags); // SD20220224
-  bool Legitimate_aflowin(const string& aflowindir, const bool osswrite, std::ostringstream& oss); // SD20220224 - made aflowindir const, removed reference from bool
-  bool Legitimate_aflowin(const string& aflowindir); // SD20220224 - made aflowindir const
-  bool Legitimate_aflowdir(const string& aflowindir, const _aflags& aflags, const bool osswrite, std::ostringstream& oss); // SD20220224
-  bool Legitimate_aflowdir(const string& aflowindir, const _aflags& aflags); // SD20220224
-  void getAflowInFromAFlags(const _aflags& aflags, string& AflowIn_file, string& AflowIn, ostream& oss = cout); // CO20191110
-  void getAflowInFromAFlags(const _aflags& aflags, string& AflowIn_file, string& AflowIn, ofstream& FileMESSAGE, ostream& oss = cout); // CO20191110
-  void getAflowInFromDirectory(const string& directory, string& AflowIn_file, string& AflowIn, ostream& oss = cout); // CO20191110
-  void getAflowInFromDirectory(const string& directory, string& AflowIn_file, string& AflowIn, ofstream& FileMESSAGE, ostream& oss = cout); // CO20191110
+  bool Legitimate_aflowin(const std::string& aflowindir, const bool osswrite, std::ostringstream& oss); // SD20220224 - made aflowindir const, removed reference from bool
+  bool Legitimate_aflowin(const std::string& aflowindir); // SD20220224 - made aflowindir const
+  bool Legitimate_aflowdir(const std::string& aflowindir, const _aflags& aflags, const bool osswrite, std::ostringstream& oss); // SD20220224
+  bool Legitimate_aflowdir(const std::string& aflowindir, const _aflags& aflags); // SD20220224
+  void getAflowInFromAFlags(const _aflags& aflags, std::string& AflowIn_file, std::string& AflowIn, std::ostream& oss = std::cout); // CO20191110
+  void getAflowInFromAFlags(const _aflags& aflags, std::string& AflowIn_file, std::string& AflowIn, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20191110
+  void getAflowInFromDirectory(const std::string& directory, std::string& AflowIn_file, std::string& AflowIn, std::ostream& oss = std::cout); // CO20191110
+  void getAflowInFromDirectory(const std::string& directory, std::string& AflowIn_file, std::string& AflowIn, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20191110
   int get_NCPUS(); // ME20200219
   int get_NCPUS(const _kflags&); // ME20200219
 
@@ -536,47 +536,44 @@ namespace KBIN {
   // ME20181027
   void setModules(_xvasp&);
   void setModules(_xinput&);
-  void readModulesFromAflowIn(const string&, _kflags&, _xvasp&);
-  void readModulesFromAflowIn(const string&, _kflags&, _xinput&);
-  vector<aurostd::xoption> loadDefaultsAPL();
-  bool writeFlagAPL(const string& key, const xoption& xopt); // CO20181226  //ME20190113
-  void readParametersAPL(const string&, _moduleOptions&, _xinput&);
-  vector<aurostd::xoption> loadDefaultsQHA(); // AS20200302
-  void readParametersQHA(const string&, _moduleOptions&, _xinput&); // AS20200302
-  vector<aurostd::xoption> loadDefaultsAAPL();
-  bool writeFlagAAPL(const string& key, const xoption& xopt); // CO20181226  //ME20190113
-  void readParametersAAPL(const string&, _moduleOptions&, _xinput&);
-  vector<aurostd::xoption> loadDefaultsAEL();
-  bool writeFlagAEL(const string& key, const xoption& xopt);
-  vector<aurostd::xoption> loadDefaultsAGL();
-  bool writeFlagAGL(const string& key, const xoption& xopt);
+  void readModulesFromAflowIn(const std::string&, _kflags&, _xvasp&);
+  void readModulesFromAflowIn(const std::string&, _kflags&, _xinput&);
+  std::vector<aurostd::xoption> loadDefaultsAPL();
+  bool writeFlagAPL(const std::string& key, const aurostd::xoption& xopt); // CO20181226  //ME20190113
+  void readParametersAPL(const std::string&, _moduleOptions&, _xinput&);
+  std::vector<aurostd::xoption> loadDefaultsQHA(); // AS20200302
+  void readParametersQHA(const std::string&, _moduleOptions&, _xinput&); // AS20200302
+  std::vector<aurostd::xoption> loadDefaultsAAPL();
+  bool writeFlagAAPL(const std::string& key, const aurostd::xoption& xopt); // CO20181226  //ME20190113
+  void readParametersAAPL(const std::string&, _moduleOptions&, _xinput&);
+  std::vector<aurostd::xoption> loadDefaultsAEL();
+  bool writeFlagAEL(const std::string& key, const aurostd::xoption& xopt);
+  std::vector<aurostd::xoption> loadDefaultsAGL();
+  bool writeFlagAGL(const std::string& key, const aurostd::xoption& xopt);
 
   // ----------------------------------------------------------------------------
   // aflow_qsub.cpp
-  bool QSUB_Extract(_xqsub& xqsub, string AflowIn, ifstream& FileAFLOWIN, ofstream& FileMESSAGE, _aflags& aflags, _kflags& kflags);
-  bool QSUB_RunFinished(_aflags& aflags, ofstream& FileMESSAGE, bool = false);
-  void QSUB_WaitFinished(_aflags& aflags, ofstream& FileMESSAGE, bool = false);
-  bool QSUB_Extract_Mode1(_xqsub& xqsub, ofstream& FileMESSAGE, _aflags& aflags, _kflags& kflags);
-  bool QSUB_Extract_Mode2(_xqsub& xqsub, ofstream& FileMESSAGE, _aflags& aflags, _kflags& kflags);
-  bool QSUB_Extract_Mode3(_xqsub& xqsub, ofstream& FileMESSAGE, _aflags& aflags, _kflags& kflags);
+  bool QSUB_Extract(_xqsub& xqsub, std::string AflowIn, std::ifstream& FileAFLOWIN, std::ofstream& FileMESSAGE, _aflags& aflags, _kflags& kflags);
+  bool QSUB_RunFinished(_aflags& aflags, std::ofstream& FileMESSAGE, bool = false);
+  void QSUB_WaitFinished(_aflags& aflags, std::ofstream& FileMESSAGE, bool = false);
+  bool QSUB_Extract_Mode1(_xqsub& xqsub, std::ofstream& FileMESSAGE, _aflags& aflags, _kflags& kflags);
+  bool QSUB_Extract_Mode2(_xqsub& xqsub, std::ofstream& FileMESSAGE, _aflags& aflags, _kflags& kflags);
+  bool QSUB_Extract_Mode3(_xqsub& xqsub, std::ofstream& FileMESSAGE, _aflags& aflags, _kflags& kflags);
 } // namespace KBIN
 
 // ----------------------------------------------------------------------------
 // aflow_ialien.cpp
 namespace ALIEN {
-  using std::ifstream;
-  using std::ofstream;
-  using std::string;
-  bool Produce_INPUT(_xalien& xalien, string AflowIn, ifstream& FileAFLOWIN, ofstream& FileMESSAGE, _aflags& aflags, _kflags& kflags, _alienflags& alienflags);
-  bool Modify_INPUT(_xalien& xalien, ofstream& FileMESSAGE, _aflags& aflags, _alienflags& alienflags);
+  bool Produce_INPUT(_xalien& xalien, std::string AflowIn, std::ifstream& FileAFLOWIN, std::ofstream& FileMESSAGE, _aflags& aflags, _kflags& kflags, _alienflags& alienflags);
+  bool Modify_INPUT(_xalien& xalien, std::ofstream& FileMESSAGE, _aflags& aflags, _alienflags& alienflags);
   bool Write_INPUT(_xalien& xalien);
-  bool Produce_INPUT_FILE(_xalien& xalien, string AflowIn, ifstream& FileAFLOWIN, ofstream& FileMESSAGE, _aflags& aflags, _kflags& kflags, _alienflags& alienflags);
-  bool Modify_INPUT_FILE(_xalien& xalien, ofstream& FileMESSAGE, _aflags& aflags, _alienflags& alienflags);
+  bool Produce_INPUT_FILE(_xalien& xalien, std::string AflowIn, std::ifstream& FileAFLOWIN, std::ofstream& FileMESSAGE, _aflags& aflags, _kflags& kflags, _alienflags& alienflags);
+  bool Modify_INPUT_FILE(_xalien& xalien, std::ofstream& FileMESSAGE, _aflags& aflags, _alienflags& alienflags);
 
   // ----------------------------------------------------------------------------
   // aflow_kalien.cpp
-  _alienflags Get_Alienflags_from_AflowIN(string& AflowIn);
-  bool Run_Directory(ofstream& FileERROR, _aflags& aflags, _kflags& kflags);
+  _alienflags Get_Alienflags_from_AflowIN(std::string& AflowIn);
+  bool Run_Directory(std::ofstream& FileERROR, _aflags& aflags, _kflags& kflags);
 } // namespace ALIEN
 
 // ----------------------------------------------------------------------------
@@ -611,6 +608,7 @@ namespace FINDSYM {
 
 // -------------------------------------------------------------------------------------------------
 // aflow_ovasp.cpp
+// TODO should move to a new ovasp.h
 class xOUTCAR;
 class xDOSCAR;
 class xEIGENVAL;
@@ -620,7 +618,7 @@ class xIBZKPT;
 class xKPOINTS;
 class xCHGCAR;
 class xVASPOUT;
-class xQMVASP; // CO20190803
+class xQMVASP;
 class xPLASMONICS; // CO20190803
 namespace aflowlib {
   class _aflowlib_entry;
@@ -641,82 +639,160 @@ namespace aurostd {
 } // namespace aurostd
 
 // -------------------------------------------------------------------------------------------------
-class xOUTCAR : public xStream, public JsonSerializable<xOUTCAR> { // CO20200404 - xStream integration for logging
+/// @brief Abstract base class for the vasp data containers such as @c xOUTCAR, @c xIBZKPT, etc.
+/// Implements some convenience static methods to construct derived classes from files. Derived classes must
+/// implement @c GetProperties to read from string, @c GetPropertiesFile to read from file, and @c clear to reset the object to default.
+/// Derived class may use @code using xOVASP::xOVASP; @endcode to inherit constructors.
+template <class Derived> class xOVASP : public xStream {
 public:
-  xOUTCAR(std::ostream& oss = std::cout); // default, just allocate  //CO20200404 - xStream integration for logging
-  xOUTCAR(std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // default, just allocate  //CO20200404 - xStream integration for logging
-  xOUTCAR(const std::string& fileIN, bool = true, std::ostream& oss = std::cout); // constructor from filename, QUIET  //CO20200404 - xStream integration for logging
-  xOUTCAR(const std::string& fileIN, std::ofstream& FileMESSAGE, bool = true, std::ostream& oss = std::cout); // constructor from filename, QUIET  //CO20200404 - xStream integration for logging
-  bool initialize(const std::string& fileIN, std::ostream& oss, bool = true); // ME20200427  //CO20200508
-  bool initialize(const std::string& fileIN, std::ofstream& FileMESSAGE, std::ostream& oss, bool = true); // ME20200427  //CO20200508
-  bool initialize(const std::string& fileIN, bool = true); // ME20200427  //CO20200508
+  xOVASP(std::ostream& oss = std::cout) : xStream(oss) {}
+  xOVASP(std::ofstream& FileMESSAGE, std::ostream& oss = std::cout) : xStream(FileMESSAGE, oss) {}
 
-  xOUTCAR(const xOUTCAR& b); // constructor copy
-  ~xOUTCAR(); // kill everything
-  const xOUTCAR& operator=(const xOUTCAR& b); // copy
-  void clear(); // clear
+  static Derived fromFile(const std::string& fileIN, bool QUIET = true, std::ostream& oss = std::cout) {
+    Derived derived(oss);
+    derived.m_initialized = derived.initialize(fileIN, QUIET);
+    return derived;
+  }
+  static Derived fromFile(const std::string& fileIN, std::ofstream& FileMESSAGE, bool QUIET = true, std::ostream& oss = std::cout) {
+    Derived derived(FileMESSAGE, oss);
+    derived.m_initialized = derived.initialize(fileIN, QUIET);
+    return derived;
+  }
 
-  bool m_initialized; // CO20200404 - xStream integration for logging
+  bool initialize(const std::string& fileIN, bool QUIET = true, std::ostream& oss = std::cout) {
+    if (aurostd::CompressFileExist(fileIN, filename)) {
+      return GetPropertiesFile(filename, QUIET);
+    }
+    return false;
+  }
+
+  virtual bool GetProperties(const std::string& stringIN, bool QUIET = true) = 0;
+  virtual bool GetPropertiesFile(const std::string& fileIN, bool QUIET = true) = 0;
+
+  virtual void clear() = 0;
+
+  bool m_initialized = false;
 
   // CONTENT
   std::string content;
   std::vector<std::string> vcontent;
-  std::string filename; // the content, and lines of it
+  std::string filename;
+};
+
+class xOUTCAR : public xOVASP<xOUTCAR>, public JsonSerializable<xOUTCAR> {
+public:
+  using xOVASP::xOVASP;
+
+  xOUTCAR(const std::string& fileIN, bool QUIET = true, std::ostream& oss = std::cout) : xOUTCAR(fromFile(fileIN, QUIET, oss)) {}
+  xOUTCAR(const std::string& fileIN, std::ofstream& FileMESSAGE, bool QUIET = true, std::ostream& oss = std::cout) : xOUTCAR(fromFile(fileIN, FileMESSAGE, QUIET, oss)) {}
+
+  void clear() override { *this = xOUTCAR(); }
+
   std::string SYSTEM;
-  int NELM; // CO20200624
-  int NIONS;
-  double Efermi;
-  bool isLSCOUPLING;
-  xvector<double> efield_pead; // CO20210315
-  int nelectrons; // AS20200528
-  double natoms; // for aflowlib_libraries.cpp
-  double energy_cell, energy_atom; // for aflowlib_libraries.cpp
-  double enthalpy_cell, enthalpy_atom; // for aflowlib_libraries.cpp
-  double eentropy_cell, eentropy_atom; // for aflowlib_libraries.cpp
-  double PV_cell, PV_atom; // for aflowlib_libraries.cpp
-  xmatrix<double> stress; // for aflowlib_libraries.cpp
-  double mag_cell, mag_atom; // for aflowlib_libraries.cpp
-  std::vector<double> vmag; // for aflowlib_libraries.cpp
-  std::vector<xvector<double>> vmag_noncoll; // DX20171205 - non-collinear
-  double volume_cell, volume_atom; // for aflowlib_libraries.cpp
-  double pressure; // for aflowlib_libraries.cpp // SAME AS PSTRESS
-  double pressure_residual; // for aflowlib_libraries.cpp
-  double Pulay_stress; // for aflowlib_libraries.cpp
-  std::vector<aurostd::xvector<double>> vforces; // for aflowlib_libraries.cpp
-  std::vector<aurostd::xvector<double>> vpositions_cartesian; // for aflowlib_libraries.cpp
-  double ENCUT, EDIFF, EDIFFG, POTIM, TEIN, TEBEG, TEEND, SMASS, NPACO, APACO, PSTRESS; //
-  int NBANDS, NKPTS, NSW, NBLOCK, KBLOCK, IBRION, NFREE, ISIF, IWAVPR, ISYM, ISPIN; // for aflowlib_libraries.cpp
-  double total_energy_change; // for aflowlib_libraries.cpp
+  int NELM = 0;
+  int NIONS = 0;
+  double Efermi = 0.0;
+  bool isLSCOUPLING = false;
+  aurostd::xvector<double> efield_pead;
+  int nelectrons = 0; // AS20200528
+  std::vector<aurostd::xvector<double>> vmag_noncoll; // DX20171205 - non-collinear
+
+  // for aflowlib_libraries.cpp
+  std::vector<double> vmag;
+  std::vector<aurostd::xvector<double>> vforces;
+  std::vector<aurostd::xvector<double>> vpositions_cartesian;
+  aurostd::xmatrix<double> stress;
+  double natoms = 0.0;
+  double energy_cell = 0.0;
+  double energy_atom = 0.0;
+  double enthalpy_cell = 0.0;
+  double enthalpy_atom = 0.0;
+  double eentropy_cell = 0.0;
+  double eentropy_atom = 0.0;
+  double PV_cell = 0.0;
+  double PV_atom = 0.0;
+  double mag_cell = 0.0;
+  double mag_atom = 0.0;
+  double volume_cell = 0.0;
+  double volume_atom = 0.0;
+  double pressure = 0.0; // SAME AS PSTRESS
+  double pressure_residual = 0.0;
+  double Pulay_stress = 0.0;
+  double ENCUT = 0.0;
+  double EDIFF = 0.0;
+  double EDIFFG = 0.0;
+  double POTIM = 0.0;
+  double TEIN = 0.0;
+  double TEBEG = 0.0;
+  double TEEND = 0.0;
+  double SMASS = 0.0;
+  double NPACO = 0.0;
+  double APACO = 0.0;
+  double PSTRESS = 0.0;
+  int NBANDS = 0;
+  int NKPTS = 0;
+  int NSW = 0;
+  int NBLOCK = 0;
+  int KBLOCK = 0;
+  int IBRION = 0;
+  int NFREE = 0;
+  int ISIF = 0;
+  int IWAVPR = 0;
+  int ISYM = 0;
+  int ISPIN = 0;
+  double total_energy_change = 0.0;
   // DOS related values
-  double EMIN, EMAX, SIGMA; // eV - energy-range for DOS
-  int ISMEAR; // broadening in eV -4-tet -1-fermi 0-gaus
+  double EMIN = 0.0;
+  double EMAX = 0.0;
+  double SIGMA = 0.0; // eV - energy-range for DOS
+  int ISMEAR = 0; // broadening in eV -4-tet -1-fermi 0-gaus
   //  Electronic relaxation
-  int IALGO; //  algorithm                         // for aflowlib_libraries.cpp
-  std::string LDIAG; //   sub-space diagonalisation        // for aflowlib_libraries.cpp
-  int IMIX, INIMIX, MIXPRE; //     mixing-type and parameters     // for aflowlib_libraries.cpp
-  double AMIX, BMIX, AMIX_MAG, BMIX_MAG, AMIN, WC; // parameters     // for aflowlib_libraries.cpp
+  int IALGO = 0; // algorithm
+  std::string LDIAG; // sub-space diagonalisation
+  int IMIX = 0;
+  int INIMIX = 0;
+  int MIXPRE = 0; // mixing-type and parameters
+  double AMIX = 0.0;
+  double BMIX = 0.0;
+  double AMIX_MAG = 0.0;
+  double BMIX_MAG = 0.0;
+  double AMIN = 0.0;
+  double WC = 0.0; // parameters
   // Intra band minimization
-  double WEIMIN, EBREAK, DEPER, TIME; // for aflowlib_libraries.cpp
+  double WEIMIN = 0.0;
+  double EBREAK = 0.0;
+  double DEPER = 0.0;
+  double TIME = 0.0;
   // begin shared xPOTCAR
-  double ENMAX;
+  double ENMAX = 0.0;
   std::vector<double> vENMAX; // eV
-  double ENMIN;
+  double ENMIN = 0.0;
   std::vector<double> vENMIN; // eV
-  double POMASS_sum, POMASS_min, POMASS_max;
+  double POMASS_sum = 0.0;
+  double POMASS_min = 0.0;
+  double POMASS_max = 0.0;
   std::vector<double> vPOMASS; // mass
-  double ZVAL_sum, ZVAL_min, ZVAL_max;
+  double ZVAL_sum = 0.0;
+  double ZVAL_min = 0.0;
+  double ZVAL_max = 0.0;
   std::vector<double> vZVAL; // valence
-  double EATOM_min, EATOM_max;
+  double EATOM_min = 0.0;
+  double EATOM_max = 0.0;
   std::vector<double> vEATOM; // eV
-  double RCORE_min, RCORE_max;
+  double RCORE_min = 0.0;
+  double RCORE_max = 0.0;
   std::vector<double> vRCORE; // outmost cutoff radius
-  double RWIGS_min, RWIGS_max;
+  double RWIGS_min = 0.0;
+  double RWIGS_max = 0.0;
   std::vector<double> vRWIGS; // wigner-seitz radius (au A)
-  double EAUG_min, EAUG_max;
+  double EAUG_min = 0.0;
+  double EAUG_max = 0.0;
   std::vector<double> vEAUG; // augmentation
-  double RAUG_min, RAUG_max;
+  double RAUG_min = 0.0;
+  double RAUG_max = 0.0;
   std::vector<double> vRAUG; // augmentation
-  double RMAX_min, RMAX_max;
+  double RMAX_min = 0.0;
+  double RMAX_max = 0.0;
   std::vector<double> vRMAX; // unicity
   std::vector<std::string> vTITEL; // unicity
   std::vector<std::string> vLEXCH; // unicity
@@ -732,25 +808,26 @@ public:
   std::vector<double> species_pp_groundstate_energy; // meV/atom
   std::vector<std::string> species_pp_groundstate_structure; // name that we have, maybe ANRL
   std::deque<std::deque<double>> species_pp_vLDAU; // WARNING: we use starting from 0 // CAN BE THE ONES OF VASP5
-  bool isKIN; // METAGGA
-  bool isMETAGGA;
+  bool isKIN = false; // METAGGA
+  bool isMETAGGA = false;
   std::string METAGGA; // METAGGA
-  std::string string_LDAU; // for aflowlib_libraries.cpp
-  uint nweights, nkpoints_irreducible; // kpoints reading
+  std::string string_LDAU;
+  uint nweights = 0;
+  uint nkpoints_irreducible = 0; // kpoints reading
   std::vector<aurostd::xvector<double>> vkpoint_reciprocal; // kpoints reading
   std::vector<aurostd::xvector<double>> vkpoint_cartesian; // kpoints reading
   std::vector<double> vweights; // kpoints reading
-  double calculation_time; // for aflowlib_libraries.cpp - calculation_time
-  double calculation_memory; // for aflowlib_libraries.cpp - calculation_memory
-  uint calculation_cores; // for aflowlib_libraries.cpp - calculation_cores
+  double calculation_time = 0.0;
+  double calculation_memory = 0.0;
+  uint calculation_cores = 1;
   xstructure xstr; // for GetBandGap()
   std::vector<xstructure> vxstr_ionic; // for all ionic steps  //CO20211106
   std::vector<double> venergy_ionic; // for all ionic steps  //CO20211106
-  std::vector<xvector<double>> vstresses_ionic; // for all ionic steps  //CO20211106
+  std::vector<aurostd::xvector<double>> vstresses_ionic; // for all ionic steps  //CO20211106
   std::vector<std::string> GetCorrectEntriesFromLine(const std::string& line, const uint expected_count); // CO20170725 - vasp issues with lattice spacing (negative sign)
   bool GetProperties(const std::stringstream& stringstreamIN, bool = true); // get everything QUIET
-  bool GetProperties(const std::string& stringIN, bool = true); // get everything QUIET
-  bool GetPropertiesFile(const std::string& fileIN, bool = true); // get everything QUIET
+  bool GetProperties(const std::string& stringIN, bool = true) override; // get everything QUIET
+  bool GetPropertiesFile(const std::string& fileIN, bool = true) override; // get everything QUIET
   bool GetPropertiesFile(const std::string& fileIN, uint natoms_check, bool = true); // get everything QUIET  //CO20200404 - added default for bool
   bool GetPropertiesUrlFile(const std::string& url, const std::string& file, bool = true); // get everything from an aflowlib entry
   std::vector<int> band_index;
@@ -767,18 +844,18 @@ public:
   std::vector<double> mass_hole_conduction;
   // BAND GAPS
   bool GetXStructure();
-  int isKPointLine(uint iline, xvector<double>& kpoint); // if returns 0 if not KPointLine, -1 means it gave *** for kpoint
+  int isKPointLine(uint iline, aurostd::xvector<double>& kpoint); // if returns 0 if not KPointLine, -1 means it gave *** for kpoint
   int isKPointLine(uint iline); // if returns 0 if not KPointLine, -1 means it gave *** for kpoint
   bool GetStartingKPointLines(std::vector<uint>& ilines);
   bool GetNextKPointLine(uint& iline);
   bool ProcessKPoint(uint iline, double EFERMI, std::vector<double>& b_energies, std::vector<double>& b_occs);
   bool GetBandEdge(std::vector<double>& b_energies, std::vector<double>& b_occs, double EFERMI, uint& iedge, double efermi_tol = AUROSTD_NAN, double energy_tol = 1e-4, double occ_tol = 1e-5);
-  bool identicalKPoints(std::vector<xvector<double>>& vkpoints, uint kpt1, uint kpt2, double tol = 1e-12);
-  bool identicalKPoints(xvector<double>& kpoint1, xvector<double>& kpoint2, double tol = 1e-12);
-  bool removeDuplicateKPoints(std::vector<xvector<double>>& vkpoints, std::vector<uint>& vikpt);
-  bool removeDuplicateKPoints(std::vector<std::vector<xvector<double>>>& vkpoints, std::vector<uint>& vikpt, std::vector<uint>& vispin);
-  double minimumDistanceKPoints(std::vector<xvector<double>>& vkpoints, uint ikp1, uint ikp2);
-  double minimumDistanceKPoints(xvector<double>& kpoint1, xvector<double>& kpoint2);
+  bool identicalKPoints(std::vector<aurostd::xvector<double>>& vkpoints, uint kpt1, uint kpt2, double tol = 1e-12);
+  bool identicalKPoints(aurostd::xvector<double>& kpoint1, aurostd::xvector<double>& kpoint2, double tol = 1e-12);
+  bool removeDuplicateKPoints(std::vector<aurostd::xvector<double>>& vkpoints, std::vector<uint>& vikpt);
+  bool removeDuplicateKPoints(std::vector<std::vector<aurostd::xvector<double>>>& vkpoints, std::vector<uint>& vikpt, std::vector<uint>& vispin);
+  double minimumDistanceKPoints(std::vector<aurostd::xvector<double>>& vkpoints, uint ikp1, uint ikp2);
+  double minimumDistanceKPoints(aurostd::xvector<double>& kpoint1, aurostd::xvector<double>& kpoint2);
   struct bandEnergyOcc {
     double energy;
     double occ;
@@ -795,28 +872,35 @@ public:
   enum GAP_TYPES { zero_gap, non_zero_gap }; // bandgap types
   bool GetBandGap(double EFERMI = AUROSTD_NAN, double efermi_tol = AUROSTD_NAN, double energy_tol = 1e-4, double occ_tol = 1e-5);
   std::vector<double> conduction_band_min;
-  double conduction_band_min_net;
+  double conduction_band_min_net = 0.0;
   std::vector<double> valence_band_max;
-  double valence_band_max_net;
+  double valence_band_max_net = 0.0;
   std::vector<double> Egap;
-  double Egap_net;
+  double Egap_net = 0.0;
   std::vector<double> Egap_fit;
-  double Egap_fit_net;
+  double Egap_fit_net = 0.0;
   std::vector<std::string> Egap_type;
   std::string Egap_type_net;
   // DIELECTRIC
-  aurostd::xmatrix<double> freq_plasma;
+  aurostd::xmatrix<double> freq_plasma; //extracted from OUTCAR
   std::vector<double> freq_grid;
   aurostd::xmatrix<double> dielectric_static;
-  std::vector<aurostd::xmatrix<double>> dielectric_interband_real;
-  std::vector<aurostd::xmatrix<double>> dielectric_interband_imag;
-  double freq_plasma_iso;
-  std::vector<double> dielectric_iso_interband_real;
-  std::vector<double> dielectric_iso_interband_imag;
-  std::vector<double> dielectric_drude_real;
-  std::vector<double> dielectric_drude_imag;
-  std::vector<double> energy_loss_function;
-  std::vector<double> reflectivity;
+  std::vector<aurostd::xmatrix<double>> dielectric_interband_real; //extracted from OUTCAR
+  std::vector<aurostd::xmatrix<double>> dielectric_interband_imag; //extracted from OUTCAR
+  double freq_plasma_iso = 0.0;
+  std::vector<double> dielectric_interband_iso_real;
+  std::vector<double> dielectric_interband_iso_imag;
+  std::vector<aurostd::xmatrix<double>> dielectric_drude_real;
+  std::vector<aurostd::xmatrix<double>> dielectric_drude_imag;
+  std::vector<double> dielectric_drude_iso_real;
+  std::vector<double> dielectric_drude_iso_imag;
+  std::vector<double> energy_loss_function_iso;
+  std::vector<double> reflectivity_iso;
+  std::vector<double> dielectric_full_iso_real;
+  std::vector<double> dielectric_full_iso_imag;
+  std::vector<aurostd::xmatrix<double>> dielectric_full_real;
+  std::vector<aurostd::xmatrix<double>> dielectric_full_imag;
+  void GetDielectricData();
   bool GetOptical(double freq_relax = 0.2);
   // EXPORT
   bool GetIonicStepsData();
@@ -830,19 +914,19 @@ protected:
   [[nodiscard]] std::string getJsonID() const override { return "xOUTCAR"; }
 
 private: //
-  void free(); // free space
   void copy(const xOUTCAR& b); //
 
   // SERIALIZATION MEMBERS
-#define JSON_xOUTCAR_MEMBERS                                                                                                                                                                                       \
-  content, vcontent, filename, SYSTEM, NELM, NIONS, Efermi, isLSCOUPLING, efield_pead, nelectrons, natoms, energy_cell, energy_atom, enthalpy_cell, enthalpy_atom, eentropy_cell, eentropy_atom, PV_cell, PV_atom, \
-      stress, mag_cell, mag_atom, vmag, vmag_noncoll, volume_cell, volume_atom, pressure, pressure_residual, Pulay_stress, vforces, vpositions_cartesian, ENCUT, EDIFF, EDIFFG, POTIM, TEIN, TEBEG, TEEND,         \
-      SMASS, NPACO, APACO, PSTRESS, NBANDS, NKPTS, NSW, NBLOCK, KBLOCK, IBRION, NFREE, ISIF, IWAVPR, ISYM, ISPIN, total_energy_change, EMIN, EMAX, SIGMA, ISMEAR, IALGO, LDIAG, IMIX, INIMIX, MIXPRE, AMIX, BMIX,  \
-      AMIX_MAG, BMIX_MAG, AMIN, WC, WEIMIN, EBREAK, DEPER, TIME, ENMAX, vENMAX, ENMIN, vENMIN, POMASS_sum, POMASS_min, POMASS_max, vPOMASS, ZVAL_sum, ZVAL_min, ZVAL_max, vZVAL, EATOM_min, EATOM_max, vEATOM,     \
-      RCORE_min, RCORE_max, vRCORE, RWIGS_min, RWIGS_max, vRWIGS, EAUG_min, EAUG_max, vEAUG, RAUG_min, RAUG_max, vRAUG, RMAX_min, RMAX_max, vRMAX, vTITEL, vLEXCH, pp_type, species, species_Z, species_pp,        \
-      species_pp_type, species_pp_version, species_pp_AUID, species_pp_AUID_collisions, species_pp_groundstate_energy, species_pp_groundstate_structure, species_pp_vLDAU, isKIN, isMETAGGA, METAGGA, string_LDAU, \
-      nweights, nkpoints_irreducible, vkpoint_reciprocal, vkpoint_cartesian, vweights, calculation_time, calculation_memory, calculation_cores, xstr, vxstr_ionic, venergy_ionic, vstresses_ionic, band_index,     \
-      carrier_spin, carrier_type, extrema_cart_coord, effective_mass_axes, equivalent_valley, effective_mass_DOS, effective_mass_COND, mass_elec_dos, mass_hole_dos, mass_elec_conduction, mass_hole_conduction
+#define JSON_xOUTCAR_MEMBERS                                                                                                                                                                                     \
+  m_initialized, content, vcontent, filename, SYSTEM, NELM, NIONS, Efermi, isLSCOUPLING, efield_pead, nelectrons, natoms, energy_cell, energy_atom, enthalpy_cell, enthalpy_atom, eentropy_cell, eentropy_atom,  \
+      PV_cell, PV_atom, stress, mag_cell, mag_atom, vmag, vmag_noncoll, volume_cell, volume_atom, pressure, pressure_residual, Pulay_stress, vforces, vpositions_cartesian, ENCUT, EDIFF, EDIFFG, POTIM, TEIN,   \
+      TEBEG, TEEND, SMASS, NPACO, APACO, PSTRESS, NBANDS, NKPTS, NSW, NBLOCK, KBLOCK, IBRION, NFREE, ISIF, IWAVPR, ISYM, ISPIN, total_energy_change, EMIN, EMAX, SIGMA, ISMEAR, IALGO, LDIAG, IMIX, INIMIX,      \
+      MIXPRE, AMIX, BMIX, AMIX_MAG, BMIX_MAG, AMIN, WC, WEIMIN, EBREAK, DEPER, TIME, ENMAX, vENMAX, ENMIN, vENMIN, POMASS_sum, POMASS_min, POMASS_max, vPOMASS, ZVAL_sum, ZVAL_min, ZVAL_max, vZVAL, EATOM_min,  \
+      EATOM_max, vEATOM, RCORE_min, RCORE_max, vRCORE, RWIGS_min, RWIGS_max, vRWIGS, EAUG_min, EAUG_max, vEAUG, RAUG_min, RAUG_max, vRAUG, RMAX_min, RMAX_max, vRMAX, vTITEL, vLEXCH, pp_type, species,          \
+      species_Z, species_pp, species_pp_type, species_pp_version, species_pp_AUID, species_pp_AUID_collisions, species_pp_groundstate_energy, species_pp_groundstate_structure, species_pp_vLDAU, isKIN,         \
+      isMETAGGA, METAGGA, string_LDAU, nweights, nkpoints_irreducible, vkpoint_reciprocal, vkpoint_cartesian, vweights, calculation_time, calculation_memory, calculation_cores, xstr, vxstr_ionic,              \
+      venergy_ionic, vstresses_ionic, band_index, carrier_spin, carrier_type, extrema_cart_coord, effective_mass_axes, equivalent_valley, effective_mass_DOS, effective_mass_COND, mass_elec_dos, mass_hole_dos, \
+      mass_elec_conduction, mass_hole_conduction
 };
 
 // EFFECTIVE MASSES //CO20200404 - moved from "friend" of xOUTCAR
@@ -850,41 +934,30 @@ bool GetEffectiveMass(xOUTCAR& outcar, xDOSCAR& doscar, xEIGENVAL& eigenval, xst
 bool GetEffectiveMass(xOUTCAR& outcar, xDOSCAR& doscar, xEIGENVAL& eigenval, xstructure xstr, std::ofstream& FileMeSSAGE, std::ostream& oss = std::cout); // CO20200404
 
 //-------------------------------------------------------------------------------------------------
-class xDOSCAR : public xStream, public JsonSerializable<xDOSCAR> { // CO20200404 - xStream integration for logging
+class xDOSCAR : public xOVASP<xDOSCAR>, public JsonSerializable<xDOSCAR> {
 public:
-  xDOSCAR(std::ostream& oss = std::cout); // default, just allocate  //CO20200404 - xStream integration for logging
-  xDOSCAR(std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // constructor from filename QUIET //CO20200404 - xStream integration for logging
-  xDOSCAR(const std::string& fileIN, bool = true, std::ostream& oss = std::cout); // constructor from filename QUIET //CO20200404 - xStream integration for logging
-  xDOSCAR(const std::string& fileIN, std::ofstream& FileMESSAGE, bool = true, std::ostream& oss = std::cout); // constructor from filename QUIET //CO20200404 - xStream integration for logging
-  bool initialize(const std::string& fileIN, std::ostream& oss, bool = true); // ME20200427  //CO20200508
-  bool initialize(const std::string& fileIN, std::ofstream& FileMESSAGE, std::ostream& oss, bool = true); // ME20200427  //CO20200508
-  bool initialize(const std::string& fileIN, bool = true); // ME20200427
+  using xOVASP::xOVASP;
 
-  xDOSCAR(const xDOSCAR& b); // constructor copy
-  ~xDOSCAR(); // kill everything
-  const xDOSCAR& operator=(const xDOSCAR& b); // copy
-  void clear(); // clear
+  xDOSCAR(const std::string& fileIN, bool QUIET = true, std::ostream& oss = std::cout) : xDOSCAR(fromFile(fileIN, QUIET, oss)) {}
+  xDOSCAR(const std::string& fileIN, std::ofstream& FileMESSAGE, bool QUIET = true, std::ostream& oss = std::cout) : xDOSCAR(fromFile(fileIN, FileMESSAGE, QUIET, oss)) {}
 
-  bool m_initialized; // CO20200404 - xStream integration for logging
+  void clear() override { *this = xDOSCAR(); }
 
-  // CONTENT
-  std::string content;
-  std::vector<std::string> vcontent;
-  std::string filename; // the content, and lines of it
   std::string title;
-  uint spin;
-  double Vol, POTIM;
-  xvector<double> lattice; // CO20200922 - an xvector in the style of Getabc_angles(), only the abc are printed/read, must be in meters: https://www.vasp.at/wiki/index.php/DOSCAR
-  double temperature;
-  bool RWIGS;
-  double Efermi;
-  double spinF;
-  double energy_max;
-  double energy_min;
-  uint number_energies;
-  uint number_atoms; // ME20190614
-  bool partial; // ME20190614
-  double denergy;
+  uint spin = 0;
+  double Vol = 0.0;
+  double POTIM = 0.0;
+  aurostd::xvector<double> lattice; // CO20200922 - an xvector in the style of Getabc_angles(), only the abc are printed/read, must be in meters: https://www.vasp.at/wiki/index.php/DOSCAR
+  double temperature = 0.0;
+  bool RWIGS = false;
+  double Efermi = 0.0;
+  double spinF = AUROSTD_NAN;
+  double energy_max = 0.0;
+  double energy_min = 0.0;
+  uint number_energies = 0;
+  uint number_atoms = 0; // ME20190614
+  bool partial = false; // ME20190614
+  double denergy = 0.0;
   std::deque<double> venergy; // venergy.at(energy_number)
   std::deque<double> venergyEf; // venergyEf.at(energy_number)
   // ME20190614 BEGIN
@@ -892,23 +965,23 @@ public:
   std::deque<std::deque<std::deque<std::deque<double>>>> vDOS; // vDOS.at(atom).at(orbital).at(spin).at(energy_number); 0 = total for atoms and orbitals
   // ME20190614 END
   // ME20190620 BEGIN
-  bool isLSCOUPLING; // Contains spin-orbit coupling
-  bool lmResolved; // Is it lm-resolved?
+  bool isLSCOUPLING = false; // Contains spin-orbit coupling
+  bool lmResolved = false; // Is it lm-resolved?
   std::string carstring; // The fourth line of the DOSCAR
   // ME20190620 END
   std::vector<double> conduction_band_min; // CO20191004
-  double conduction_band_min_net; // CO20191004
+  double conduction_band_min_net = AUROSTD_NAN; // CO20191004
   std::vector<double> valence_band_max; // CO20191004
-  double valence_band_max_net; // CO20191004
+  double valence_band_max_net = AUROSTD_NAN; // CO20191004
   std::vector<double> Egap; // CO20191004
-  double Egap_net; // CO20191004
+  double Egap_net = AUROSTD_NAN; // CO20191004
   std::vector<double> Egap_fit; // CO20191004
-  double Egap_fit_net; // CO20191004
+  double Egap_fit_net = AUROSTD_NAN; // CO20191004
   std::vector<std::string> Egap_type; // CO20191004
   std::string Egap_type_net; // CO20191004
   bool GetProperties(const std::stringstream& stringstreamIN, bool = true); // get everything QUIET
-  bool GetProperties(const std::string& stringIN, bool = true); // get everything QUIET
-  bool GetPropertiesFile(const std::string& fileIN, bool = true); // get everything QUIET
+  bool GetProperties(const std::string& stringIN, bool = true) override; // get everything QUIET
+  bool GetPropertiesFile(const std::string& fileIN, bool = true) override; // get everything QUIET
   bool GetPropertiesUrlFile(const std::string& url, const std::string& file, bool = true); // get everything from an aflowlib entry
   void convertSpinOFF2ON(); // CO20191217 - copies everything from spin channel 1 to spin channel 2
   void addAtomChannel(); // CO20211124 - creates another atom channel, mimicking size of orbital, spin, and energy
@@ -920,6 +993,20 @@ public:
   [[nodiscard]] std::deque<std::deque<std::deque<std::deque<double>>>> GetVDOSSpecies(std::deque<int> num_each_type) const; // vDOS.at(species).at(spin).at(energy_number)  //CO20191110
   friend std::ostream& operator<<(std::ostream&, const xDOSCAR&); // ME20190623
 
+  //SD20230214 BEGIN
+  std::deque<std::deque<std::deque<std::deque<double>>>> vDOS_atom; // vDOS.at(atom).at(orbital).at(spin).at(energy_number); 0 = total for atoms and orbitals
+  std::deque<std::deque<std::deque<std::deque<double>>>> vDOS_lm_atom; // vDOS.at(atom).at(orbital_lm).at(spin).at(energy_number); 0 = total for atoms and orbitals
+  std::deque<std::deque<std::deque<std::deque<double>>>> vDOS_species; // vDOS.at(species).at(orbital).at(spin).at(energy_number); 0 = total for atoms and orbitals
+  std::deque<std::deque<std::deque<std::deque<double>>>> vDOS_lm_species; // vDOS.at(species).at(orbital_lm).at(spin).at(energy_number); 0 = total for atoms and orbitals
+  std::deque<std::deque<std::deque<std::deque<double>>>> vDOS_iatom; // vDOS.at(iatom).at(orbital).at(spin).at(energy_number); 0 = total for atoms and orbitals
+  std::deque<std::deque<std::deque<std::deque<double>>>> vDOS_lm_iatom; // vDOS.at(iatom).at(orbital_lm).at(spin).at(energy_number); 0 = total for atoms and orbitals
+  //SD20230214 END
+  void GetVDOSSpecies(const xstructure& xstr); //vDOS.at(species).at(spin).at(energy_number)  //CO20191110 //SD20230213 - void function
+  void GetVDOSSpecies(const std::deque<int>& num_each_type); //vDOS.at(species).at(spin).at(energy_number)  //CO20191110 //SD20230213 - void function
+  void GetVDOSIAtom(const xstructure& xstr); //vDOS.at(iatom).at(spin).at(energy_number)  //SD20230213
+  void GetVDOSIAtom(const std::vector<std::vector<int>>& iatoms_index); //vDOS.at(iatom).at(spin).at(energy_number)  //SD20230213
+  friend std::ostream& operator<<(std::ostream&, const xDOSCAR&); //ME20190623
+
   // JSON load/dump
 protected:
   [[nodiscard]] aurostd::JSON::object serialize() const override;
@@ -930,55 +1017,42 @@ public:
   // debugging methods:
   void printVidos() const { std::cout << viDOS.size() << std::endl; }
 
-private: //
-  void free(); // free space
-  void copy(const xDOSCAR& b); //
-
 // SERIALIZATION MEMBERS, ignoring vcontent and content
 #define JSON_xDOSCAR_MEMBERS                                                                                                                                                                              \
   m_initialized, filename, title, spin, Vol, POTIM, lattice, temperature, RWIGS, Efermi, spinF, energy_max, energy_min, number_energies, number_atoms, partial, denergy, venergy, venergyEf, viDOS, vDOS, \
       isLSCOUPLING, lmResolved, carstring, conduction_band_min, conduction_band_min_net, valence_band_max, valence_band_max_net, Egap, Egap_net, Egap_fit, Egap_fit_net, Egap_type, Egap_type_net
 };
 //-------------------------------------------------------------------------------------------------
-class xEIGENVAL : public xStream, public JsonSerializable<xEIGENVAL> { // CO20200404 - xStream integration for logging
+class xEIGENVAL : public xOVASP<xEIGENVAL>, public JsonSerializable<xEIGENVAL> {
 public:
-  xEIGENVAL(std::ostream& oss = std::cout); // default, just allocate  //CO20200404 - xStream integration for logging
-  xEIGENVAL(std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // constructor from filename QUIET //CO20200404 - xStream integration for logging
-  xEIGENVAL(const std::string& fileIN, bool = true, std::ostream& oss = std::cout); // constructor from filename QUIET //CO20200404 - xStream integration for logging
-  xEIGENVAL(const std::string& fileIN, std::ofstream& FileMESSAGE, bool = true, std::ostream& oss = std::cout); // constructor from filename QUIET //CO20200404 - xStream integration for logging
-  bool initialize(const std::string& fileIN, std::ostream& oss, bool = true); // ME20200427  //CO20200508
-  bool initialize(const std::string& fileIN, std::ofstream& FileMESSAGE, std::ostream& oss, bool = true); // ME20200427  //CO20200508
-  bool initialize(const std::string& fileIN, bool = true); // ME20200427
+  using xOVASP::xOVASP;
 
-  xEIGENVAL(const xEIGENVAL& b); // constructor copy
-  ~xEIGENVAL(); // kill everything
-  const xEIGENVAL& operator=(const xEIGENVAL& b); // copy
-  void clear(); // clear
+  xEIGENVAL(const std::string& fileIN, bool QUIET = true, std::ostream& oss = std::cout) : xEIGENVAL(fromFile(fileIN, QUIET, oss)) {}
+  xEIGENVAL(const std::string& fileIN, std::ofstream& FileMESSAGE, bool QUIET = true, std::ostream& oss = std::cout) : xEIGENVAL(fromFile(fileIN, FileMESSAGE, QUIET, oss)) {}
 
-  bool m_initialized; // CO20200404 - xStream integration for logging
+  void clear() override { *this = xEIGENVAL(); }
 
-  // CONTENT
-  std::string content;
-  std::vector<std::string> vcontent;
-  std::string filename; // the content, and lines of it
   std::string title;
-  uint number_atoms; // ME20190623
-  uint number_loops; // ME20190623
-  uint spin;
-  double Vol, POTIM;
-  xvector<double> lattice;
-  double temperature;
-  uint number_electrons, number_kpoints, number_bands;
+  uint number_atoms = 0;
+  uint number_loops = 0;
+  uint spin = 0;
+  double Vol = 0.0;
+  double POTIM = 0.0;
+  aurostd::xvector<double> lattice;
+  double temperature = 0.0;
+  uint number_electrons = 0;
+  uint number_kpoints = 0;
+  uint number_bands = 0;
   std::deque<double> vweight; // vweight.at(kpoint number)
-  std::deque<xvector<double>> vkpoint; // vkpoint.at(kpoint number)[1,2,3]=xyz.
+  std::deque<aurostd::xvector<double>> vkpoint; // vkpoint.at(kpoint number)[1,2,3]=xyz.
   std::deque<std::deque<std::deque<double>>> venergy; // venergy.at(kpoint number).at(band number).at(spin number)
   std::string carstring; // ME20190620 - the fourth line of the EIGENVAL file
   bool GetProperties(const std::stringstream& stringstreamIN, bool = true); // get everything QUIET
-  bool GetProperties(const std::string& stringIN, bool = true); // get everything QUIET
-  bool GetPropertiesFile(const std::string& fileIN, bool = true); // get everything QUIET
+  bool GetProperties(const std::string& stringIN, bool = true) override; // get everything QUIET
+  bool GetPropertiesFile(const std::string& fileIN, bool = true) override; // get everything QUIET
   bool GetPropertiesUrlFile(const std::string& url, const std::string& file, bool = true); // get everything from an aflowlib entry
-  double energy_max; // ME20190614
-  double energy_min; // ME20190614
+  double energy_max = 0.0;
+  double energy_min = 0.0;
   friend std::ostream& operator<<(std::ostream&, const xEIGENVAL&); // ME20190623
 
   // JSON load/dump
@@ -987,61 +1061,55 @@ protected:
   xEIGENVAL deserialize(const aurostd::JSON::object& jo) override;
   [[nodiscard]] std::string getJsonID() const override { return "xEIGENVAL"; }
 
-private: //
-  void free(); // free space
-  void copy(const xEIGENVAL& b); //
-
 // SERIALIZATION MEMBERS
 #define JSON_xEIGENVAL_MEMBERS \
   m_initialized, filename, title, number_atoms, number_loops, spin, Vol, POTIM, lattice, temperature, number_electrons, number_kpoints, number_bands, vweight, vkpoint, venergy, carstring, energy_max, energy_min
 };
 //-------------------------------------------------------------------------------------------------
-class xPOTCAR : public xStream, public JsonSerializable<xPOTCAR> { // CO20200404 - xStream integration for logging
+class xPOTCAR : public xOVASP<xPOTCAR>, public JsonSerializable<xPOTCAR> {
 public:
-  xPOTCAR(std::ostream& oss = std::cout); // default, just allocate  //CO20200404 - xStream integration for logging
-  xPOTCAR(std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // constructor from filename QUIET //CO20200404 - xStream integration for logging
-  xPOTCAR(const std::string& fileIN, bool = true, std::ostream& oss = std::cout); // constructor from filename QUIET //CO20200404 - xStream integration for logging
-  xPOTCAR(const std::string& fileIN, std::ofstream& FileMESSAGE, bool = true, std::ostream& oss = std::cout); // constructor from filename QUIET //CO20200404 - xStream integration for logging
-  bool initialize(const std::string& fileIN, std::ostream& oss, bool = true); // ME20200427  //CO20200508
-  bool initialize(const std::string& fileIN, std::ofstream& FileMESSAGE, std::ostream& oss, bool = true); // ME20200427  //CO20200508
-  bool initialize(const std::string& fileIN, bool = true); // ME20200427
+  using xOVASP::xOVASP;
 
-  ~xPOTCAR(); // kill everything
-  xPOTCAR(const xPOTCAR& b); // constructor copy
-  const xPOTCAR& operator=(const xPOTCAR& b); // copy
-  void clear(); // clear
+  xPOTCAR(const std::string& fileIN, bool QUIET = true, std::ostream& oss = std::cout) : xPOTCAR(fromFile(fileIN, QUIET, oss)) {}
+  xPOTCAR(const std::string& fileIN, std::ofstream& FileMESSAGE, bool QUIET = true, std::ostream& oss = std::cout) : xPOTCAR(fromFile(fileIN, FileMESSAGE, QUIET, oss)) {}
 
-  bool m_initialized; // CO20200404 - xStream integration for logging
+  void clear() override { *this = xPOTCAR(); }; // clear
 
-  // CONTENT
-  std::string content;
-  std::vector<std::string> vcontent; // the content and the lines
-  std::string filename; // the filename - THIS IS A GLOBAL PROPERTY OF THE WHOLE POTCAR
   std::string title;
-  bool POTCAR_PAW;
+  bool POTCAR_PAW = false;
   std::string POTCAR_TYPE;
-  bool POTCAR_KINETIC;
-  bool POTCAR_GW;
-  bool POTCAR_AE;
-  double ENMAX;
+  bool POTCAR_KINETIC = false;
+  bool POTCAR_GW = false;
+  bool POTCAR_AE = false;
+  double ENMAX = 0.0;
   std::vector<double> vENMAX; // eV
-  double ENMIN;
+  double ENMIN = 0.0;
   std::vector<double> vENMIN; // eV
-  double POMASS_sum, POMASS_min, POMASS_max;
+  double POMASS_sum = 0.0;
+  double POMASS_min = 0.0;
+  double POMASS_max = 0.0;
   std::vector<double> vPOMASS; // mass
-  double ZVAL_sum, ZVAL_min, ZVAL_max;
+  double ZVAL_sum = 0.0;
+  double ZVAL_min = 0.0;
+  double ZVAL_max = 0.0;
   std::vector<double> vZVAL; // valence
-  double EATOM_min, EATOM_max;
+  double EATOM_min = 0.0;
+  double EATOM_max = 0.0;
   std::vector<double> vEATOM; // eV
-  double RCORE_min, RCORE_max;
+  double RCORE_min = 0.0;
+  double RCORE_max = 0.0;
   std::vector<double> vRCORE; // outmost cutoff radius
-  double RWIGS_min, RWIGS_max;
+  double RWIGS_min = 0.0;
+  double RWIGS_max = 0.0;
   std::vector<double> vRWIGS; // wigner-seitz radius (au A)
-  double EAUG_min, EAUG_max;
+  double EAUG_min = 0.0;
+  double EAUG_max = 0.0;
   std::vector<double> vEAUG; // augmentation
-  double RAUG_min, RAUG_max;
+  double RAUG_min = 0.0;
+  double RAUG_max = 0.0;
   std::vector<double> vRAUG; // augmentation
-  double RMAX_min, RMAX_max;
+  double RMAX_min = 0.0;
+  double RMAX_max = 0.0;
   std::vector<double> vRMAX; // unicity
   std::vector<std::string> vTITEL; // unicity
   std::vector<std::string> vLEXCH; // unicity
@@ -1056,8 +1124,8 @@ public:
   std::vector<double> species_pp_groundstate_energy; // meV/atom
   std::vector<std::string> species_pp_groundstate_structure; // name that we have, maybe ANRL
   bool GetProperties(const std::stringstream& stringstreamIN, bool = true); // get everything QUIET
-  bool GetProperties(const std::string& stringIN, bool = true); // get everything QUIET
-  bool GetPropertiesFile(const std::string& fileIN, bool = true); // get everything QUIET
+  bool GetProperties(const std::string& stringIN, bool = true) override; // get everything QUIET
+  bool GetPropertiesFile(const std::string& fileIN, bool = true) override; // get everything QUIET
   bool GetPropertiesUrlFile(const std::string& url, const std::string& file, bool = true); // get everything from an aflowlib entry
   // objects/functions for references energies defined only with one specie
   std::string AUID; // crc32 - THIS IS A GLOBAL PROPERTY OF THE WHOLE POTCAR
@@ -1070,18 +1138,14 @@ protected:
   xPOTCAR deserialize(const aurostd::JSON::object& jo) override;
   [[nodiscard]] std::string getJsonID() const override { return "xPOTCAR"; }
 
-private: //
-  void free(); // free space
-  void copy(const xPOTCAR& b); //
-
   // SERIALIZATION MEMBERS
 #define JSON_xPOTCAR_MEMBERS                                                                                                                                                                                    \
   m_initialized, filename, title, POTCAR_PAW, POTCAR_TYPE, POTCAR_KINETIC, POTCAR_GW, POTCAR_AE, vENMAX, vENMIN, vPOMASS, vZVAL, vEATOM, vRCORE, vRWIGS, vEAUG, vRAUG, vRMAX, vTITEL, vLEXCH, pp_type, species, \
       species_Z, species_pp, species_pp_type, species_pp_version, species_pp_AUID, species_pp_AUID_collisions, species_pp_groundstate_energy, species_pp_groundstate_structure
 };
 
-extern std::vector<xPOTCAR> vxpseudopotential; // store starting from ONE
-uint xPOTCAR_Initialize();
+std::vector<xPOTCAR> get_pseudopotential_data();
+aurostd::JSON::object get_pseudopotential_enthalpy_references();
 bool xPOTCAR_PURE_Printer(xPOTCAR& xPOT, std::ostream& oss, bool LVERBOSE = false);
 xPOTCAR xPOTCAR_Finder(std::vector<std::string>& species_pp_AUID, std::vector<std::string>& species_pp_AUID_collisions, const std::string& TITEL, const std::string& LEXCH, const double& EATOM, const double& RMAX, bool LVERBOSE = false);
 xPOTCAR xPOTCAR_Finder(const std::string& AUID, bool LVERBOSE = false);
@@ -1089,35 +1153,23 @@ bool xPOTCAR_EnthalpyReference_AUID(std::string AUID, std::string METAGGA = "");
 bool xPOTCAR_EnthalpyReference_AUID(std::string AUID, std::string METAGGA, std::string& gs, double& enthalpy_atom, double& volume_atom, double& spin_atom);
 
 // -------------------------------------------------------------------------------------------------
-class xVASPRUNXML : public xStream, public JsonSerializable<xVASPRUNXML> { // CO20200404 - xStream integration for logging
+class xVASPRUNXML : public xOVASP<xVASPRUNXML>, public JsonSerializable<xVASPRUNXML> { // CO20200404 - xStream integration for logging
 public:
-  xVASPRUNXML(std::ostream& oss = std::cout); // default, just allocate  //CO20200404 - xStream integration for logging
-  xVASPRUNXML(std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // default, just allocate  //CO20200404 - xStream integration for logging
-  xVASPRUNXML(const std::string& fileIN, bool = true, std::ostream& oss = std::cout); // constructor from filename, QUIET  //CO20200404 - xStream integration for logging
-  xVASPRUNXML(const std::string& fileIN, std::ofstream& FileMESSAGE, bool = true, std::ostream& oss = std::cout); // constructor from filename, QUIET  //CO20200404 - xStream integration for logging
-  bool initialize(const std::string& fileIN, std::ostream& oss, bool = true); // ME20200427  //CO20200508
-  bool initialize(const std::string& fileIN, std::ofstream& FileMESSAGE, std::ostream& oss, bool = true); // ME20200427  //CO20200508
-  bool initialize(const std::string& fileIN, bool = true); // ME20200427  //CO20200508
+  using xOVASP::xOVASP;
 
-  xVASPRUNXML(const xVASPRUNXML& b); // constructor copy
-  ~xVASPRUNXML(); // kill everything
-  const xVASPRUNXML& operator=(const xVASPRUNXML& b); // copy
-  void clear(); // clear
+  xVASPRUNXML(const std::string& fileIN, bool QUIET = true, std::ostream& oss = std::cout) : xVASPRUNXML(fromFile(fileIN, QUIET, oss)) {}
+  xVASPRUNXML(const std::string& fileIN, std::ofstream& FileMESSAGE, bool QUIET = true, std::ostream& oss = std::cout) : xVASPRUNXML(fromFile(fileIN, FileMESSAGE, QUIET, oss)) {}
 
-  bool m_initialized; // CO20200404 - xStream integration for logging
+  void clear() override { *this = xVASPRUNXML(); }; // clear
 
-  // CONTENT
-  std::string content;
-  std::vector<std::string> vcontent;
-  std::string filename; // the content, and lines of it
-  double natoms; // for aflowlib_libraries.cpp
-  xmatrix<double> stress; // for aflowlib_libraries.cpp
+  double natoms = 0.0; // for aflowlib_libraries.cpp
+  aurostd::xmatrix<double> stress; // for aflowlib_libraries.cpp
   std::vector<aurostd::xvector<double>> vkpoint; // for aflowlib_libraries.cpp
   std::vector<aurostd::xvector<double>> vweights; // for aflowlib_libraries.cpp
   std::vector<aurostd::xvector<double>> vforces; // for aflowlib_libraries.cpp
   bool GetProperties(const std::stringstream& stringstreamIN, bool = true); // get everything QUIET
-  bool GetProperties(const std::string& stringIN, bool = true); // get everything QUIET
-  bool GetPropertiesFile(const std::string& fileIN, bool = true); // get everything QUIET
+  bool GetProperties(const std::string& stringIN, bool = true) override; // get everything QUIET
+  bool GetPropertiesFile(const std::string& fileIN, bool = true) override; // get everything QUIET
   bool GetPropertiesUrlFile(const std::string& url, const std::string& file, bool = true); // get everything from an aflowlib entry
   bool GetForces(const std::string&, bool = true); // ME20190204
   bool GetForcesFile(const std::string&, bool = true); // ME20190204
@@ -1129,45 +1181,29 @@ protected:
   xVASPRUNXML deserialize(const aurostd::JSON::object& jo) override;
   [[nodiscard]] std::string getJsonID() const override { return "xVASPRUNXML"; }
 
-private: //
-  void free(); // free space
-  void copy(const xVASPRUNXML& b); //
-
 // SERIALIZATION MEMBERS
 #define JSON_xVASPRUNXML_MEMBERS m_initialized, filename, natoms, stress, vkpoint, vweights, vforces
 };
 // -------------------------------------------------------------------------------------------------
-class xIBZKPT : public xStream, public JsonSerializable<xIBZKPT> { // CO20200404 - xStream integration for logging
+class xIBZKPT : public xOVASP<xIBZKPT>, public JsonSerializable<xIBZKPT> { // CO20200404 - xStream integration for logging
 public:
-  xIBZKPT(std::ostream& oss = std::cout); // default, just allocate  //CO20200404 - xStream integration for logging
-  xIBZKPT(std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // default, just allocate  //CO20200404 - xStream integration for logging
-  xIBZKPT(const std::string& fileIN, bool = true, std::ostream& oss = std::cout); // constructor from filename, QUIET  //CO20200404 - xStream integration for logging
-  xIBZKPT(const std::string& fileIN, std::ofstream& FileMESSAGE, bool = true, std::ostream& oss = std::cout); // constructor from filename, QUIET  //CO20200404 - xStream integration for logging
-  bool initialize(const std::string& fileIN, std::ostream& oss, bool = true); // ME20200427  //CO20200508
-  bool initialize(const std::string& fileIN, std::ofstream& FileMESSAGE, std::ostream& oss, bool = true); // ME20200427  //CO20200508
-  bool initialize(const std::string& fileIN, bool = true); // ME20200427  //CO20200508
+  using xOVASP::xOVASP;
 
-  xIBZKPT(const xIBZKPT& b); // constructor copy
-  ~xIBZKPT(); // kill everything
-  const xIBZKPT& operator=(const xIBZKPT& b); // copy
-  void clear(); // clear
+  xIBZKPT(const std::string& fileIN, bool QUIET = true, std::ostream& oss = std::cout) : xIBZKPT(fromFile(fileIN, QUIET, oss)) {}
+  xIBZKPT(const std::string& fileIN, std::ofstream& FileMESSAGE, bool QUIET = true, std::ostream& oss = std::cout) : xIBZKPT(fromFile(fileIN, FileMESSAGE, QUIET, oss)) {}
 
-  bool m_initialized; // CO20200404 - xStream integration for logging
+  void clear() override { *this = xIBZKPT(); }; // clear
 
-  // CONTENT
-  std::string content;
-  std::vector<std::string> vcontent;
-  std::string filename; // the content, and lines of it
-  uint nweights; // for aflowlib_libraries.cpp
-  uint nkpoints_irreducible; // for aflowlib_libraries.cpp
+  uint nweights = 0; // for aflowlib_libraries.cpp
+  uint nkpoints_irreducible = 0; // for aflowlib_libraries.cpp
   std::vector<aurostd::xvector<double>> vkpoint; // for aflowlib_libraries.cpp
   std::vector<uint> vweights; // for aflowlib_libraries.cpp
-  uint ntetrahedra; // for aflowlib_libraries.cpp
-  double wtetrahedra; // for aflowlib_libraries.cpp
+  uint ntetrahedra = 0; // for aflowlib_libraries.cpp
+  double wtetrahedra = 0.0; // for aflowlib_libraries.cpp
   std::vector<aurostd::xvector<int>> vtetrahedra; // for aflowlib_libraries.cpp
   bool GetProperties(const std::stringstream& stringstreamIN, bool = true); // get everything QUIET
-  bool GetProperties(const std::string& stringIN, bool = true); // get everything QUIET
-  bool GetPropertiesFile(const std::string& fileIN, bool = true); // get everything QUIET
+  bool GetProperties(const std::string& stringIN, bool = true) override; // get everything QUIET
+  bool GetPropertiesFile(const std::string& fileIN, bool = true) override; // get everything QUIET
   bool GetPropertiesUrlFile(const std::string& url, const std::string& file, bool = true); // get everything from an aflowlib entry
 
   // JSON load/dump
@@ -1176,50 +1212,34 @@ protected:
   xIBZKPT deserialize(const aurostd::JSON::object& jo) override;
   [[nodiscard]] std::string getJsonID() const override { return "xIBZKPT"; }
 
-private: //
-  void free(); // free space
-  void copy(const xIBZKPT& b); //
-
 // SERIALIZATION MEMBERS
 #define JSON_xIBZKPT_MEMBERS m_initialized, filename, nweights, nkpoints_irreducible, vkpoint, vweights, ntetrahedra, wtetrahedra, vtetrahedra
 };
 // -------------------------------------------------------------------------------------------------
-class xKPOINTS : public xStream, public JsonSerializable<xKPOINTS> { // CO20200404 - xStream integration for logging
+class xKPOINTS : public xOVASP<xKPOINTS>, public JsonSerializable<xKPOINTS> { // CO20200404 - xStream integration for logging
 public:
-  xKPOINTS(std::ostream& oss = std::cout); // default, just allocate  //CO20200404 - xStream integration for logging
-  xKPOINTS(std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // default, just allocate  //CO20200404 - xStream integration for logging
-  xKPOINTS(const std::string& fileIN, bool = true, std::ostream& oss = std::cout); // constructor from filename, QUIET  //CO20200404 - xStream integration for logging
-  xKPOINTS(const std::string& fileIN, std::ofstream& FileMESSAGE, bool = true, std::ostream& oss = std::cout); // constructor from filename, QUIET  //CO20200404 - xStream integration for logging
-  bool initialize(const std::string& fileIN, std::ostream& oss, bool = true); // ME20200427  //CO20200508
-  bool initialize(const std::string& fileIN, std::ofstream& FileMESSAGE, std::ostream& oss, bool = true); // ME20200427  //CO20200508
-  bool initialize(const std::string& fileIN, bool = true); // ME20200427  //CO20200508
+  using xOVASP::xOVASP;
 
-  xKPOINTS(const xKPOINTS& b); // constructor copy
-  ~xKPOINTS(); // kill everything
-  const xKPOINTS& operator=(const xKPOINTS& b); // copy
-  void clear(); // clear
+  xKPOINTS(const std::string& fileIN, bool QUIET = true, std::ostream& oss = std::cout) : xKPOINTS(fromFile(fileIN, QUIET, oss)) {}
+  xKPOINTS(const std::string& fileIN, std::ofstream& FileMESSAGE, bool QUIET = true, std::ostream& oss = std::cout) : xKPOINTS(fromFile(fileIN, FileMESSAGE, QUIET, oss)) {}
 
-  bool m_initialized; // CO20200404 - xStream integration for logging
+  void clear() override { *this = xKPOINTS(); }; // clear
 
-  // CONTENT
-  std::string content;
-  std::vector<std::string> vcontent;
-  std::string filename; // the content, and lines of it
   std::string title; // first line
   int mode; // sort of mode
   std::string grid_type; // if grid specified
   bool is_KPOINTS_NNN, is_KPOINTS_PATH; // control parameters
-  xvector<int> nnn_kpoints; // N*N*N                          // triplet of kpoints
-  xvector<double> ooo_kpoints; // ORIGIN                         // triplet of origin
+  aurostd::xvector<int> nnn_kpoints; // N*N*N                          // triplet of kpoints
+  aurostd::xvector<double> ooo_kpoints; // ORIGIN                         // triplet of origin
   int nkpoints; // total kpoints
   std::string path_mode, path;
   std::vector<std::string> vpath;
   int path_grid; // path if any
-  std::vector<xvector<double>> vkpoints; // ME20190614 - k-point coordinates of the path
+  std::vector<aurostd::xvector<double>> vkpoints; // ME20190614 - k-point coordinates of the path
 
   bool GetProperties(const std::stringstream& stringstreamIN, bool = true); // get everything QUIET
-  bool GetProperties(const std::string& stringIN, bool = true); // get everything QUIET
-  bool GetPropertiesFile(const std::string& fileIN, bool = true); // get everything QUIET
+  bool GetProperties(const std::string& stringIN, bool = true) override; // get everything QUIET
+  bool GetPropertiesFile(const std::string& fileIN, bool = true) override; // get everything QUIET
   bool GetPropertiesUrlFile(const std::string& url, const std::string& file, bool = true); // get everything from an aflowlib entry
   friend std::ostream& operator<<(std::ostream&, const xKPOINTS&); // ME20190623
   std::string createStandardTitlePath(const xstructure&); // ME20190623
@@ -1230,75 +1250,45 @@ protected:
   xKPOINTS deserialize(const aurostd::JSON::object& jo) override;
   [[nodiscard]] std::string getJsonID() const override { return "xKPOINTS"; }
 
-private: //
-  void free(); // free space
-  void copy(const xKPOINTS& b); //
-
 // SERIALIZATION MEMBERS
 #define JSON_xKPOINTS_MEMBERS title, filename, mode, grid_type, is_KPOINTS_NNN, is_KPOINTS_PATH, nnn_kpoints, ooo_kpoints, nkpoints, path_mode, path, vpath, path_grid, vkpoints, m_initialized
 };
 // -------------------------------------------------------------------------------------------------
-class xCHGCAR : public xStream { // CO20200404 - xStream integration for logging
+class xCHGCAR : public xOVASP<xCHGCAR> { // CO20200404 - xStream integration for logging
 public:
-  xCHGCAR(std::ostream& oss = std::cout); // default, just allocate  //CO20200404 - xStream integration for logging
-  xCHGCAR(std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // default, just allocate  //CO20200404 - xStream integration for logging
-  xCHGCAR(const std::string& fileIN, bool = true, std::ostream& oss = std::cout); // constructor from filename, QUIET  //CO20200404 - xStream integration for logging
-  xCHGCAR(const std::string& fileIN, std::ofstream& FileMESSAGE, bool = true, std::ostream& oss = std::cout); // constructor from filename, QUIET  //CO20200404 - xStream integration for logging
-  bool initialize(const std::string& fileIN, std::ostream& oss, bool = true); // ME20200427  //CO20200508
-  bool initialize(const std::string& fileIN, std::ofstream& FileMESSAGE, std::ostream& oss, bool = true); // ME20200427  //CO20200508
-  bool initialize(const std::string& fileIN, bool = true); // ME20200427  //CO20200508
+  using xOVASP::xOVASP;
 
-  xCHGCAR(const xCHGCAR& b); // constructor copy
-  ~xCHGCAR(); // kill everything
-  const xCHGCAR& operator=(const xCHGCAR& b); // copy
-  void clear(); // clear
+  xCHGCAR(const std::string& fileIN, bool QUIET = true, std::ostream& oss = std::cout) : xCHGCAR(fromFile(fileIN, QUIET, oss)) {}
+  xCHGCAR(const std::string& fileIN, std::ofstream& FileMESSAGE, bool QUIET = true, std::ostream& oss = std::cout) : xCHGCAR(fromFile(fileIN, FileMESSAGE, QUIET, oss)) {}
 
-  bool m_initialized; // CO20200404 - xStream integration for logging
+  void clear() override { *this = xCHGCAR(); }; // clear
 
-  // CONTENT
-  std::string content;
-  std::vector<std::string> vcontent;
-  std::string filename; // the content, and lines of it
-  xvector<int> grid; // N*N*N                                // triplet of grid
+  aurostd::xvector<int> grid; // N*N*N                                // triplet of grid
   std::vector<std::string> vstring; // ORIGIN                            // std::string of values
-  xvector<double> vvalues; // ORIGIN                            // xvector of values
+  aurostd::xvector<double> vvalues; // ORIGIN                            // xvector of values
   aurostd::xtensor<double> tvalues; // ORIGIN                             // xtensor of values ME20180705
   bool GetProperties(const std::stringstream& stringstreamIN, bool = true); // get everything QUIET
-  bool GetProperties(const std::string& stringIN, bool = true); // get everything QUIET
-  bool GetPropertiesFile(const std::string& fileIN, bool = true); // get everything QUIET
+  bool GetProperties(const std::string& stringIN, bool = true) override; // get everything QUIET
+  bool GetPropertiesFile(const std::string& fileIN, bool = true) override; // get everything QUIET
   bool GetPropertiesUrlFile(const std::string& url, const std::string& file, bool = true); // get everything from an aflowlib entry
-private: //
-  void free(); // free space
-  void copy(const xCHGCAR& b); //
 };
 // -------------------------------------------------------------------------------------------------
-class xQMVASP : public xStream, public JsonSerializable<xQMVASP> { // CO20191110 //CO20200404 - xStream integration for logging
+class xQMVASP : public xOVASP<xQMVASP>, public JsonSerializable<xQMVASP> { // CO20191110 //CO20200404 - xStream integration for logging
 public:
-  xQMVASP(std::ostream& oss = std::cout); // default, just allocate  //CO20200404 - xStream integration for logging
-  xQMVASP(std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // constructor from filename QUIET //CO20200404 - xStream integration for logging
-  xQMVASP(const std::string& fileIN, bool = true, std::ostream& oss = std::cout); // constructor from filename QUIET //CO20200404 - xStream integration for logging
-  xQMVASP(const std::string& fileIN, std::ofstream& FileMESSAGE, bool = true, std::ostream& oss = std::cout); // constructor from filename QUIET //CO20200404 - xStream integration for logging
-  bool initialize(const std::string& fileIN, std::ostream& oss, bool = true); // ME20200427  //CO20200508
-  bool initialize(const std::string& fileIN, std::ofstream& FileMESSAGE, std::ostream& oss, bool = true); // ME20200427  //CO20200508
-  bool initialize(const std::string& fileIN, bool = true); // ME20200427
+  using xOVASP::xOVASP;
 
-  ~xQMVASP(); // kill everything
-  xQMVASP(const xQMVASP& b); // constructor copy
-  const xQMVASP& operator=(const xQMVASP& b); // copy
-  void clear(); // clear
+  xQMVASP(const std::string& fileIN, bool QUIET = true, std::ostream& oss = std::cout) : xQMVASP(fromFile(fileIN, QUIET, oss)) {}
+  xQMVASP(const std::string& fileIN, std::ofstream& FileMESSAGE, bool QUIET = true, std::ostream& oss = std::cout) : xQMVASP(fromFile(fileIN, FileMESSAGE, QUIET, oss)) {}
 
-  bool m_initialized; // CO20200404 - xStream integration for logging
+  void clear() override { *this = xQMVASP(); }; // clear
 
-  // CONTENT
-  std::string content;
-  std::vector<std::string> vcontent;
-  std::string filename; // the content, and lines of it
-  double H_atom_relax;
-  double H_atom_static;
+  double H_atom_relax = AUROSTD_NAN;
+  double H_atom_static = AUROSTD_NAN;
   std::vector<aurostd::xvector<double>> vforces; // for APL - only one (no relax vs. static), get most relaxed forces  //CO20191112
+  xstructure xstr_final;
   bool GetProperties(const std::stringstream& stringstreamIN, bool = true); // get everything QUIET
-  bool GetProperties(const std::string& stringIN, bool = true); // get everything QUIET
-  bool GetPropertiesFile(const std::string& fileIN, bool = true); // get everything QUIET
+  bool GetProperties(const std::string& stringIN, bool = true) override; // get everything QUIET
+  bool GetPropertiesFile(const std::string& fileIN, bool = true) override; // get everything QUIET
   bool GetPropertiesUrlFile(const std::string& url, const std::string& file, bool = true); // get everything from an aflowlib entry
 
   // JSON load/dump
@@ -1307,59 +1297,9 @@ protected:
   xQMVASP deserialize(const aurostd::JSON::object& jo) override;
   [[nodiscard]] std::string getJsonID() const override { return "xQMVASP"; }
 
-private: //
-  void free(); // free space
-  void copy(const xQMVASP& b); //
-
 // SERIALIZATION MEMBERS
 #define JSON_xQMVASP_MEMBERS m_initialized, filename, H_atom_relax, H_atom_static, vforces
 };
-// -------------------------------------------------------------------------------------------------
-class xPLASMONICS : public xStream, public JsonSerializable<xPLASMONICS> { // CO20191110 //CO20200404 - xStream integration for logging
-public:
-  xPLASMONICS(std::ostream& oss = std::cout); // default, just allocate  //CO20200404 - xStream integration for logging
-  xPLASMONICS(std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // constructor from filename QUIET //CO20200404 - xStream integration for logging
-  xPLASMONICS(const std::string& fileIN, bool = true, std::ostream& oss = std::cout); // constructor from filename QUIET //CO20200404 - xStream integration for logging
-  xPLASMONICS(const std::string& fileIN, std::ofstream& FileMESSAGE, bool = true, std::ostream& oss = std::cout); // constructor from filename QUIET //CO20200404 - xStream integration for logging
-  bool initialize(const std::string& fileIN, std::ostream& oss, bool = true); // ME20200427  //CO20200508
-  bool initialize(const std::string& fileIN, std::ofstream& FileMESSAGE, std::ostream& oss, bool = true); // ME20200427  //CO20200508
-  bool initialize(const std::string& fileIN, bool = true); // ME20200427
-
-  ~xPLASMONICS(); // kill everything
-  xPLASMONICS(const xPLASMONICS& b); // constructor copy
-  const xPLASMONICS& operator=(const xPLASMONICS& b); // copy
-  void clear(); // clear
-
-  bool m_initialized; // CO20200404 - xStream integration for logging
-
-  // CONTENT
-  std::string content;
-  std::vector<std::string> vcontent;
-  std::string filename; // the content, and lines of it
-  std::string eps; // plasmonics
-  std::vector<double> venergy; // plasmonics
-  std::vector<double> veels; // plasmonics
-  std::vector<xcomplex<double>> vdielectric; // plasmonics  //contains both real and imaginary parts
-  void getEPS(); // CO20211120 - extract eps from filename
-  bool GetProperties(const std::stringstream& stringstreamIN, bool = true); // get everything QUIET
-  bool GetProperties(const std::string& stringIN, bool = true); // get everything QUIET
-  bool GetPropertiesFile(const std::string& fileIN, bool = true); // get everything QUIET
-  bool GetPropertiesUrlFile(const std::string& url, const std::string& file, bool = true); // get everything from an aflowlib entry
-
-  // JSON load/dump
-protected:
-  [[nodiscard]] aurostd::JSON::object serialize() const override;
-  xPLASMONICS deserialize(const aurostd::JSON::object& jo) override;
-  [[nodiscard]] std::string getJsonID() const override { return "xPLASMONICS"; }
-
-private: //
-  void free(); // free space
-  void copy(const xPLASMONICS& b); //
-};
-
-// SERIALIZATION MEMBERS
-#define JSON_xPLASMONICS_MEMBERS m_initialized, filename, eps, venergy, veels, vdielectric
-
 // -------------------------------------------------------------------------------------------------
 // aflow_kaims.cpp
 namespace KBIN {
@@ -1388,28 +1328,47 @@ namespace KBIN {
 // -------------------------------------------------------------------------------------------------
 // aflow_oaims.cpp
 class xAIMSOUT;
-class xAIMSOUT {
+/// @brief Abstract base class for the AIMS data containers such as @c xAIMSOUT.
+/// Implements some convenience static methods to construct derived classes from files. Derived classes must
+/// implement @c GetProperties to read from string, @c GetPropertiesFile to read from file, and @c clear to reset the object to default.
+/// Derived class may use @code using xOAIMS::xOAIMS; @endcode to inherit constructors.
+template <class Derived> class xOAIMS {
 public:
-  xAIMSOUT(); // default, just allocate
-  ~xAIMSOUT(); // kill everything
-  xAIMSOUT(const std::string& fileIN, bool = true); // constructor from filename, QUIET
-  xAIMSOUT(const xAIMSOUT& b); // constructor copy
-  const xAIMSOUT& operator=(const xAIMSOUT& b); // copy
-  void clear(); // clear
+  virtual ~xOAIMS() = default;
+  xOAIMS() = default;
+
+  static Derived fromFile(const std::string& fileIN, bool QUIET = true) {
+    Derived derived;
+    derived.filename = fileIN;
+    derived.GetPropertiesFile(fileIN, QUIET);
+    return derived;
+  }
+
+  virtual bool GetProperties(const std::string& stringIN, bool QUIET = true) = 0;
+  virtual bool GetPropertiesFile(const std::string& fileIN, bool QUIET = true) = 0;
+
+  virtual void clear() = 0;
+
   // CONTENT
   std::string content;
   std::vector<std::string> vcontent;
-  std::string filename; // the content, and lines of it
+  std::string filename;
+};
+class xAIMSOUT : public xOAIMS<xAIMSOUT> {
+public:
+  using xOAIMS::xOAIMS;
+
+  xAIMSOUT(const std::string& fileIN, bool QUIET = true) : xAIMSOUT(fromFile(fileIN, QUIET)) {}
+
+  void clear() override { *this = xAIMSOUT(); }
+
   std::vector<aurostd::xvector<double>> vforces; // for aflowlib_libraries.cpp
-  double natoms;
+  double natoms = 0;
   bool GetProperties(const std::stringstream& stringstreamIN, bool = true); // get everything QUIET
-  bool GetProperties(const std::string& stringIN, bool = true); // get everything QUIET
-  bool GetPropertiesFile(const std::string& fileIN, bool = true); // get everything QUIET
+  bool GetProperties(const std::string& stringIN, bool = true) override; // get everything QUIET
+  bool GetPropertiesFile(const std::string& fileIN, bool = true) override; // get everything QUIET
   bool GetPropertiesFile(const std::string& fileIN, uint natoms_check, bool); // get everything QUIET
   bool GetPropertiesUrlFile(const std::string& url, const std::string& file, bool = true); // get everything from an aflowlib entry
-private: //
-  void free(); // free space
-  void copy(const xAIMSOUT& b); //
 };
 // -----------------------------------------------------------------------------------------------
 bool PrintBandGap(std::string& WorkDir, std::ostream& oss);
@@ -1417,33 +1376,33 @@ bool PrintBandGap_DOS(std::string& WorkDir, std::ostream& oss); // CO20191110
 bool PrintEffectiveMass(std::string& WorkDir, std::ostream& oss);
 bool PrintEigCurv(std::string& WorkDir, std::ostream& oss);
 // -----------------------------------------------------------------------------------------------
-bool ParseKPOINTS(std::stringstream& File_Kpoints, int& GRIDS, std::vector<xvector<double>>& special_kpts, std::vector<xvector<double>>& unique_kpts, std::vector<int>& repeat_kpts_num);
-bool AdjacencyList_KPT(std::vector<xvector<double>>& special_kpts, std::vector<xvector<double>>& unique_kpts, std::vector<xvector<int>>& connect_kpts, std::vector<int>& connect_kpts_num);
-bool AdjacencyList_EIG(std::vector<xvector<double>>& unique_kpts,
-                       std::vector<xvector<int>>& connect_kpts,
+bool ParseKPOINTS(std::stringstream& File_Kpoints, int& GRIDS, std::vector<aurostd::xvector<double>>& special_kpts, std::vector<aurostd::xvector<double>>& unique_kpts, std::vector<int>& repeat_kpts_num);
+bool AdjacencyList_KPT(std::vector<aurostd::xvector<double>>& special_kpts, std::vector<aurostd::xvector<double>>& unique_kpts, std::vector<aurostd::xvector<int>>& connect_kpts, std::vector<int>& connect_kpts_num);
+bool AdjacencyList_EIG(std::vector<aurostd::xvector<double>>& unique_kpts,
+                       std::vector<aurostd::xvector<int>>& connect_kpts,
                        std::vector<int>& connect_kpts_num,
                        xEIGENVAL& xeigenval,
-                       std::vector<xvector<double>>& unique_kpts_EIG,
-                       std::vector<xvector<int>>& connect_kpts_EIG,
-                       std::vector<xvector<double>>& vkpoint_eig);
-bool RepeatsList(std::vector<xvector<double>>& unique_kpts_EIG, std::vector<int>& repeat_kpts_num, std::vector<xvector<double>>& vkpoint_eig, std::vector<xvector<int>>& repeat_kpts_EIG);
-bool VertexPaths(std::vector<xvector<int>>& repeat_kpts_EIG, std::vector<xvector<int>>& connect_kpts_EIG, std::vector<int>& repeat_kpts_num, int& GRIDS, std::vector<xvector<int>>& vrtx_path);
-bool RepeatedEdges(std::vector<xvector<int>>& vrtx_path, std::vector<xvector<int>>& repeat_kpts_EIG, std::vector<int>& repeat_kpts_num, std::vector<xvector<int>>& ndx_edges);
-bool VertexBranches(std::vector<xvector<int>>& ndx_edges, std::vector<int>& repeat_kpts_num, std::vector<xvector<int>>& repeat_kpts_EIG, std::vector<std::vector<xvector<int>>>& branches);
+                       std::vector<aurostd::xvector<double>>& unique_kpts_EIG,
+                       std::vector<aurostd::xvector<int>>& connect_kpts_EIG,
+                       std::vector<aurostd::xvector<double>>& vkpoint_eig);
+bool RepeatsList(std::vector<aurostd::xvector<double>>& unique_kpts_EIG, std::vector<int>& repeat_kpts_num, std::vector<aurostd::xvector<double>>& vkpoint_eig, std::vector<aurostd::xvector<int>>& repeat_kpts_EIG);
+bool VertexPaths(std::vector<aurostd::xvector<int>>& repeat_kpts_EIG, std::vector<aurostd::xvector<int>>& connect_kpts_EIG, std::vector<int>& repeat_kpts_num, int& GRIDS, std::vector<aurostd::xvector<int>>& vrtx_path);
+bool RepeatedEdges(std::vector<aurostd::xvector<int>>& vrtx_path, std::vector<aurostd::xvector<int>>& repeat_kpts_EIG, std::vector<int>& repeat_kpts_num, std::vector<aurostd::xvector<int>>& ndx_edges);
+bool VertexBranches(std::vector<aurostd::xvector<int>>& ndx_edges, std::vector<int>& repeat_kpts_num, std::vector<aurostd::xvector<int>>& repeat_kpts_EIG, std::vector<std::vector<aurostd::xvector<int>>>& branches);
 bool PathDataStuct(xEIGENVAL& xeigenval,
-                   std::vector<xvector<double>>& vkpoint_eig,
-                   std::vector<std::vector<xvector<int>>>& branches,
+                   std::vector<aurostd::xvector<double>>& vkpoint_eig,
+                   std::vector<std::vector<aurostd::xvector<int>>>& branches,
                    std::vector<std::vector<std::vector<int>>>& branches_indx,
-                   std::vector<std::vector<std::vector<xvector<double>>>>& branches_kpts,
+                   std::vector<std::vector<std::vector<aurostd::xvector<double>>>>& branches_kpts,
                    std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>& branches_bnds);
-bool IBZextrema(xEIGENVAL& xeigenval, std::vector<xvector<double>>& vkpoint_eig, std::vector<std::vector<xvector<int>>>& branches);
+bool IBZextrema(xEIGENVAL& xeigenval, std::vector<aurostd::xvector<double>>& vkpoint_eig, std::vector<std::vector<aurostd::xvector<int>>>& branches);
 void CompareDoublesChar(bool& MATCH, double& number1, double& number2);
-void CompareEdges(std::vector<std::vector<xvector<int>>>& branches, std::vector<xvector<int>>& vertex_edges, xvector<int>& test_edge, bool& MATCH);
-void NaiveCurvatures(xvector<double>& eigvec, std::vector<xvector<double>>& posvec, std::vector<double>& curvature);
-double StencilLinear1D(std::vector<xvector<double>>& positions, xvector<double>& eigenvals);
+void CompareEdges(std::vector<std::vector<aurostd::xvector<int>>>& branches, std::vector<aurostd::xvector<int>>& vertex_edges, aurostd::xvector<int>& test_edge, bool& MATCH);
+void NaiveCurvatures(aurostd::xvector<double>& eigvec, std::vector<aurostd::xvector<double>>& posvec, std::vector<double>& curvature);
+double StencilLinear1D(std::vector<aurostd::xvector<double>>& positions, aurostd::xvector<double>& eigenvals);
 //-------------------------------------------------------------------------------------------------
 struct kEn_st {
-  xvector<double> kpoint;
+  aurostd::xvector<double> kpoint;
   double energy[2];
   int band_index;
   int band_type; // 0 -- valence band; 1 -- conduction band
@@ -1465,7 +1424,7 @@ bool comparison_kEn_str_position(const kEn_st& k1, const kEn_st& k2);
 bool comparison_kEn_str_band_type_up(const kEn_st& k1, const kEn_st& k2);
 bool comparison_kEn_str_band_type_dn(const kEn_st& k1, const kEn_st& k2);
 bool is_equal_position_kEn_str(const kEn_st& k1, const kEn_st& k2);
-bool near_to(const xvector<double>& k1, const xvector<double>& k2, const std::vector<double>& max_distance);
+bool near_to(const aurostd::xvector<double>& k1, const aurostd::xvector<double>& k2, const std::vector<double>& max_distance);
 namespace aurostd {
   class JSONwriter; // forward-declaration of JSONwriter class: later in plotter
   // namespace JSONwriter class defined in aurostd.h is not visible; dependencies race?
@@ -1473,203 +1432,196 @@ namespace aurostd {
 //-------------------------------------------------------------------------------------------------
 // ME20190614 - plotter functions
 namespace plotter {
-  using aurostd::xoption;
-  using std::cout;
-  using std::deque;
-  using std::ofstream;
-  using std::ostream;
-  using std::string;
-  using std::stringstream;
-  using std::vector;
   // Plot setup --------------------------------------------------------------
   // Plot options
-  aurostd::xoption getPlotOptions(const aurostd::xoption&, const string&, bool = false);
-  aurostd::xoption getPlotOptionsEStructure(const aurostd::xoption&, const string&, bool = false);
-  aurostd::xoption getPlotOptionsPhonons(const aurostd::xoption&, const string&);
-  aurostd::xoption getPlotOptionsQHAthermo(const aurostd::xoption& xopt, const string& key); // AS20210705
+  aurostd::xoption getPlotOptions(const aurostd::xoption&, const std::string&, bool = false);
+  aurostd::xoption getPlotOptionsEStructure(const aurostd::xoption&, const std::string&, bool = false);
+  aurostd::xoption getPlotOptionsPhonons(const aurostd::xoption&, const std::string&);
+  aurostd::xoption getPlotOptionsQHAthermo(const aurostd::xoption& xopt, const std::string& key); // AS20210705
 
   // Plot functions
-  void generateHeader(stringstream&, const aurostd::xoption&, bool = false);
-  void savePlotGNUPLOT(const aurostd::xoption&, const stringstream&);
-  void setFileName(aurostd::xoption&, string = "");
-  void setTitle(aurostd::xoption&, ostream& oss = cout); // CO20200404
-  void setTitle(aurostd::xoption&, ofstream& FileMESSAGE, ostream& oss = cout); // CO20200404
-  string formatDefaultPlotTitle(const aurostd::xoption&, ostream& oss = cout); // CO20200404
-  string formatDefaultPlotTitle(const aurostd::xoption&, ofstream& FileMESSAGE, ostream& oss = cout); // CO20200404
-  vector<double> getCompositionFromHTQCPrototype(const string&, const string&); // ME20190813
-  vector<double> getCompositionFromANRLPrototype(const string&);
-  string formatDefaultTitlePOCC(const aurostd::xoption&, ostream& oss = cout); // CO20200404
-  string formatDefaultTitlePOCC(const aurostd::xoption&, ofstream& FileMESSAGE, ostream& oss = cout); // CO20200404
-  vector<double> getCompositionFromPoccString(const string&, bool&);
+  void generateHeader(std::stringstream&, const aurostd::xoption&, bool = false);
+  void savePlotGNUPLOT(const aurostd::xoption&, const std::stringstream&);
+  void setFileName(aurostd::xoption&, std::string = "");
+  void setTitle(aurostd::xoption&, std::ostream& oss = std::cout); // CO20200404
+  void setTitle(aurostd::xoption&, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20200404
+  std::string formatDefaultPlotTitle(const aurostd::xoption&, std::ostream& oss = std::cout); // CO20200404
+  std::string formatDefaultPlotTitle(const aurostd::xoption&, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20200404
+  std::vector<double> getCompositionFromHTQCPrototype(const std::string&, const std::string&); // ME20190813
+  std::vector<double> getCompositionFromANRLPrototype(const std::string&);
+  std::string formatDefaultTitlePOCC(const aurostd::xoption&, std::ostream& oss = std::cout); // CO20200404
+  std::string formatDefaultTitlePOCC(const aurostd::xoption&, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20200404
+  std::vector<double> getCompositionFromPoccString(const std::string&, bool&);
 
   // Electronic structure ----------------------------------------------------
-  void patchDefaultTitleAFLOWIN(xoption& plotoptions); // CO20191110
+  void patchDefaultTitleAFLOWIN(aurostd::xoption& plotoptions); // CO20191110
   // Plot functions
-  void PLOT_DOS(aurostd::xoption&, ostream& oss = cout); // CO20200404
-  void PLOT_DOS(aurostd::xoption&, ofstream& FileMESSAGE, ostream& oss = cout); // CO20200404
-  void PLOT_DOS(aurostd::xoption&, const xDOSCAR&, ostream& oss = cout); // CO20191110 //CO20200404
-  void PLOT_DOS(aurostd::xoption&, const xDOSCAR&, ofstream& FileMESSAGE, ostream& oss = cout); // CO20191110 //CO20200404
-  void PLOT_DOS(aurostd::xoption&, stringstream&, ostream& oss = cout); // CO20200404
-  void PLOT_DOS(aurostd::xoption&, stringstream&, ofstream& FileMESSAGE, ostream& oss = cout); // CO20200404
-  void PLOT_DOS(aurostd::xoption&, stringstream&, const xDOSCAR&, ostream& oss = cout); // CO20191110  //CO20200404
-  void PLOT_DOS(aurostd::xoption&, stringstream&, const xDOSCAR&, ofstream& FileMESSAGE, ostream& oss = cout); // CO20191110  //CO20200404
+  void PLOT_DOS(aurostd::xoption&, std::ostream& oss = std::cout); // CO20200404
+  void PLOT_DOS(aurostd::xoption&, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20200404
+  void PLOT_DOS(aurostd::xoption&, const xDOSCAR&, std::ostream& oss = std::cout); // CO20191110 //CO20200404
+  void PLOT_DOS(aurostd::xoption&, const xDOSCAR&, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20191110 //CO20200404
+  void PLOT_DOS(aurostd::xoption&, std::stringstream&, std::ostream& oss = std::cout); // CO20200404
+  void PLOT_DOS(aurostd::xoption&, std::stringstream&, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20200404
+  void PLOT_DOS(aurostd::xoption&, std::stringstream&, const xDOSCAR&, std::ostream& oss = std::cout); // CO20191110  //CO20200404
+  void PLOT_DOS(aurostd::xoption&, std::stringstream&, const xDOSCAR&, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20191110  //CO20200404
 
-  void PLOT_PDOS(aurostd::xoption&, ostream& oss = cout); // CO20200404
-  void PLOT_PDOS(aurostd::xoption&, ofstream& FileMESSAGE, ostream& oss = cout); // CO20200404
-  void PLOT_PDOS(aurostd::xoption&, const xDOSCAR&, ostream& oss = cout); // CO20191110 //CO20200404
-  void PLOT_PDOS(aurostd::xoption&, const xDOSCAR&, ofstream& FileMESSAGE, ostream& oss = cout); // CO20191110 //CO20200404
-  void PLOT_PDOS(aurostd::xoption&, stringstream&, ostream& oss = cout); // CO20200404
-  void PLOT_PDOS(aurostd::xoption&, stringstream&, ofstream& FileMESSAGE, ostream& oss = cout); // CO20200404
-  void PLOT_PDOS(aurostd::xoption&, stringstream&, const xDOSCAR&, ostream& oss = cout); // CO20191110 //CO20200404
-  void PLOT_PDOS(aurostd::xoption&, stringstream&, const xDOSCAR&, ofstream& FileMESSAGE, ostream& oss = cout); // CO20191110 //CO20200404
+  void PLOT_PDOS(aurostd::xoption&, std::ostream& oss = std::cout); // CO20200404
+  void PLOT_PDOS(aurostd::xoption&, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20200404
+  void PLOT_PDOS(aurostd::xoption&, const xDOSCAR&, std::ostream& oss = std::cout); // CO20191110 //CO20200404
+  void PLOT_PDOS(aurostd::xoption&, const xDOSCAR&, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20191110 //CO20200404
+  void PLOT_PDOS(aurostd::xoption&, std::stringstream&, std::ostream& oss = std::cout); // CO20200404
+  void PLOT_PDOS(aurostd::xoption&, std::stringstream&, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20200404
+  void PLOT_PDOS(aurostd::xoption&, std::stringstream&, const xDOSCAR&, std::ostream& oss = std::cout); // CO20191110 //CO20200404
+  void PLOT_PDOS(aurostd::xoption&, std::stringstream&, const xDOSCAR&, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20191110 //CO20200404
 
-  void PLOT_BAND(aurostd::xoption&, ostream& oss = cout); // CO20200404
-  void PLOT_BAND(aurostd::xoption&, ofstream& FileMESSAGE, ostream& oss = cout); // CO20200404
-  void PLOT_BAND(aurostd::xoption&, stringstream&, ostream& oss = cout); // CO20200404
-  void PLOT_BAND(aurostd::xoption&, stringstream&, ofstream& FileMESSAGE, ostream& oss = cout); // CO20200404
-  void BANDDOS2JSON(ostream&, string);
-  void PLOT_BANDDOS(aurostd::xoption&, ostream& oss = cout); // CO20200404
-  void PLOT_BANDDOS(aurostd::xoption&, ofstream& FileMESSAGE, ostream& oss = cout); // CO20200404
-  void PLOT_BANDDOS(aurostd::xoption&, stringstream&, ostream& oss = cout); // CO20200404
-  void PLOT_BANDDOS(aurostd::xoption&, stringstream&, ofstream& FileMESSAGE, ostream& oss = cout); // CO20200404
+  void PLOT_BAND(aurostd::xoption&, std::ostream& oss = std::cout); // CO20200404
+  void PLOT_BAND(aurostd::xoption&, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20200404
+  void PLOT_BAND(aurostd::xoption&, std::stringstream&, std::ostream& oss = std::cout); // CO20200404
+  void PLOT_BAND(aurostd::xoption&, std::stringstream&, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20200404
+  void BANDDOS2JSON(std::ostream&, std::string);
+  void PLOT_BANDDOS(aurostd::xoption&, std::ostream& oss = std::cout); // CO20200404
+  void PLOT_BANDDOS(aurostd::xoption&, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20200404
+  void PLOT_BANDDOS(aurostd::xoption&, std::stringstream&, std::ostream& oss = std::cout); // CO20200404
+  void PLOT_BANDDOS(aurostd::xoption&, std::stringstream&, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20200404
 
   // Helper functions
-  xstructure getStructureWithNames(const aurostd::xoption&, const string& carstring = "CAR", ostream& oss = cout); // CO20191110 //CO20200404
-  xstructure getStructureWithNames(const aurostd::xoption&, ofstream& FileMESSAGE, const string& carstring = "CAR", ostream& oss = cout); // CO20191110 //CO20200404
-  string getLatticeFromKpointsTitle(const string&);
+  xstructure getStructureWithNames(const aurostd::xoption&, const std::string& carstring = "CAR", std::ostream& oss = std::cout); // CO20191110 //CO20200404
+  xstructure getStructureWithNames(const aurostd::xoption&, std::ofstream& FileMESSAGE, const std::string& carstring = "CAR", std::ostream& oss = std::cout); // CO20191110 //CO20200404
+  std::string getLatticeFromKpointsTitle(const std::string&);
   void shiftEfermiToZero(xEIGENVAL&, double);
   void setEMinMax(aurostd::xoption&, double, double);
-  aurostd::JSON::object DOS2JSON(xoption& xopt, const xDOSCAR& xdos, ofstream& FileMESSAGE,
-                                 ostream& oss); // AS20201102
-  aurostd::JSON::object bands2JSON(const xEIGENVAL& xeigen, const xKPOINTS& xkpts, const vector<double>& distances, const vector<double>& segment_points,
-                                   const xoption& plotoptions); // AS2021102
-  aurostd::JSON::object bandsDOS2JSON(const xDOSCAR& xdos, const xEIGENVAL& xeigen, const xKPOINTS& xkpts, xoption& xopt, ofstream& FileMESSAGE, ostream& oss = std::cout); // AS20201102  //ME20211014 - added default for oss
+  aurostd::JSON::object DOS2JSON(aurostd::xoption& xopt, const xDOSCAR& xdos, std::ofstream& FileMESSAGE,
+                                 std::ostream& oss); // AS20201102
+  aurostd::JSON::object bands2JSON(const xEIGENVAL& xeigen,
+                                   const xKPOINTS& xkpts,
+                                   const std::vector<double>& distances,
+                                   const std::vector<double>& segment_points,
+                                   const aurostd::xoption& plotoptions); // AS2021102
+  aurostd::JSON::object bandsDOS2JSON(const xDOSCAR& xdos, const xEIGENVAL& xeigen, const xKPOINTS& xkpts, aurostd::xoption& xopt, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // AS20201102  //ME20211014 - added default for oss
 
   // DOS
-  bool dosDataAvailable(const deque<deque<deque<deque<double>>>>& vdos, int pdos); // ME20200305
-  void generateDosPlot(stringstream&, const xDOSCAR&, aurostd::xoption&, ostream& oss = cout); // CO20200404
-  void generateDosPlot(stringstream&, const xDOSCAR&, aurostd::xoption&, ofstream& FileMESSAGE, ostream& oss = cout); // CO20200404
+  bool dosDataAvailable(const std::deque<std::deque<std::deque<std::deque<double>>>>& vdos, int pdos); // ME20200305
+  void generateDosPlot(std::stringstream&, const xDOSCAR&, aurostd::xoption&, std::ostream& oss = std::cout); // CO20200404
+  void generateDosPlot(std::stringstream&, const xDOSCAR&, aurostd::xoption&, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20200404
 
   // Bands
-  void generateBandPlot(stringstream&, const xEIGENVAL&, const xKPOINTS&, const xstructure&, const aurostd::xoption&);
-  void generateBandPlot(stringstream&, aurostd::JSON::object&, const xEIGENVAL&, const xKPOINTS&, const xstructure&, const aurostd::xoption&);
-  string convertKPointLabel(const string&, const string&);
-  string convertKPointLetter(string, const string&);
+  void generateBandPlot(std::stringstream&, const xEIGENVAL&, const xKPOINTS&, const xstructure&, const aurostd::xoption&);
+  void generateBandPlot(std::stringstream&, aurostd::JSON::object&, const xEIGENVAL&, const xKPOINTS&, const xstructure&, const aurostd::xoption&);
+  std::string convertKPointLabel(const std::string&, const std::string&);
+  std::string convertKPointLetter(std::string, const std::string&);
 
   // Gnuplot
-  void generateDosPlotGNUPLOT(stringstream&, const xDOSCAR&, const deque<double>&, const deque<deque<deque<double>>>&, const vector<string>&, const aurostd::xoption&);
-  double getDosLimits(const aurostd::xoption&, const xDOSCAR&, const deque<deque<deque<double>>>&, const deque<double>&);
-  void generateBandPlotGNUPLOT(stringstream&, const xEIGENVAL&, const vector<double>&, const vector<double>&, const vector<string>&, const aurostd::xoption&);
-  string getFormattedUnit(const string&);
+  void generateDosPlotGNUPLOT(std::stringstream&, const xDOSCAR&, const std::deque<double>&, const std::deque<std::deque<std::deque<double>>>&, const std::vector<std::string>&, const aurostd::xoption&);
+  double getDosLimits(const aurostd::xoption&, const xDOSCAR&, const std::deque<std::deque<std::deque<double>>>&, const std::deque<double>&);
+  void generateBandPlotGNUPLOT(std::stringstream&, const xEIGENVAL&, const std::vector<double>&, const std::vector<double>&, const std::vector<std::string>&, const aurostd::xoption&);
+  std::string getFormattedUnit(const std::string&);
 
   // Phonons -----------------------------------------------------------------
-  void PLOT_PHDOS(aurostd::xoption&, ostream& oss = cout); // CO20200404
-  void PLOT_PHDOS(aurostd::xoption&, ofstream& FileMESSAGE, ostream& oss = cout); // CO20200404
-  void PLOT_PHDOS(aurostd::xoption&, stringstream&, ostream& oss = cout); // CO20200404
-  void PLOT_PHDOS(aurostd::xoption&, stringstream&, ofstream& FileMESSAGE, ostream& oss = cout); // CO20200404
-  void PLOT_PHDOS(aurostd::xoption&, const xDOSCAR&, ostream& oss = cout); // ME20210927
-  void PLOT_PHDOS(aurostd::xoption&, const xDOSCAR&, ofstream& FileMESSAGE, ostream& oss = cout); // ME20210927
-  void PLOT_PHDOS(aurostd::xoption&, stringstream& out, xDOSCAR, ofstream& FileMESSAGE, ostream& oss = cout); // ME20210927
+  void PLOT_PHDOS(aurostd::xoption&, std::ostream& oss = std::cout); // CO20200404
+  void PLOT_PHDOS(aurostd::xoption&, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20200404
+  void PLOT_PHDOS(aurostd::xoption&, std::stringstream&, std::ostream& oss = std::cout); // CO20200404
+  void PLOT_PHDOS(aurostd::xoption&, std::stringstream&, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20200404
+  void PLOT_PHDOS(aurostd::xoption&, const xDOSCAR&, std::ostream& oss = std::cout); // ME20210927
+  void PLOT_PHDOS(aurostd::xoption&, const xDOSCAR&, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // ME20210927
+  void PLOT_PHDOS(aurostd::xoption&, std::stringstream& out, xDOSCAR, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // ME20210927
 
-  void PLOT_PHDISP(aurostd::xoption&, ostream& oss = cout); // CO20200404
-  void PLOT_PHDISP(aurostd::xoption&, ofstream& FileMESSAGE, ostream& oss = cout); // CO20200404
-  void PLOT_PHDISP(aurostd::xoption&, stringstream&, ofstream& FileMESSAGE, ostream& oss = cout); // CO20200404
-  void PLOT_PHDISPDOS(aurostd::xoption&, ostream& oss = cout); // CO20200404
-  void PLOT_PHDISPDOS(aurostd::xoption&, ofstream& FileMESSAGE, ostream& oss = cout); // CO20200404
-  void PLOT_PHDISPDOS(aurostd::xoption&, stringstream&, ostream& oss = cout); // CO20204004
-  void PLOT_PHDISPDOS(aurostd::xoption&, stringstream&, ofstream& FileMESSAGE, ostream& oss = cout); // CO20204004
+  void PLOT_PHDISP(aurostd::xoption&, std::ostream& oss = std::cout); // CO20200404
+  void PLOT_PHDISP(aurostd::xoption&, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20200404
+  void PLOT_PHDISP(aurostd::xoption&, std::stringstream&, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20200404
+  void PLOT_PHDISPDOS(aurostd::xoption&, std::ostream& oss = std::cout); // CO20200404
+  void PLOT_PHDISPDOS(aurostd::xoption&, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20200404
+  void PLOT_PHDISPDOS(aurostd::xoption&, std::stringstream&, std::ostream& oss = std::cout); // CO20204004
+  void PLOT_PHDISPDOS(aurostd::xoption&, std::stringstream&, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20204004
 
-  void convertEnergies(xEIGENVAL&, const string&);
-  void convertEnergies(xDOSCAR&, const string&);
-  double getEnergyConversionFactor(const string&);
+  void convertEnergies(xEIGENVAL&, const std::string&);
+  void convertEnergies(xDOSCAR&, const std::string&);
+  double getEnergyConversionFactor(const std::string&);
 
   // Properties plotter ------------------------------------------------------
-  void PLOT_THERMO(aurostd::xoption&, ostream& oss = cout); // CO20200404
-  void PLOT_THERMO(aurostd::xoption&, ofstream& FileMESSAGE, ostream& oss = cout); // CO20200404
-  void PLOT_THERMO(aurostd::xoption&, stringstream&, ostream& oss = cout); // CO20200404
-  void PLOT_THERMO(aurostd::xoption&, stringstream&, ofstream& FileMESSAGE, ostream& oss = cout); // CO20200404
-  void PLOT_TCOND(aurostd::xoption&, ostream& oss = cout); // CO20200404
-  void PLOT_TCOND(aurostd::xoption&, ofstream& FileMESSAGE, ostream& oss = cout); // CO20200404
-  void PLOT_TCOND(aurostd::xoption&, stringstream&, ostream& oss = cout); // CO20200404
-  void PLOT_TCOND(aurostd::xoption&, stringstream&, ofstream& FileMESSAGE, ostream& oss = cout); // CO20200404
+  void PLOT_THERMO(aurostd::xoption&, std::ostream& oss = std::cout); // CO20200404
+  void PLOT_THERMO(aurostd::xoption&, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20200404
+  void PLOT_THERMO(aurostd::xoption&, std::stringstream&, std::ostream& oss = std::cout); // CO20200404
+  void PLOT_THERMO(aurostd::xoption&, std::stringstream&, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20200404
+  void PLOT_TCOND(aurostd::xoption&, std::ostream& oss = std::cout); // CO20200404
+  void PLOT_TCOND(aurostd::xoption&, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20200404
+  void PLOT_TCOND(aurostd::xoption&, std::stringstream&, std::ostream& oss = std::cout); // CO20200404
+  void PLOT_TCOND(aurostd::xoption&, std::stringstream&, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20200404
 
   // QHA properties plotter -------------------------------------------------
-  void PLOT_THERMO_QHA(aurostd::xoption&, ostream& oss = cout); // AS20200909
-  void PLOT_THERMO_QHA(aurostd::xoption&, ofstream& FileMESSAGE, ostream& oss = cout); // AS20200909
-  void PLOT_THERMO_QHA(aurostd::xoption&, stringstream&, ostream& oss = cout); // AS20200909
-  void PLOT_THERMO_QHA(aurostd::xoption&, stringstream&, ofstream& FileMESSAGE, ostream& oss = cout); // AS20200909
-  void PLOT_GRUENEISEN_DISPERSION(aurostd::xoption&, ostream& oss = cout); // AS20210701
-  void PLOT_GRUENEISEN_DISPERSION(aurostd::xoption&, ofstream& FileMESSAGE, ostream& oss = cout); // AS20210701
-  void PLOT_GRUENEISEN_DISPERSION(aurostd::xoption&, stringstream&, ostream& oss = cout); // AS20210701
-  void PLOT_GRUENEISEN_DISPERSION(aurostd::xoption&, stringstream&, ofstream& FileMESSAGE, ostream& oss = cout); // AS20210701
+  void PLOT_THERMO_QHA(aurostd::xoption&, std::ostream& oss = std::cout); // AS20200909
+  void PLOT_THERMO_QHA(aurostd::xoption&, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // AS20200909
+  void PLOT_THERMO_QHA(aurostd::xoption&, std::stringstream&, std::ostream& oss = std::cout); // AS20200909
+  void PLOT_THERMO_QHA(aurostd::xoption&, std::stringstream&, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // AS20200909
+  void PLOT_GRUENEISEN_DISPERSION(aurostd::xoption&, std::ostream& oss = std::cout); // AS20210701
+  void PLOT_GRUENEISEN_DISPERSION(aurostd::xoption&, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // AS20210701
+  void PLOT_GRUENEISEN_DISPERSION(aurostd::xoption&, std::stringstream&, std::ostream& oss = std::cout); // AS20210701
+  void PLOT_GRUENEISEN_DISPERSION(aurostd::xoption&, std::stringstream&, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // AS20210701
 
   // General plots -----------------------------------------------------------
-  void plotSingleFromSet(xoption&, stringstream&, const vector<vector<double>>&, int, ostream& oss = cout); // CO20200404
-  void plotSingleFromSet(xoption&, stringstream&, const vector<vector<double>>&, int, ofstream& FileMESSAGE, ostream& oss = cout); // CO20200404
-  void plotMatrix(xoption& plotoptions, stringstream&, ostream& oss = cout); // CO20200404
-  void plotMatrix(xoption& plotoptions, stringstream&, ofstream& FileMESSAGE, ostream& oss = cout); // CO20200404
-  void setPlotLabels(aurostd::xoption&, const string&, const string&, const string&, const string&);
-  vector<vector<double>> readAflowDataFile(aurostd::xoption&);
-  void generatePlotGNUPLOT(stringstream&, const xoption&, const vector<vector<double>>&);
+  void plotSingleFromSet(aurostd::xoption&, std::stringstream&, const std::vector<std::vector<double>>&, int, std::ostream& oss = std::cout); // CO20200404
+  void plotSingleFromSet(aurostd::xoption&, std::stringstream&, const std::vector<std::vector<double>>&, int, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20200404
+  void plotMatrix(aurostd::xoption& plotoptions, std::stringstream&, std::ostream& oss = std::cout); // CO20200404
+  void plotMatrix(aurostd::xoption& plotoptions, std::stringstream&, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20200404
+  void setPlotLabels(aurostd::xoption&, const std::string&, const std::string&, const std::string&, const std::string&);
+  std::vector<std::vector<double>> readAflowDataFile(aurostd::xoption&);
+  void generatePlotGNUPLOT(std::stringstream&, const aurostd::xoption&, const std::vector<std::vector<double>>&);
 } // namespace plotter
 
 //-------------------------------------------------------------------------------------------------
 // aflow_estructure_dos.cpp
 
 namespace estructure {
-  using aurostd::xoption;
-  using std::cout;
-  using std::ofstream;
-  using std::ostream;
-  using std::string;
-  using std::stringstream;
-  using std::vector;
-  string PEDOS_GENERATE_GNUPLOTSCRIPT(const string&, const string&, const double&, const double&, const double&, const double&, const int&, const vector<vector<vector<double>>>&, const string&);
-  bool isSpecialKPOINT(string kpoint); // CO20170830
-  string fixSpecialKPOINT_GNUPLOT(string kpoint, bool json = false); // CO20170830
-  string fixSpecialKPOINT_HTML(string kpoint); // CO20170830
-  string fixSpecialKPOINT_LATEX(string kpoint); // CO20170830
-  string fixKPOINT_GNUPLOT(string kpoint, bool json = false); // CO20170830
-  string fixKPOINT_HTML(string kpoint); // CO20170830
-  string fixKPOINT_LATEX(string kpoint); // CO20170830
-  string fixKPOINT_SPECIALONLY(string kpoint); // CO20170830
-  void PLOT_BANDDOS(string options);
-  void PLOT_BAND(string options);
-  void PLOT_DOS(string options);
-  void PLOT_PEDOS(string options);
-  void PLOT_PEDOSALL(string options);
-  void PLOT_PEDOSALL_AFLOWLIB(string options, _aflags& aflags);
-  void PLOT_BAND2(string options);
-  void PLOT_BAND_SPINSPLIT(string options);
-  void PLOT_DOSWEB(string options);
+  std::string PEDOS_GENERATE_GNUPLOTSCRIPT(const std::string&, const std::string&, const double&, const double&, const double&, const double&, const int&, const std::vector<std::vector<std::vector<double>>>&, const std::string&);
+  bool isSpecialKPOINT(std::string kpoint); // CO20170830
+  std::string fixSpecialKPOINT_GNUPLOT(std::string kpoint, bool json = false); // CO20170830
+  std::string fixSpecialKPOINT_HTML(std::string kpoint); // CO20170830
+  std::string fixSpecialKPOINT_LATEX(std::string kpoint); // CO20170830
+  std::string fixKPOINT_GNUPLOT(std::string kpoint, bool json = false); // CO20170830
+  std::string fixKPOINT_HTML(std::string kpoint); // CO20170830
+  std::string fixKPOINT_LATEX(std::string kpoint); // CO20170830
+  std::string fixKPOINT_SPECIALONLY(std::string kpoint); // CO20170830
+  void PLOT_BANDDOS(std::string options);
+  void PLOT_BAND(std::string options);
+  void PLOT_DOS(std::string options);
+  void PLOT_PEDOS(std::string options);
+  void PLOT_PEDOSALL(std::string options);
+  void PLOT_PEDOSALL_AFLOWLIB(std::string options, _aflags& aflags);
+  void PLOT_BAND2(std::string options);
+  void PLOT_BAND_SPINSPLIT(std::string options);
+  void PLOT_DOSWEB(std::string options);
   // manipulation
-  string changeICSDNameGunplot(string ICSDName);
-  void CombineTDOSAndTOTALPDOS(const vector<vector<double>>& TDOS, const vector<vector<double>>& TOTALPDOS, vector<vector<double>>& vvDOS);
-  double GET_TDOSDATA(const string& str_dir, vector<vector<double>>& TDOS);
-  double GET_TDOSDATA(stringstream& ss_dosfile, stringstream& ss_outcarfile, vector<vector<double>>& TDOS);
-  double GET_TOTALPDOSDATA(const string& str_dir, vector<vector<double>>& TOTALPDOS);
-  double GET_TOTALPDOSDATA(stringstream& ss_dosfile, stringstream& ss_outfile, vector<vector<double>>& TOTALPDOS);
-  double GET_PDOSDATA(const string& str_dir, vector<vector<vector<double>>>& PDOS);
-  double GET_PDOSDATA(stringstream& ss_dosfile, stringstream& ss_outfile, vector<vector<vector<double>>>& PDOS);
-  bool GET_DOS_DATA(stringstream& ss_dosfile, stringstream& ss_outfile, double& Efermi, vector<vector<double>>& TDOS, vector<vector<double>>& TOTALPDOS); // CO20180216
-  bool GET_DOS_DATA(const string& str_dir, double& Efermi, vector<vector<double>>& TDOS, vector<vector<double>>& TOTALPDOS, vector<vector<vector<double>>>& PDOS); // CO20180216
-  bool GET_DOS_DATA(stringstream& ss_dosfile, stringstream& ss_outfile, double& Efermi, vector<vector<double>>& TDOS, vector<vector<double>>& TOTALPDOS, vector<vector<vector<double>>>& PDOS); // CO20180216
-  void FormatSpinofPDOS(vector<vector<vector<double>>>& vvva);
+  std::string changeICSDNameGunplot(std::string ICSDName);
+  void CombineTDOSAndTOTALPDOS(const std::vector<std::vector<double>>& TDOS, const std::vector<std::vector<double>>& TOTALPDOS, std::vector<std::vector<double>>& vvDOS);
+  double GET_TDOSDATA(const std::string& str_dir, std::vector<std::vector<double>>& TDOS);
+  double GET_TDOSDATA(std::stringstream& ss_dosfile, std::stringstream& ss_outcarfile, std::vector<std::vector<double>>& TDOS);
+  double GET_TOTALPDOSDATA(const std::string& str_dir, std::vector<std::vector<double>>& TOTALPDOS);
+  double GET_TOTALPDOSDATA(std::stringstream& ss_dosfile, std::stringstream& ss_outfile, std::vector<std::vector<double>>& TOTALPDOS);
+  double GET_PDOSDATA(const std::string& str_dir, std::vector<std::vector<std::vector<double>>>& PDOS);
+  double GET_PDOSDATA(std::stringstream& ss_dosfile, std::stringstream& ss_outfile, std::vector<std::vector<std::vector<double>>>& PDOS);
+  bool GET_DOS_DATA(std::stringstream& ss_dosfile, std::stringstream& ss_outfile, double& Efermi, std::vector<std::vector<double>>& TDOS, std::vector<std::vector<double>>& TOTALPDOS); // CO20180216
+  bool GET_DOS_DATA(const std::string& str_dir, double& Efermi, std::vector<std::vector<double>>& TDOS, std::vector<std::vector<double>>& TOTALPDOS, std::vector<std::vector<std::vector<double>>>& PDOS); // CO20180216
+  bool GET_DOS_DATA(std::stringstream& ss_dosfile,
+                    std::stringstream& ss_outfile,
+                    double& Efermi,
+                    std::vector<std::vector<double>>& TDOS,
+                    std::vector<std::vector<double>>& TOTALPDOS,
+                    std::vector<std::vector<std::vector<double>>>& PDOS); // CO20180216
+  void FormatSpinofPDOS(std::vector<std::vector<std::vector<double>>>& vvva);
 
   // Functions for serializing bands data to JSON
   // Added by EG
-  bool DOSDATA_JSON(xoption& vpflow, ostream& oss = cout);
-  bool DOSDATA_JSON(xoption& vpflow, string directory, stringstream& json, bool wrapping_brackets = true);
-  bool BANDSDATA_JSON(xoption& vpflow, ostream& oss = cout);
-  bool BANDSDATA_JSON(xoption& vpflow, string directory, stringstream& json, bool wrapping_brackets = true);
-  // uint DOSDATA_JSON(string options);
-  // uint DOSDATA_JSON(string options, ostream& json);
-  // uint BANDSDATA_JSON(string options);
-  // uint BANDSDATA_JSON(string options, string json_dir);
-  // uint BANDSDATA_JSON(string options, ostream& json);
-  string linelabel2HTML(string linelabel);
-  uint inequivalentAtomsJSON(vector<vector<vector<double>>>& PDOS, vector<int>& iatoms, vector<double>& numbers, vector<string>& vspecies, ostream& json);
-  uint constructInequivalentAtomPDOSJSON(vector<vector<vector<double>>>& PDOS, int iatom, ostream& json);
+  bool DOSDATA_JSON(aurostd::xoption& vpflow, std::ostream& oss = std::cout);
+  bool DOSDATA_JSON(aurostd::xoption& vpflow, std::string directory, std::stringstream& json, bool wrapping_brackets = true);
+  bool BANDSDATA_JSON(aurostd::xoption& vpflow, std::ostream& oss = std::cout);
+  bool BANDSDATA_JSON(aurostd::xoption& vpflow, std::string directory, std::stringstream& json, bool wrapping_brackets = true);
+  // uint DOSDATA_JSON(std::string options);
+  // uint DOSDATA_JSON(std::string options, std::ostream& json);
+  // uint BANDSDATA_JSON(std::string options);
+  // uint BANDSDATA_JSON(std::string options, std::string json_dir);
+  // uint BANDSDATA_JSON(std::string options, std::ostream& json);
+  std::string linelabel2HTML(std::string linelabel);
+  uint inequivalentAtomsJSON(std::vector<std::vector<std::vector<double>>>& PDOS, std::vector<int>& iatoms, std::vector<double>& numbers, std::vector<std::string>& vspecies, std::ostream& json);
+  uint constructInequivalentAtomPDOSJSON(std::vector<std::vector<std::vector<double>>>& PDOS, int iatom, std::ostream& json);
   // End of bands data JSON serializers
 
 } // namespace estructure
@@ -1680,33 +1632,32 @@ namespace estructure {
 
 // aflow_poccupation_params.cpp
 namespace pocc {
-  using std::string;
   bool poccInput(); // CO20170805
 
-  string ReturnAtomSpecies(string atom);
-  string ReturnAtomSpeciesPotential(string atom);
-  string ReturnUFFParameters(string atom);
+  std::string ReturnAtomSpecies(std::string atom);
+  std::string ReturnAtomSpeciesPotential(std::string atom);
+  std::string ReturnUFFParameters(std::string atom);
   class UFFPara {
   public:
     UFFPara(); // constructor
     ~UFFPara(); // destructor
-    string symbol;
+    std::string symbol;
     double r1, theta0, x1, D1, zeta, Z1, Vi, Uj, Xi, hard, radius;
-    void GetUFFParameters(string);
+    void GetUFFParameters(std::string);
 
   private:
     void free(); // free space
   };
-  string ReturnAtomProperties(string atom);
+  std::string ReturnAtomProperties(std::string atom);
   // Atomic Properties Database
   class Atom {
   public:
     Atom();
     ~Atom();
-    string name, symbol;
+    std::string name, symbol;
     int number; // atomic number
     double mass, radius, Xi; // atomic, weight radius /pauling electronegativity
-    void GetAtomicProperties(string);
+    void GetAtomicProperties(std::string);
 
   private:
     void free();
@@ -1793,47 +1744,40 @@ namespace KBIN {
 xstructure PutInCell(const xstructure& a); // Bring all atoms in the cell (will be moved to external function)
 xstructure PutInCompact(const xstructure& a); // Bring all atoms in a compact shape (will be moved to external function)
 xstructure GetPrim(const xstructure& a);
-bool IsTranslationFVector(const xstructure& a, const xvector<double>& ftvec);
-bool IsTranslationCVector(const xstructure& a, const xvector<double>& ctvec);
-xvector<double> GetMom1(const xstructure& a); // get moment_1 position of the atoms
-xstructure SetMom1(const xstructure& a, const xvector<double>& mom1_in); // set moment_1 position of atoms
-xvector<double> AtomCDisp(const _atom& at1, const _atom& at2);
+bool IsTranslationFVector(const xstructure& a, const aurostd::xvector<double>& ftvec);
+bool IsTranslationCVector(const xstructure& a, const aurostd::xvector<double>& ctvec);
+aurostd::xvector<double> GetMom1(const xstructure& a); // get moment_1 position of the atoms
+xstructure SetMom1(const xstructure& a, const aurostd::xvector<double>& mom1_in); // set moment_1 position of atoms
+aurostd::xvector<double> AtomCDisp(const _atom& at1, const _atom& at2);
 double AtomDist(const xstructure& str, const _atom& atom1, const _atom& atom2); // with structure
 double AtomDist(const _atom& at1, const _atom& at2); // without structure
-xvector<double> GetCDispFromOrigin(const _atom& atom);
+aurostd::xvector<double> GetCDispFromOrigin(const _atom& atom);
 double GetDistFromOrigin(const _atom& atom);
-// void GetUnitCellRep(const xvector<double>& ppos,xvector<double>& p_cell0,xvector<int>& ijk,const xmatrix<double>& lattice,const bool coord_flag);
-_atom ConvertAtomToLat(const _atom& in_at, const xmatrix<double>& lattice);
+_atom ConvertAtomToLat(const _atom& in_at, const aurostd::xmatrix<double>& lattice);
 double GetXrayScattFactor(const std::string& name, double lambda = XRAY_RADIATION_COPPER_Kalpha, bool clean = true); // CO20190322
-xmatrix<double> RecipLat(const xmatrix<double>& lat);
+aurostd::xmatrix<double> RecipLat(const aurostd::xmatrix<double>& lat);
 double Normal(const double& x, const double& mu, const double& sigma);
-xstructure SetLat(const xstructure& a, const xmatrix<double>& in_lat);
-xmatrix<double> GetLat(const xstructure& a);
+xstructure SetLat(const xstructure& a, const aurostd::xmatrix<double>& in_lat);
+aurostd::xmatrix<double> GetLat(const xstructure& a);
 
 namespace pflow {
-  using aurostd::xoption;
-  using std::deque;
-  using std::ofstream;
-  using std::ostream;
-  using std::string;
-  using std::vector;
-  double GetVol(const xmatrix<double>& lat);
+  double GetVol(const aurostd::xmatrix<double>& lat);
   double GetVol(const aurostd::matrix<double>& lat); // CO20200404 pflow::matrix()->aurostd::matrix()
-  double GetSignedVol(const xmatrix<double>& lat);
+  double GetSignedVol(const aurostd::xmatrix<double>& lat);
   double GetSignedVol(const aurostd::matrix<double>& lat); // CO20200404 pflow::matrix()->aurostd::matrix()
-  xmatrix<double> RecipLat(const xmatrix<double>& lat);
+  aurostd::xmatrix<double> RecipLat(const aurostd::xmatrix<double>& lat);
   aurostd::matrix<double> RecipLat(const aurostd::matrix<double>& lat); // CO20200404 pflow::matrix()->aurostd::matrix()
-  _atom SetCpos(const _atom& a, const vector<double>& in_cpos);
-  _atom SetFpos(const _atom& a, const vector<double>& in_fpos);
-  vector<double> vecF2C(const aurostd::matrix<double>& lat, const vector<double>& vf); // CO20200404 pflow::matrix()->aurostd::matrix()
-  vector<double> vecC2F(const aurostd::matrix<double>& lat, const vector<double>& vc); // CO20200404 pflow::matrix()->aurostd::matrix()
-  _atom SetName(const _atom& a, const string& in_name);
+  _atom SetCpos(const _atom& a, const std::vector<double>& in_cpos);
+  _atom SetFpos(const _atom& a, const std::vector<double>& in_fpos);
+  std::vector<double> vecF2C(const aurostd::matrix<double>& lat, const std::vector<double>& vf); // CO20200404 pflow::matrix()->aurostd::matrix()
+  std::vector<double> vecC2F(const aurostd::matrix<double>& lat, const std::vector<double>& vc); // CO20200404 pflow::matrix()->aurostd::matrix()
+  _atom SetName(const _atom& a, const std::string& in_name);
   _atom SetType(const _atom& a, const int in_type);
   _atom SetNum(const _atom& a, const int in_num);
-  // [RF20200415 - duplicate from xatom]vector<int> GetTypes(const xstructure& a);
-  // [RF20200415 - duplicate from xatom]vector<string> GetNames(const xstructure& a);
-  // [RF20200415 - duplicate from xatom]vector<string> GetCleanNames(const xstructure& a);
-  // [RF20200415 - duplicate from xatom]vector<double> GetSpins(const xstructure& a);
+  // [RF20200415 - duplicate from xatom]std::vector<int> GetTypes(const xstructure& a);
+  // [RF20200415 - duplicate from xatom]std::vector<std::string> GetNames(const xstructure& a);
+  // [RF20200415 - duplicate from xatom]std::vector<std::string> GetCleanNames(const xstructure& a);
+  // [RF20200415 - duplicate from xatom]std::vector<double> GetSpins(const xstructure& a);
   aurostd::matrix<double> GetFpos(const xstructure& str); // CO20200404 pflow::matrix()->aurostd::matrix()
   aurostd::matrix<double> GetCpos(const xstructure& str); // CO20200404 pflow::matrix()->aurostd::matrix()
   xstructure SetLat(const xstructure& a, const aurostd::matrix<double>& in_lat); // CO20200404 pflow::matrix()->aurostd::matrix()
@@ -1842,86 +1786,83 @@ namespace pflow {
   aurostd::matrix<double> GetScaledLat(const xstructure& a); // CO20200404 pflow::matrix()->aurostd::matrix()
   xstructure AddAllAtomPos(const xstructure& a, const aurostd::matrix<double>& in_pos, const int in_coord_flag); // CO20200404 pflow::matrix()->aurostd::matrix()
   xstructure SetAllAtomPos(const xstructure& a, const aurostd::matrix<double>& in_pos, const int in_coord_flag); // CO20200404 pflow::matrix()->aurostd::matrix()
-  xstructure SetAllAtomNames(const xstructure& a, const vector<string>& in_names);
-  xstructure SetNamesWereGiven(const xstructure& a, const vector<int>& in_names_were_given);
-  xstructure SetOrigin(const xstructure& a, const vector<double>& in_origin);
-  xstructure SetOrigin(const xstructure& a, const xvector<double>& in_origin);
-  bool VVequal(const vector<double>& a, const vector<double>& b);
-  bool VVequal(const vector<int>& a, const vector<int>& b);
-  bool VVequal(const deque<double>& a, const deque<double>& b);
-  bool VVequal(const deque<int>& a, const deque<int>& b);
-  vector<double> SmoothFunc(const vector<double>& func, const double& sigma);
+  xstructure SetAllAtomNames(const xstructure& a, const std::vector<std::string>& in_names);
+  xstructure SetNamesWereGiven(const xstructure& a, const std::vector<int>& in_names_were_given);
+  xstructure SetOrigin(const xstructure& a, const std::vector<double>& in_origin);
+  xstructure SetOrigin(const xstructure& a, const aurostd::xvector<double>& in_origin);
+  bool VVequal(const std::vector<double>& a, const std::vector<double>& b);
+  bool VVequal(const std::vector<int>& a, const std::vector<int>& b);
+  bool VVequal(const std::deque<double>& a, const std::deque<double>& b);
+  bool VVequal(const std::deque<int>& a, const std::deque<int>& b);
+  std::vector<double> SmoothFunc(const std::vector<double>& func, const double& sigma);
   void VVset(aurostd::matrix<double>& mat, const double& value); // CO20200404 pflow::matrix()->aurostd::matrix()
-  void VVset(vector<vector<int>>& mat, const int& value);
-  double norm(const vector<double>& v);
-  double getcos(const vector<double>& a, const vector<double>& b);
+  void VVset(std::vector<std::vector<int>>& mat, const int& value);
+  double norm(const std::vector<double>& v);
+  double getcos(const std::vector<double>& a, const std::vector<double>& b);
   //  vector<double> Getabc_angles(const aurostd::matrix<double>& lat);   // confuses namespace  //CO20200404 pflow::matrix()->aurostd::matrix()
-  vector<double> Sort_abc_angles(const vector<double>& abc_angles);
-  void Vout(const vector<double>& a, ostream& out);
-  void Vout(const vector<int>& a, ostream& out);
-  void Vout(const vector<string>& a, ostream& out);
-  void Mout(const aurostd::matrix<double>& m, ostream& out); // CO20200404 pflow::matrix()->aurostd::matrix()
-  void Mout(const vector<vector<double>>& m, ostream& out);
-  vector<double> SVprod(const double& s, const vector<double>& b);
-  vector<int> SVprod(const int& s, const vector<int>& b);
-  vector<double> VVsum(const vector<double>& a, const vector<double>& b);
-  vector<double> VVsum(const vector<double>& a, const vector<int>& b);
-  vector<double> VVdiff(const vector<double>& a, const vector<double>& b);
-  double VVprod(const vector<double>& a, const vector<double>& b);
-  double VVprod(const vector<double>& a, const vector<int>& b);
+  std::vector<double> Sort_abc_angles(const std::vector<double>& abc_angles);
+  void Vout(const std::vector<double>& a, std::ostream& out);
+  void Vout(const std::vector<int>& a, std::ostream& out);
+  void Vout(const std::vector<std::string>& a, std::ostream& out);
+  void Mout(const aurostd::matrix<double>& m, std::ostream& out); // CO20200404 pflow::matrix()->aurostd::matrix()
+  void Mout(const std::vector<std::vector<double>>& m, std::ostream& out);
+  std::vector<double> SVprod(const double& s, const std::vector<double>& b);
+  std::vector<int> SVprod(const int& s, const std::vector<int>& b);
+  std::vector<double> VVsum(const std::vector<double>& a, const std::vector<double>& b);
+  std::vector<double> VVsum(const std::vector<double>& a, const std::vector<int>& b);
+  std::vector<double> VVdiff(const std::vector<double>& a, const std::vector<double>& b);
+  double VVprod(const std::vector<double>& a, const std::vector<double>& b);
+  double VVprod(const std::vector<double>& a, const std::vector<int>& b);
   aurostd::matrix<double> MMmult(const aurostd::matrix<double>& a, const aurostd::matrix<double>& b); // CO20200404 pflow::matrix()->aurostd::matrix()
-  vector<double> MVmult(const aurostd::matrix<double>& A, const vector<double>& v); // CO20200404 pflow::matrix()->aurostd::matrix()
-  vector<double> VMmult(const vector<double>& v, const aurostd::matrix<double>& A); // CO20200404 pflow::matrix()->aurostd::matrix()
-  vector<double> VMmult(const vector<int>& v, const aurostd::matrix<double>& A); // CO20200404 pflow::matrix()->aurostd::matrix()
-  vector<double> VVcross(const vector<double>& a, const vector<double>& b);
-  double VVdot(const vector<double>& a, const vector<double>& b);
+  std::vector<double> MVmult(const aurostd::matrix<double>& A, const std::vector<double>& v); // CO20200404 pflow::matrix()->aurostd::matrix()
+  std::vector<double> VMmult(const std::vector<double>& v, const aurostd::matrix<double>& A); // CO20200404 pflow::matrix()->aurostd::matrix()
+  std::vector<double> VMmult(const std::vector<int>& v, const aurostd::matrix<double>& A); // CO20200404 pflow::matrix()->aurostd::matrix()
+  std::vector<double> VVcross(const std::vector<double>& a, const std::vector<double>& b);
+  double VVdot(const std::vector<double>& a, const std::vector<double>& b);
   int GetNumAtoms(const xstructure& a);
-  void SetSpline(const vector<double>& x, const vector<double>& y, const double& yp1, const double& ypn, vector<double>& y2);
-  void GetSplineInt(const vector<double>& xa, const vector<double>& ya, vector<double>& y2a, const double& x, double& y);
-  void PrintSpline(const vector<double>& x, const vector<double>& y, const int& npts, ostream& outf);
+  void SetSpline(const std::vector<double>& x, const std::vector<double>& y, const double& yp1, const double& ypn, std::vector<double>& y2);
+  void GetSplineInt(const std::vector<double>& xa, const std::vector<double>& ya, std::vector<double>& y2a, const double& x, double& y);
+  void PrintSpline(const std::vector<double>& x, const std::vector<double>& y, const int& npts, std::ostream& outf);
 } // namespace pflow
 
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 // aflow_xelement.h stuff
 namespace xelement {
-  using std::ostream;
-  using std::string;
-  using std::vector;
   class xelement { // simple class.. nothing fancy
   public:
     // constructor destructor                                       // constructor/destructor
     xelement(); // default, just allocate
     xelement(uint Z, int oxidation_state = AUROSTD_MAX_INT); // look at it by Z
-    xelement(const string&, int oxidation_state = AUROSTD_MAX_INT); // look at it by symbol or name  //CO20200520
+    xelement(const std::string&, int oxidation_state = AUROSTD_MAX_INT); // look at it by symbol or name  //CO20200520
     xelement(const xelement& b); // CO20210201 copy
     ~xelement(); // kill everything
     const xelement& operator=(const xelement& b); // copy
     void clear();
-    static uint isElement(const string& element); // CO20201220 //SD20220223 - made static
+    static uint isElement(const std::string& element); // CO20201220 //SD20220223 - made static
     void loadDefaultUnits(); // CO20201111
-    void populate(const string& element, int oxidation_state = AUROSTD_MAX_INT); // CO20200520
+    void populate(const std::string& element, int oxidation_state = AUROSTD_MAX_INT); // CO20200520
     void populate(uint ZZ, int oxidation_state = AUROSTD_MAX_INT); // CO20200520
-    [[nodiscard]] string getPropertyStringVector(const string& property, const string& delim = ",", uint ncols = AUROSTD_MAX_UINT) const; // CO20201111
-    [[nodiscard]] string getPropertyString(const string& property, const string& delim = ",", uint ncols = AUROSTD_MAX_UINT) const; // CO20201111
-    [[nodiscard]] double getPropertyDouble(const string& property, int index = AUROSTD_MAX_INT) const;
-    [[nodiscard]] const xvector<double>& getPropertyXVectorDouble(const string& property) const;
-    [[nodiscard]] const vector<double>& getPropertyVectorDouble(const string& property) const;
-    [[nodiscard]] string getType(const string& property) const; // CO20201111
-    [[nodiscard]] string getUnits(const string& property) const; // CO20201111
-    void convertUnits(const string& property = "ALL", const string& units_new = "SI"); // CO20201111
+    [[nodiscard]] std::string getPropertyStringVector(const std::string& property, const std::string& delim = ",", uint ncols = AUROSTD_MAX_UINT) const; // CO20201111
+    [[nodiscard]] std::string getPropertyString(const std::string& property, const std::string& delim = ",", uint ncols = AUROSTD_MAX_UINT) const; // CO20201111
+    [[nodiscard]] double getPropertyDouble(const std::string& property, int index = AUROSTD_MAX_INT) const;
+    [[nodiscard]] const aurostd::xvector<double>& getPropertyXVectorDouble(const std::string& property) const;
+    [[nodiscard]] const std::vector<double>& getPropertyVectorDouble(const std::string& property) const;
+    [[nodiscard]] std::string getType(const std::string& property) const; // CO20201111
+    [[nodiscard]] std::string getUnits(const std::string& property) const; // CO20201111
+    void convertUnits(const std::string& property = "ALL", const std::string& units_new = "SI"); // CO20201111
 
     // content                                             // content
     bool verbose;
 
     // [AFLOW]START=DECLARATION
     uint Z; // Z
-    string symbol; // http://periodictable.com      //DU20190517   // DONE SC20190524
-    string name; // http://periodictable.com      //DU20190517   // DONE SC20190524
+    std::string symbol; // http://periodictable.com      //DU20190517   // DONE SC20190524
+    std::string name; // http://periodictable.com      //DU20190517   // DONE SC20190524
     uint period; // http://periodictable.com      //DU20190517
     uint group; // http://periodictable.com      //DU20190517
-    string series; // http://periodictable.com For Nh,Fl,Mc,Lv,Ts Value is a guess based on periodic table trend.      //DU20190517
-    string block; // http://periodictable.com      //DU20190517
+    std::string series; // http://periodictable.com For Nh,Fl,Mc,Lv,Ts Value is a guess based on periodic table trend.      //DU20190517
+    std::string block; // http://periodictable.com      //DU20190517
     //
     double mass; // (kg)     // DONE SC20190524
     double volume_molar; // (m^3/mol) http://periodictable.com      //DU20190517
@@ -1936,14 +1877,14 @@ namespace xelement {
     double valence_d; // number of valence f electrons (http://periodictable.com) //CO20201111
     double valence_f; // number of valence f electrons (http://periodictable.com) //CO20201111
     double density_PT; // (g/cm^3)  http://periodictable.com      //DU20190517
-    string crystal; // Ashcroft-Mermin
-    string crystal_structure_PT; // http://periodictable.com      //DU20190517
-    string spacegroup; // http://periodictable.com      //DU20190517
+    std::string crystal; // Ashcroft-Mermin
+    std::string crystal_structure_PT; // http://periodictable.com      //DU20190517
+    std::string spacegroup; // http://periodictable.com      //DU20190517
     uint spacegroup_number; // http://periodictable.com      //DU20190517
     double variance_parameter_mass; // Pearson mass deviation coefficient: the square deviation of the isotope masses (weighted by occurrence): 10.1103/PhysRevB.27.858 (isotope corrections), 10.1351/PAC-REP-10-06-02 (isotope distributions) //ME20181020
-    xvector<double> lattice_constants; // (pm) http://periodictable.com      //DU20190517
-    xvector<double> lattice_angles; // (rad) http://periodictable.com      //DU20190517
-    string phase; //      http://periodictable.com      //DU20190517
+    aurostd::xvector<double> lattice_constants; // (pm) http://periodictable.com      //DU20190517
+    aurostd::xvector<double> lattice_angles; // (rad) http://periodictable.com      //DU20190517
+    std::string phase; //      http://periodictable.com      //DU20190517
     double radius_Saxena; // Saxena (nm)
     double radius_PT; // (pm)       http://periodictable.com      //DU20190517
     double radius_covalent_PT; // (pm)       http://periodictable.com      //DU20190517
@@ -1967,12 +1908,12 @@ namespace xelement {
     //  this is confirmed by the Allred and Rochow electronegativities that are all very similar for all lanthanides
     double electronegativity_Allen; // https://pubs.acs.org/doi/abs/10.1021/ja00207a003; https://pubs.acs.org/doi/10.1021/ja992866e; https://pubs.acs.org/doi/10.1021/ja9928677
     // preferred and all oxidation states of the elements according to the periodic table of the elements from Wiley-VCH, 5th edition (2012) with some modifications (e. g. for Cr, Cu, Fe, Ti)
-    vector<double> oxidation_states_preferred;
-    vector<double> oxidation_states;
+    std::vector<double> oxidation_states_preferred;
+    std::vector<double> oxidation_states;
     // RF+SK20200410 END
 
     double electron_affinity_PT; // (kJ/mol)  http://periodictable.com       //DU20190517
-    vector<double> energies_ionization; // (kJ/mol) http://periodictable.com //CO20201111
+    std::vector<double> energies_ionization; // (kJ/mol) http://periodictable.com //CO20201111
     double work_function_Miedema; // (V)        (phi^{\star} empirically-adjusted work function   Miedema Rule Table 1a Physica 100B 1-28 (1980) 10.1016/0378-4363(80)90054-6
     double density_line_electron_WS_Miedema; // (d.u.)^1/3 n_{ws}^{1/3} (averaged electron density at the boundary of the Wigner-Seitz cell)^{1/3}  Miedema Rule Table 1a Physica 100B 1-28 (1980) 10.1016/0378-4363(80)90054-6
     double energy_surface_0K_Miedema; // (mJ/m^2)   \gamma_s^0 surface energy at T=0   Miedema Rule Table 1a Physica 100B 1-28 (1980) 10.1016/0378-4363(80)90054-6
@@ -2003,14 +1944,14 @@ namespace xelement {
     double Poisson_ratio_PT; // (--)   http://periodictable.com      //DU20190517
     double modulus_bulk_x_volume_molar_Miedema; // (kJ/mol) B*V_m Miedema Rule Table 1a Physica 100B 1-28 (1980) 10.1016/0378-4363(80)90054-6
     //
-    string magnetic_type_PT; //           http://periodictable.com  //DU20190517
+    std::string magnetic_type_PT; //           http://periodictable.com  //DU20190517
     double susceptibility_magnetic_mass; // (m^3/K)   http://periodictable.com //DU20190517
     double susceptibility_magnetic_volume; //           http://periodictable.com //DU20190517
     double susceptibility_magnetic_molar; // (m^3/mol) http://periodictable.com //DU20190517
     double temperature_Curie; // (K)       http://periodictable.com   //DU20190517
     //
     double refractive_index; // http://periodictable.com C:diamond      //DU20190517
-    string color_PT; // http://periodictable.com      //DU20190517
+    std::string color_PT; // http://periodictable.com      //DU20190517
     //
     double HHIP; // Chem. Mater. 25(15), 2911–2920 (2013) Herfindahl–Hirschman Index (HHI), HHIP: for elemental production, Uncertinities in HHI_P: C,O,F,Cl,Sc,Ga,Rb,Ru,Rh,Cs,Hf,Os,Ir,Tl.      //DU20190517
     double HHIR; // Chem. Mater. 25(15), 2911–2920 (2013) Herfindahl–Hirschman Index (HHI), HHIR: for elemental reserves,   Uncertinities in HHI_R: Be,C,N,O,F,Na,Mg,Al,Si,S,Cl,Ca,Sc,Ga,Ge,As,Rb,Sr,Ru,Rh,Pd,In,Cs,Hf,Os,Ir,Pt,Tl. //DU20190517
@@ -2028,100 +1969,100 @@ namespace xelement {
     // [AFLOW]STOP=DECLARATION
 
     // UNITS
-    string units_Z;
-    string units_symbol;
-    string units_name;
-    string units_period;
-    string units_group;
-    string units_series;
-    string units_block;
+    std::string units_Z;
+    std::string units_symbol;
+    std::string units_name;
+    std::string units_period;
+    std::string units_group;
+    std::string units_series;
+    std::string units_block;
     //
-    string units_mass;
-    string units_volume_molar;
-    string units_volume;
-    string units_area_molar_Miedema;
+    std::string units_mass;
+    std::string units_volume_molar;
+    std::string units_volume;
+    std::string units_area_molar_Miedema;
     //
-    string units_valence_std;
-    string units_valence_iupac;
-    string units_valence_PT;
-    string units_valence_s; // CO20201111
-    string units_valence_p; // CO20201111
-    string units_valence_d; // CO20201111
-    string units_valence_f; // CO20201111
-    string units_density_PT;
-    string units_crystal;
-    string units_crystal_structure_PT;
-    string units_spacegroup;
-    string units_spacegroup_number;
-    string units_variance_parameter_mass;
-    string units_lattice_constants;
-    string units_lattice_angles;
-    string units_phase;
-    string units_radius_Saxena;
-    string units_radius_PT;
-    string units_radius_covalent_PT;
-    string units_radius_covalent;
-    string units_radius_VanDerWaals_PT;
-    string units_radii_Ghosh08;
-    string units_radii_Slatter;
-    string units_radii_Pyykko;
+    std::string units_valence_std;
+    std::string units_valence_iupac;
+    std::string units_valence_PT;
+    std::string units_valence_s; // CO20201111
+    std::string units_valence_p; // CO20201111
+    std::string units_valence_d; // CO20201111
+    std::string units_valence_f; // CO20201111
+    std::string units_density_PT;
+    std::string units_crystal;
+    std::string units_crystal_structure_PT;
+    std::string units_spacegroup;
+    std::string units_spacegroup_number;
+    std::string units_variance_parameter_mass;
+    std::string units_lattice_constants;
+    std::string units_lattice_angles;
+    std::string units_phase;
+    std::string units_radius_Saxena;
+    std::string units_radius_PT;
+    std::string units_radius_covalent_PT;
+    std::string units_radius_covalent;
+    std::string units_radius_VanDerWaals_PT;
+    std::string units_radii_Ghosh08;
+    std::string units_radii_Slatter;
+    std::string units_radii_Pyykko;
     //
-    string units_conductivity_electrical;
-    string units_electronegativity_Pauling;
-    string units_hardness_chemical_Ghosh;
-    string units_electronegativity_Pearson;
-    string units_electronegativity_Ghosh;
-    string units_electronegativity_Allen;
-    string units_oxidation_states;
-    string units_oxidation_states_preferred;
-    string units_electron_affinity_PT;
-    string units_energies_ionization;
-    string units_work_function_Miedema;
-    string units_density_line_electron_WS_Miedema;
-    string units_energy_surface_0K_Miedema;
+    std::string units_conductivity_electrical;
+    std::string units_electronegativity_Pauling;
+    std::string units_hardness_chemical_Ghosh;
+    std::string units_electronegativity_Pearson;
+    std::string units_electronegativity_Ghosh;
+    std::string units_electronegativity_Allen;
+    std::string units_oxidation_states;
+    std::string units_oxidation_states_preferred;
+    std::string units_electron_affinity_PT;
+    std::string units_energies_ionization;
+    std::string units_work_function_Miedema;
+    std::string units_density_line_electron_WS_Miedema;
+    std::string units_energy_surface_0K_Miedema;
     //
-    string units_chemical_scale_Pettifor;
-    string units_Mendeleev_number; // CO20201111
+    std::string units_chemical_scale_Pettifor;
+    std::string units_Mendeleev_number; // CO20201111
     //
-    string units_temperature_boiling;
-    string units_temperature_melting;
-    string units_enthalpy_fusion; // CO20201111
-    string units_enthalpy_vaporization;
-    string units_enthalpy_atomization_WE; // CO20201111
-    string units_energy_cohesive; // CO20201111
-    string units_specific_heat_PT;
-    string units_critical_pressure;
-    string units_critical_temperature_PT;
-    string units_thermal_expansion;
-    string units_conductivity_thermal;
+    std::string units_temperature_boiling;
+    std::string units_temperature_melting;
+    std::string units_enthalpy_fusion; // CO20201111
+    std::string units_enthalpy_vaporization;
+    std::string units_enthalpy_atomization_WE; // CO20201111
+    std::string units_energy_cohesive; // CO20201111
+    std::string units_specific_heat_PT;
+    std::string units_critical_pressure;
+    std::string units_critical_temperature_PT;
+    std::string units_thermal_expansion;
+    std::string units_conductivity_thermal;
     //
-    string units_hardness_mechanical_Brinell;
-    string units_hardness_mechanical_Mohs;
-    string units_hardness_mechanical_Vickers;
-    string units_hardness_chemical_Pearson;
-    string units_hardness_chemical_Putz;
-    string units_hardness_chemical_RB;
-    string units_modulus_shear;
-    string units_modulus_Young;
-    string units_modulus_bulk;
-    string units_Poisson_ratio_PT;
-    string units_modulus_bulk_x_volume_molar_Miedema;
+    std::string units_hardness_mechanical_Brinell;
+    std::string units_hardness_mechanical_Mohs;
+    std::string units_hardness_mechanical_Vickers;
+    std::string units_hardness_chemical_Pearson;
+    std::string units_hardness_chemical_Putz;
+    std::string units_hardness_chemical_RB;
+    std::string units_modulus_shear;
+    std::string units_modulus_Young;
+    std::string units_modulus_bulk;
+    std::string units_Poisson_ratio_PT;
+    std::string units_modulus_bulk_x_volume_molar_Miedema;
     //
-    string units_magnetic_type_PT;
-    string units_susceptibility_magnetic_mass;
-    string units_susceptibility_magnetic_volume;
-    string units_susceptibility_magnetic_molar;
-    string units_temperature_Curie;
+    std::string units_magnetic_type_PT;
+    std::string units_susceptibility_magnetic_mass;
+    std::string units_susceptibility_magnetic_volume;
+    std::string units_susceptibility_magnetic_molar;
+    std::string units_temperature_Curie;
     //
-    string units_refractive_index;
-    string units_color_PT;
+    std::string units_refractive_index;
+    std::string units_color_PT;
     //
-    string units_HHIP;
-    string units_HHIR;
-    string units_xray_scatt;
+    std::string units_HHIP;
+    std::string units_HHIR;
+    std::string units_xray_scatt;
 
     // operators/functions                                    // operator/functions
-    friend ostream& operator<<(ostream&, const xelement&); // print
+    friend std::ostream& operator<<(std::ostream&, const xelement&); // print
     xelement Initialize(uint Z); // function to clean up the name
 
   private: //
@@ -2130,12 +2071,12 @@ namespace xelement {
   };
 
   void Initialize();
-  string symbol2name(const string& symbol);
-  string name2symbol(const string& name);
-  int symbol2Z(const string& symbol);
-  string Z2symbol(const int& Z);
-  string Z2name(const int& Z);
-  int name2Z(const string& name);
+  std::string symbol2name(const std::string& symbol);
+  std::string name2symbol(const std::string& name);
+  int symbol2Z(const std::string& symbol);
+  std::string Z2symbol(const int& Z);
+  std::string Z2name(const int& Z);
+  int name2Z(const std::string& name);
 
 } // namespace xelement
 
@@ -2146,39 +2087,57 @@ extern std::vector<xelement::xelement> velement; // store starting from ONE
 // CO20201111 - START
 
 namespace aflowMachL { // CO20211111
-  using std::string;
-  using std::vector;
-  void insertElementalProperties(const vector<string>& vproperties, const xelement::xelement& xel, vector<string>& vitems);
-  void insertElementalPropertiesCoordCE(const vector<string>& vproperties, const xelement::xelement& xel, double M_X_bonds, double natoms_per_fu, vector<string>& vitems);
-  void insertCrystalProperties(const string& structure_path, const string& anion, const vector<string>& vheaders, vector<string>& vitems, const string& e_props = _AFLOW_XELEMENT_PROPERTIES_ALL_);
-  double getStatistic(const xvector<double>& xvec, const string& stat);
-  void insertElementalCombinations(const vector<string>& vproperties, vector<string>& vheaders);
-  void insertElementalCombinations(const vector<string>& vproperties,
+  void insertElementalProperties(const std::vector<std::string>& vproperties, const xelement::xelement& xel, std::vector<std::string>& vitems);
+  void insertElementalPropertiesCoordCE(const std::vector<std::string>& vproperties, const xelement::xelement& xel, double M_X_bonds, double natoms_per_fu, std::vector<std::string>& vitems);
+  void insertCrystalProperties(const std::string& structure_path, const std::string& anion, const std::vector<std::string>& vheaders, std::vector<std::string>& vitems, const std::string& e_props = _AFLOW_XELEMENT_PROPERTIES_ALL_);
+  double getStatistic(const aurostd::xvector<double>& xvec, const std::string& stat);
+  void insertElementalCombinations(const std::vector<std::string>& vproperties, std::vector<std::string>& vheaders);
+  void insertElementalCombinations(const std::vector<std::string>& vproperties,
                                    const xelement::xelement& xel_cation,
                                    const xelement::xelement& xel_anion,
                                    const aflowlib::_aflowlib_entry& entry,
                                    double M_X_bonds,
                                    double natoms_per_fu_cation,
                                    double natoms_per_fu_anion,
-                                   vector<string>& vheaders,
-                                   vector<double>& vfeatures,
+                                   std::vector<std::string>& vheaders,
+                                   std::vector<double>& vfeatures,
                                    bool vheaders_only = false,
                                    uint count_vcols = AUROSTD_MAX_UINT);
-  void getColumn(const vector<vector<string>>& table, uint icol, vector<string>& column, bool& isfloat, bool& isinteger, bool include_header = false);
-  void delColumn(vector<vector<string>>& table, uint icol);
-  void oneHotFeatures(vector<vector<string>>& table, const string& features_categories);
-  void removeNaN(const xvector<double>& xvec, xvector<double>& xvec_new);
-  void replaceNaN(xvector<double>& xvec, double val = 0.0);
-  void MinMaxScale(xvector<double>& xvec);
-  void reduceFeatures(vector<vector<string>>& table, const string& yheader, double var_threshold = _VAR_THRESHOLD_STD_, double ycorr_threshold = _Y_CORR_THRESHOLD_STD_, double selfcorr_threshold = _SELF_CORR_THRESHOLD_STD_);
-  void reduceFeatures(vector<vector<string>>& table, const string& yheader, const string& header2skip, double var_threshold = _VAR_THRESHOLD_STD_, double ycorr_threshold = _Y_CORR_THRESHOLD_STD_, double selfcorr_threshold = _SELF_CORR_THRESHOLD_STD_);
-  void reduceFeatures(vector<vector<string>>& table, const string& yheader, const vector<string>& vheaders2skip, double var_threshold = _VAR_THRESHOLD_STD_, double ycorr_threshold = _Y_CORR_THRESHOLD_STD_, double selfcorr_threshold = _SELF_CORR_THRESHOLD_STD_);
-  void reduceFeatures(vector<vector<string>>& table, const string& yheader, uint icol2skip, double var_threshold = _VAR_THRESHOLD_STD_, double ycorr_threshold = _Y_CORR_THRESHOLD_STD_, double selfcorr_threshold = _SELF_CORR_THRESHOLD_STD_);
-  void reduceFeatures(vector<vector<string>>& table, const string& yheader, const vector<uint>& vicol2skip, double var_threshold = _VAR_THRESHOLD_STD_, double ycorr_threshold = _Y_CORR_THRESHOLD_STD_, double selfcorr_threshold = _SELF_CORR_THRESHOLD_STD_);
-  string reduceEProperties(double var_threshold = _VAR_THRESHOLD_STD_, double selfcorr_threshold = _SELF_CORR_THRESHOLD_STD_);
+  void getColumn(const std::vector<std::vector<std::string>>& table, uint icol, std::vector<std::string>& column, bool& isfloat, bool& isinteger, bool include_header = false);
+  void delColumn(std::vector<std::vector<std::string>>& table, uint icol);
+  void oneHotFeatures(std::vector<std::vector<std::string>>& table, const std::string& features_categories);
+  void removeNaN(const aurostd::xvector<double>& xvec, aurostd::xvector<double>& xvec_new);
+  void replaceNaN(aurostd::xvector<double>& xvec, double val = 0.0);
+  void MinMaxScale(aurostd::xvector<double>& xvec);
+  void reduceFeatures(std::vector<std::vector<std::string>>& table, const std::string& yheader, double var_threshold = _VAR_THRESHOLD_STD_, double ycorr_threshold = _Y_CORR_THRESHOLD_STD_, double selfcorr_threshold = _SELF_CORR_THRESHOLD_STD_);
+  void reduceFeatures(std::vector<std::vector<std::string>>& table,
+                      const std::string& yheader,
+                      const std::string& header2skip,
+                      double var_threshold = _VAR_THRESHOLD_STD_,
+                      double ycorr_threshold = _Y_CORR_THRESHOLD_STD_,
+                      double selfcorr_threshold = _SELF_CORR_THRESHOLD_STD_);
+  void reduceFeatures(std::vector<std::vector<std::string>>& table,
+                      const std::string& yheader,
+                      const std::vector<std::string>& vheaders2skip,
+                      double var_threshold = _VAR_THRESHOLD_STD_,
+                      double ycorr_threshold = _Y_CORR_THRESHOLD_STD_,
+                      double selfcorr_threshold = _SELF_CORR_THRESHOLD_STD_);
+  void reduceFeatures(std::vector<std::vector<std::string>>& table,
+                      const std::string& yheader,
+                      uint icol2skip,
+                      double var_threshold = _VAR_THRESHOLD_STD_,
+                      double ycorr_threshold = _Y_CORR_THRESHOLD_STD_,
+                      double selfcorr_threshold = _SELF_CORR_THRESHOLD_STD_);
+  void reduceFeatures(std::vector<std::vector<std::string>>& table,
+                      const std::string& yheader,
+                      const std::vector<uint>& vicol2skip,
+                      double var_threshold = _VAR_THRESHOLD_STD_,
+                      double ycorr_threshold = _Y_CORR_THRESHOLD_STD_,
+                      double selfcorr_threshold = _SELF_CORR_THRESHOLD_STD_);
+  std::string reduceEProperties(double var_threshold = _VAR_THRESHOLD_STD_, double selfcorr_threshold = _SELF_CORR_THRESHOLD_STD_);
   void writeCoordCECSV();
   void WriteFileIAPCFG(const aurostd::xoption& vpflow); // CO20211111 //SD20221207 - rewritten using EntryLoader and JSON
-  void WriteFilesXYZF(const string& outfile, const aurostd::JSON::object& jo); // SD20230919
+  void WriteFilesXYZF(const std::string& outfile, const aurostd::JSON::object& jo); // SD20230919
 } // namespace aflowMachL
 // CO20201111 - END
 //  ----------------------------------------------------------------------------
@@ -2186,50 +2145,47 @@ namespace aflowMachL { // CO20211111
 //  aflow_xprototype.h stuff by DAVID
 
 namespace xprototype {
-  using std::ostream;
-  using std::string;
-  using std::vector;
   class xprototype { // stuff in aflow_xprototype.cpp
   public:
     // constructor destructor                          // constructor/destructor
     xprototype(); // default, just allocate
-    xprototype(const string&); // look at it by symbol or name IN ANRL database
+    xprototype(const std::string&); // look at it by symbol or name IN ANRL database
     ~xprototype(); // kill everything
     const xprototype& operator=(const xprototype& b); // copy
     void clear();
-    void populate(const string& prototype);
+    void populate(const std::string& prototype);
     //    void populate(uint ZZ);
     // content                                         // content
     bool verbose;
     // label/params info
-    string catalog; // prototype catalog 'anrl' or 'htqc'
+    std::string catalog; // prototype catalog 'anrl' or 'htqc'
     uint volume; // volume/part of Encyclopedia
-    string label; // label (e.g., 201 or AB_cF8_225_a_b)
-    vector<string> parameter_list; // list of degrees of freedom (a,b/a,c/a,alpha,beta,gamma,x1,y1,z1,x2,...)
-    vector<double> parameter_values; // values for degrees of freedom
-    string parameter_set_id; // parameter set enumeration (e.g., 001, 002, 003, etc.)
-    string weblink; // link to the corresponding CrystalDatabase web page
-    vector<uint> stoichiometry; // reduced stoichiometry for prototype (e.g., equicompositional ternary=1:1:1)
+    std::string label; // label (e.g., 201 or AB_cF8_225_a_b)
+    std::vector<std::string> parameter_list; // list of degrees of freedom (a,b/a,c/a,alpha,beta,gamma,x1,y1,z1,x2,...)
+    std::vector<double> parameter_values; // values for degrees of freedom
+    std::string parameter_set_id; // parameter std::set enumeration (e.g., 001, 002, 003, etc.)
+    std::string weblink; // link to the corresponding CrystalDatabase web page
+    std::vector<uint> stoichiometry; // reduced stoichiometry for prototype (e.g., equicompositional ternary=1:1:1)
     // symmetry
-    string Pearson_symbol; // Pearson symbol
+    std::string Pearson_symbol; // Pearson symbol
     uint space_group_number; // space group number
-    string space_group_symbol_H_M; // space group symbol Hermann-Mauguin (optional or use AFLOW lookup table)
-    string space_group_symbol_Hall; // space group symbol Hall (optional or use AFLOW lookup table)
-    string space_group_symbol_Schoenflies; // space group symbol Schoenflies (optional or use AFLOW lookup table)
-    vector<vector<string>> Wyckoff_letters; // list of Wyckoff letters grouped by species ([[a,b],[c,d,e],[f,g,h,i],...])
-    vector<vector<string>> Wyckoff_site_symmetries; // list of Wyckoff site symmetries grouped by species ([mmm],[2mm,m2m],[mm2],...]) (optional, I can grab from look-up table)
-    vector<vector<uint>> Wyckoff_multiplicities; // list of Wyckoff multiplicities grouped by species ([48],[24,24],[12,12,12][4,4,4,4],...]) (optional, I can grab from look-up table)
+    std::string space_group_symbol_H_M; // space group symbol Hermann-Mauguin (std::optional or use AFLOW lookup table)
+    std::string space_group_symbol_Hall; // space group symbol Hall (std::optional or use AFLOW lookup table)
+    std::string space_group_symbol_Schoenflies; // space group symbol Schoenflies (std::optional or use AFLOW lookup table)
+    std::vector<std::vector<std::string>> Wyckoff_letters; // list of Wyckoff letters grouped by species ([[a,b],[c,d,e],[f,g,h,i],...])
+    std::vector<std::vector<std::string>> Wyckoff_site_symmetries; // list of Wyckoff site symmetries grouped by species ([mmm],[2mm,m2m],[mm2],...]) (std::optional, I can grab from look-up table)
+    std::vector<std::vector<uint>> Wyckoff_multiplicities; // list of Wyckoff multiplicities grouped by species ([48],[24,24],[12,12,12][4,4,4,4],...]) (std::optional, I can grab from look-up table)
     // designations
-    string prototype_material; // common prototype material, e.g., NaCl
-    string common_name; // common prototype name, e.g., half-Heusler
-    string mineral_name; // mineral name, e.g., corundum
-    string phase; // compound phase designation (alpha, beta, gamma, delta, etc.) (if applicable)
-    string strukturbericht; // Strukturbericht designation (if applicable)
-    vector<string> similar_materials; // list of similar compounds (if in same order as stoichiometry we can easily decorate prototypes)
-    vector<string> comments; // noteworthy comments (included in ANRL document and webpage)
-    string title; // title (for ANRL document/webpage)
+    std::string prototype_material; // common prototype material, e.g., NaCl
+    std::string common_name; // common prototype name, e.g., half-Heusler
+    std::string mineral_name; // mineral name, e.g., corundum
+    std::string phase; // compound phase designation (alpha, beta, gamma, delta, etc.) (if applicable)
+    std::string strukturbericht; // Strukturbericht designation (if applicable)
+    std::vector<std::string> similar_materials; // list of similar compounds (if in same order as stoichiometry we can easily decorate prototypes)
+    std::vector<std::string> comments; // noteworthy comments (included in ANRL document and webpage)
+    std::string title; // title (for ANRL document/webpage)
     // operators/functions                                    // operator/functions
-    friend ostream& operator<<(ostream&, const xprototype&); // print
+    friend std::ostream& operator<<(std::ostream&, const xprototype&); // print
     xprototype Iinitialize(uint Z); // function to clean up the name
   private: //
     void free(); // free space

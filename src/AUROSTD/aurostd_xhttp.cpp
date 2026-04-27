@@ -8,21 +8,22 @@
 // Changed to use CURL by Hagen Eckert in 2025
 // hagen.eckert@duke.edu
 
-#ifndef _AUROSTD_XHTTP_CPP_
-#define _AUROSTD_XHTTP_CPP_
-
 #include "aurostd_xhttp.h"
+
+#include "config.h"
 
 #include <array>
 #include <cerrno>
 #include <cstdio>
 #include <cstring>
+#include <fstream>
 #include <iomanip>
 #include <ios>
 #include <iostream>
 #include <map>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include <curl/curl.h>
@@ -38,6 +39,12 @@
 
 using std::cerr;
 using std::endl;
+using std::ifstream;
+using std::iostream;
+using std::istringstream;
+using std::map;
+using std::ofstream;
+using std::ostringstream;
 using std::string;
 using std::stringstream;
 using std::vector;
@@ -359,7 +366,11 @@ namespace aurostd {
     aurostd::string2tokens(content, stokens, delimiters);
     for (const string& stoken : stokens) {
       if (!stoken.empty()) {
-        tokens.push_back(aurostd::string2utype<utype>(stoken));
+        if constexpr (std::is_convertible_v<utype, std::string_view>) {
+          tokens.push_back(stoken);
+        } else {
+          tokens.push_back(aurostd::string2utype<utype>(stoken));
+        }
       }
     }
     if (LDEBUG) {
@@ -429,7 +440,7 @@ namespace aurostd {
     int to_replace = 0;
     std::stringstream output;
     if (LDEBUG) {
-      cerr << __AFLOW_FUNC__ << " Escaping '" << work_str << "'" << std::endl;
+      cerr << __AFLOW_FUNC__ << " Escaping '" << work_str << "'" << endl;
     }
 
     while (!work_str.empty()) {
@@ -440,12 +451,10 @@ namespace aurostd {
       }
       output << work_str.substr(0, pos) << "%" << std::uppercase << std::hex << std::setfill('0') << std::setw(2) << to_replace;
       if (LDEBUG) {
-        cerr << " Match '" << work_str[pos] << "' (%" << std::uppercase << std::hex << std::setfill('0') << to_replace << std::dec << ")" << std::endl;
+        cerr << " Match '" << work_str[pos] << "' (%" << std::uppercase << std::hex << std::setfill('0') << to_replace << std::dec << ")" << endl;
       }
       work_str.erase(0, pos + 1);
     }
     return output.str();
   }
 } // namespace aurostd
-
-#endif  // _AUROSTD_XHTTP_CPP_

@@ -1,0 +1,28 @@
+
+@GENERATED_BY_CMAKE_COMMENT@
+
+#include "config.h"
+
+#include <string>
+
+namespace build_constants {
+  const std::string& project_name() { static const std::string s = "@CMAKE_PROJECT_NAME@"; return s; }
+  const std::string& project_version() { static const std::string s =  "@CMAKE_PROJECT_VERSION@"; return s; }
+
+  const std::string& aflow_name() { static const std::string s =  "@AFLOW_VERSION@"; return s; }
+  const std::string& aflow_version() { static const std::string s =  "@CMAKE_PROJECT_VERSION@"; return s; }
+
+  const std::string& build_type() { static const std::string s =  "@CMAKE_BUILD_TYPE@"; return s; }
+  const std::string& build_timestamp() { static const std::string s =  "@BUILD_TIMESTAMP@"; return s; }
+
+  const std::string& git_commit_hash() { static const std::string s =  "@GIT_COMMIT_HASH@@GIT_DIRTY@"; return s; }
+  const std::string& git_commit_short() { static const std::string s =  "@GIT_COMMIT_SHORT@@GIT_DIRTY@"; return s; }
+  const std::string& git_commit_date() { static const std::string s =  "@GIT_COMMIT_DATE@"; return s; }
+
+  const std::string& compiler_id() { static const std::string s =  "@CMAKE_CXX_COMPILER_ID@"; return s; }
+  const std::string& compiler_version() { static const std::string s =  "@CMAKE_CXX_COMPILER_VERSION@"; return s; }
+  const std::string& compiler_flags() { static const std::string s =  "@CMAKE_CXX_FLAGS@"; return s; }
+
+  const std::string& today() { static const std::string s =  "@TODAY@"; return s; }
+  const std::string& commit_date() { static const std::string s =  "@GIT_COMMIT_DATE@"; return s; }
+}

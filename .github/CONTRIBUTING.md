@@ -84,15 +84,22 @@ approach for solving the problem in the comments for an existing issue.
 
 ## Coding Style
 
-C++ code is formatted according to the `.clang-tidy` at the root of the repository. Your IDE will typically detect this file 
+C++ code is formatted according to the `.clang-format` at the root of the repository. Your IDE will typically detect this file 
 and apply formatting as you code, but you should also make sure you apply the formatting as you work. Your IDE will likely have
-a keybind for formatting code, but you can also apply formatting with the `clang-format` program.
+a keybind for formatting code, but you can also apply formatting with the `clang-format` program. If you have bash and awk 
+available, you can use the `scripts/format-changed.sh` script to be notified of and apply formatting on changed lines since the 
+base branch.
 
-You should also use clang-tidy to check for warnings. You may tell your IDE to use the `.clang-format` or `.clang-tidy-fix` files 
-at the root of the repository. The latter has less checks, but these are the ones we are stricter about. The checks in the `.clang-tidy-fix`
-should all pass before something can be merged.
+You should also use clang-tidy to check for warnings. You may tell your IDE to use the `.clang-tidy` or `.clang-tidy-lint` files 
+at the root of the repository. The latter has less checks, but these are the ones we are stricter about. The checks in the `.clang-tidy-lint` 
+should all pass before something can be merged. If you have bash and awk available, you can use the `scripts/tidy-changed.sh` script to 
+be notified of and apply clang-tidy fixes on changed lines since the base branch.
 
-Hint: Use `git diff --name-only` or `git diff --name-only --staged` to get a list of changed files to pass to run-clang-tidy and clang-format.
+Hint: Use `git diff --name-only` or `git diff --name-only --staged` to get a list of changed files to pass to run-clang-tidy and clang-format 
+for whole-file changes, or use `scripts/format-changed.sh` and `scripts/tidy-changed.sh` to detect and apply fixes to lines changed since 
+the base branch.
 
-For reference, `clang-tidy -p build --config-file .clang-tidy-fix $(git diff --name-only HEAD $(git merge-base HEAD staging))` will effectively 
-be run before a merge can be completed.
+For reference, `scripts/format-changed.sh` and `scripts/tidy-changed.sh` will effectively be run before a merge can be completed. If your 
+local linting messages/changes don't match those of the linter on the remote repository, check that you are using the same version of the 
+llvm tools.
+

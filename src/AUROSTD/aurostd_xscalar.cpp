@@ -5,17 +5,18 @@
 // ***************************************************************************
 // Written by Stefano Curtarolo 1994-2011
 
-#ifndef _AUROSTD_XSCALAR_CPP_
-#define _AUROSTD_XSCALAR_CPP_
-
 #include "aurostd_xscalar.h"
 
 #include <cmath>
 #include <cstddef>
 #include <cstdlib>
+#include <fstream>
 #include <iomanip>
 #include <ios>
 #include <iostream>
+#include <sstream>
+#include <string>
+#include <vector>
 
 #include "aurostd.h"
 #include "aurostd_automatic_template.h"
@@ -35,6 +36,14 @@
 
 using std::cerr;
 using std::endl;
+using std::ifstream;
+using std::iostream;
+using std::istringstream;
+using std::ofstream;
+using std::ostringstream;
+using std::string;
+using std::stringstream;
+using std::vector;
 
 // ----------------------------------------------------------------------------
 // _isfloat  _isfloat  _isfloat  _isfloat  _isfloat
@@ -381,16 +390,16 @@ namespace aurostd {
 // ----------------------------------------------------------------------------
 // sqrt  sqrt  sqrt  sqrt  sqrt
 namespace aurostd {
-  template <class utype> utype sqrt(utype x) {
-    if constexpr (std::is_floating_point_v<utype>) {
-      return std::sqrt(x);
-    }
-    return (utype) std::sqrt((double) x);
+  template <class utype> double sqrt(utype x) {
+    return std::sqrt((double) x);
   }
-#define AST_TEMPLATE(utype) template utype sqrt(utype);
+#define AST_TEMPLATE(utype) template double sqrt(utype);
   AST_GEN_1(AST_UTYPE_NUM)
   AST_GEN_1(AST_UTYPE_CHAR)
 #undef AST_TEMPLATE
+  long double sqrt(long double x) {
+    return std::sqrt(x);
+  }
   float sqrt(xcomplex<float> x) {
     return sqrtf(x.re * x.re + x.im * x.im);
   }
@@ -405,25 +414,75 @@ namespace aurostd {
 // ----------------------------------------------------------------------------
 // exp  exp  exp  exp  exp
 namespace aurostd {
-  template <class utype> utype exp(utype x) {
-    return (utype) std::exp((double) x);
+  template <class utype> double exp(utype x) {
+    return std::exp((double) x);
   }
-#define AST_TEMPLATE(utype) template utype exp(utype);
+#define AST_TEMPLATE(utype) template double exp(utype);
   AST_GEN_1(AST_UTYPE_NUM)
   AST_GEN_1(AST_UTYPE_CHAR)
 #undef AST_TEMPLATE
+  long double exp(long double x) {
+    return std::exp(x);
+  }
 } // namespace aurostd
 
 // ----------------------------------------------------------------------------
 // pow  pow  pow  pow  pow
 namespace aurostd {
-  template <class utype> utype pow(utype x, utype d) {
-    return (utype) std::pow((double) x, (double) d);
+  template <class utype> double pow(utype x, utype d) {
+    return std::pow((double) x, (double) d);
   }
-#define AST_TEMPLATE(utype) template utype pow(utype x, utype d);
+#define AST_TEMPLATE(utype) template double pow(utype x, utype d);
   AST_GEN_1(AST_UTYPE_NUM)
   AST_GEN_1(AST_UTYPE_CHAR)
 #undef AST_TEMPLATE
+  long double pow(long double x, long double d) {
+    return std::pow(x, d);
+  }
+} // namespace aurostd
+
+// ----------------------------------------------------------------------------
+// sin  sin  sin  sin  sin
+namespace aurostd {
+  template <class utype> double sin(utype x) {
+    return std::sin((double) x);
+  }
+#define AST_TEMPLATE(utype) template double sin(utype);
+  AST_GEN_1(AST_UTYPE_NUM)
+  AST_GEN_1(AST_UTYPE_CHAR)
+#undef AST_TEMPLATE
+  long double sin(long double x) {
+    return std::sin(x);
+  }
+} // namespace aurostd
+
+// ----------------------------------------------------------------------------
+// cos  cos  cos  cos  cos
+namespace aurostd {
+  template <class utype> double cos(utype x) {
+    return std::cos((double) x);
+  }
+#define AST_TEMPLATE(utype) template double cos(utype);
+  AST_GEN_1(AST_UTYPE_NUM)
+  AST_GEN_1(AST_UTYPE_CHAR)
+#undef AST_TEMPLATE
+  long double cos(long double x) {
+    return std::cos(x);
+  }
+} // namespace aurostd
+
+// atan2  atan2  atan2  atan2  atan2
+namespace aurostd {
+  template <class utype> double atan2(utype y, utype x) {
+    return std::atan2((double) y, (double) x);
+  }
+#define AST_TEMPLATE(utype) template double atan2(utype y, utype x);
+  AST_GEN_1(AST_UTYPE_NUM)
+  AST_GEN_1(AST_UTYPE_CHAR)
+#undef AST_TEMPLATE
+  long double atan2(long double y, long double x) {
+    return std::atan2(y, x);
+  }
 } // namespace aurostd
 
 // ----------------------------------------------------------------------------
@@ -449,7 +508,7 @@ namespace aurostd {  // namespace aurostd
     return -aurostd::sign(x) * std::ceil(-std::abs(x) * mult - 0.5) / mult;
   }
 
-  int roundDouble(double doub, int multiple, bool up) { // CO20220624 (moved from chull)
+  int roundDouble(double doub, int multiple, bool up) { // CO20220624
     // rounds double to the nearest (multiple), choose round up or down
     // http://stackoverflow.com/questions/3407012/c-rounding-up-to-the-nearest-multiple-of-a-number
     // round up - round further from 0 if doub is positive, closer to 0 if doub is negative
@@ -481,22 +540,22 @@ namespace aurostd {  // namespace aurostd
   }
   bool greaterEqualZero(double val) {
     return (val >= 0.0);
-  } // CO20220624 (moved from chull)
+  } // CO20220624
   bool lessEqualZero(double val) {
     return (val <= 0.0);
-  }  // CO20220624 (moved from chull)
+  }  // CO20220624
   bool notPositive(double val, bool soft_cutoff, double tol) {
     return (soft_cutoff ? val <= tol : lessEqualZero(val));
-  }  // CO20220624 (moved from chull)
+  }  // CO20220624
   bool notNegative(double val, bool soft_cutoff, double tol) {
     return (soft_cutoff ? val >= -tol : greaterEqualZero(val));
-  }  // CO20220624 (moved from chull)
+  }  // CO20220624
   bool zeroWithinTol(double val, double tol) {
     return notPositive(abs(val), true, tol);
-  } // CO20220624 (moved from chull)
+  } // CO20220624
   bool nonZeroWithinTol(double val, double tol) {
     return !zeroWithinTol(val, tol);
-  } // CO20220624 (moved from chull)
+  } // CO20220624
 } // namespace aurostd
 
 namespace aurostd {
@@ -1924,8 +1983,6 @@ namespace aurostd {
   }
 } // namespace aurostd
 // CO20201111 - END
-
-#endif // _AUROSTD_XSCALAR_CPP_
 
 // **************************************************************************
 // *                                                                        *

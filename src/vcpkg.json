@@ -1,15 +1,15 @@
 {
   "name": "aflow",
-  "version-string": "4.0.4",
-  "builtin-baseline": "3425f537d2f01c761d2d2cff59a7577eb4f568c0",
+  "version-string": "4.1.0",
+  "builtin-baseline": "70c9c298db1713e8b57455297385adf811f67378",
   "dependencies": [
     {
       "name": "libarchive",
-      "version>=": "3.7.8"
+      "version>=": "3.8.6"
     },
     {
       "name": "openssl",
-      "version>=": "3.5.0"
+      "version>=": "3.6.2"
     },
     {
       "name": "curl",
@@ -17,7 +17,7 @@
         "openssl",
         "zstd"
       ],
-      "version>=": "8.13.0"
+      "version>=": "8.19.0"
     }
   ]
 }

@@ -6,8 +6,6 @@
 // ***************************************************************************
 // Written by Cormac Toher
 // cormac.toher@duke.edu
-#ifndef _AFLOW_AGL_POLYNOMIAL_CPP
-#define _AFLOW_AGL_POLYNOMIAL_CPP
 
 #include <algorithm>
 #include <cmath>
@@ -1412,7 +1410,6 @@ namespace AGL_functions {
 //  End of AFLOW AGL polynomial fitting and processing
 // **************************************************************************
 
-#endif // _AFLOW_AGL_POLYNOMIAL_CPP
 // ***************************************************************************
 // *                                                                         *
 // *           Aflow STEFANO CURTAROLO - Duke University 2003-2024           *

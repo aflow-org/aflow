@@ -6,8 +6,6 @@
 // ***************************************************************************
 // Written by Cormac Toher
 // cormac.toher@duke.edu
-#ifndef _AFLOW_AGL_DEBYE_CPP
-#define _AFLOW_AGL_DEBYE_CPP
 
 #include "modules/AGL/aflow_agl_debye.h"
 
@@ -2969,15 +2967,15 @@ namespace AGL_functions {
         aus << _AGLSTR_MESSAGE_ << "Opening file AGL_structures.json" << endl;
         aurostd::PrintMessageStream(FileMESSAGE, aus, XHOST.QUIET);
 
-        const aurostd::JSON::object json(aurostd::JSON::object_types::DICTIONARY);
+        aurostd::JSON::object json(aurostd::JSON::object_types::DICTIONARY);
         json["AGL_structures"] = aurostd::JSON::object(aurostd::JSON::object_types::LIST);
-        const aurostd::JSON::object json_dis(aurostd::JSON::object_types::DICTIONARY);
+        aurostd::JSON::object json_dis(aurostd::JSON::object_types::DICTIONARY);
         json_dis["distorted_structure"] = aurostd::JSON::object(aurostd::JSON::object_types::DICTIONARY);
         json_dis["distorted_structure"]["distortion"] = nullptr;
         json_dis["distorted_structure"]["structure"] = xstructure2json(xvasp.str);
         json["AGL_structures"].push_back(json_dis);
         for (uint i = 0; i < vaspRuns.size(); i++) {
-          const aurostd::JSON::object json_loop(aurostd::JSON::object_types::DICTIONARY);
+          aurostd::JSON::object json_loop(aurostd::JSON::object_types::DICTIONARY);
           json_loop["distorted_structure"] = aurostd::JSON::object(aurostd::JSON::object_types::DICTIONARY);
           json_loop["distorted_structure"]["distortion"] = runname[i];
           json_loop["distorted_structure"]["structure"] = xstructure2json(vaspRuns[i].str);
@@ -2998,12 +2996,12 @@ namespace AGL_functions {
         return 8;
       } else {
         // Only write structures that have been successfully calculated
-        const aurostd::JSON::object json(aurostd::JSON::object_types::DICTIONARY);
+        aurostd::JSON::object json(aurostd::JSON::object_types::DICTIONARY);
         uint idSuccessRun;
         json["AGL_energy_structures"] = aurostd::JSON::object(aurostd::JSON::object_types::LIST);
         for (uint i = 0; i < AGL_data.structurecalculated.size(); i++) {
           idSuccessRun = AGL_data.structurecalculated[i];
-          const aurostd::JSON::object json_loop(aurostd::JSON::object_types::DICTIONARY);
+          aurostd::JSON::object json_loop(aurostd::JSON::object_types::DICTIONARY);
           json_loop["distortion"] = runname[idSuccessRun];
           json_loop["strainfactor"] = strainfactorlist[idSuccessRun];
           json_loop["energy"] = AGL_data.energyinput[i] / AGL_data.natoms;
@@ -4766,8 +4764,6 @@ namespace AGL_functions {
 // **************************************************************************
 //  End of AFLOW AGL
 // **************************************************************************
-
-#endif // _AFLOW_AGL_DEBYE_CPP
 
 // ***************************************************************************
 // *                                                                         *

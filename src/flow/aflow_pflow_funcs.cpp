@@ -6,9 +6,6 @@
 // Stefano Curtarolo
 // Dane Morgan
 
-#ifndef _AFLOW_PFLOW_FUNCS_CPP_
-#define _AFLOW_PFLOW_FUNCS_CPP_
-
 #include <algorithm>
 #include <cmath>
 #include <complex>
@@ -176,7 +173,7 @@ xvector<double> balanceChemicalEquation(const vector<xvector<double>>& lhs, cons
   // left_hand_side of reaction is POSITIVE
   // right_hand_side of reaction is NEGATIVE
 
-  const xmatrix<double> composition_matrix(lhs.size() + rhs.size(), dim);
+  xmatrix<double> composition_matrix(lhs.size() + rhs.size(), dim);
   int counter;
   for (size_t i = 0; i < lhs.size(); i++) {
     counter = 1;
@@ -955,7 +952,7 @@ namespace pflow {
     const xvector<double> n_z = xstr_slab_newbasis.lattice(3);
     if (partial_dissociation) {
       const xvector<double> total_shift_cpos = (d_layers_s) *n_s;
-      const xvector<double> total_shift_fpos = xstr_slab_newbasis.c2f * total_shift_cpos;
+      xvector<double> total_shift_fpos = xstr_slab_newbasis.c2f * total_shift_cpos;
       z_shift_fpos = total_shift_fpos[3];
       if (LDEBUG) {
         cerr << __AFLOW_FUNC__ << " total_shift_cpos=" << total_shift_cpos << endl;
@@ -1979,7 +1976,7 @@ namespace pflow {
     const double twotheta_smoothing = 5.0; // avg over 5 degrees
     const double twotheta_diff = (v_twotheta[1] - v_twotheta[0]);
     const double davg_window = twotheta_smoothing / twotheta_diff;
-    avg_window = max(avg_window, (uint) davg_window);
+    avg_window = aurostd::max(avg_window, (uint) davg_window);
     if (LDEBUG) {
       cerr << __AFLOW_FUNC__ << " twotheta_smoothing=" << twotheta_smoothing << endl;
       cerr << __AFLOW_FUNC__ << " twotheta_diff=" << twotheta_diff << endl;
@@ -2195,8 +2192,8 @@ namespace pflow {
     const int kmx0 = (int) (4.0 * PI / (modulus(rlat(1)) * lambda) + 1);
     const int kmx1 = (int) (4.0 * PI / (modulus(rlat(2)) * lambda) + 1);
     const int kmx2 = (int) (4.0 * PI / (modulus(rlat(3)) * lambda) + 1);
-    int kmx = max(kmx0, kmx1);
-    kmx = max(kmx2, kmx);
+    int kmx = aurostd::max(kmx0, kmx1);
+    kmx = aurostd::max(kmx2, kmx);
     const int len = 2 * kmx + 1; // simply -kmx to kmx in for loop
     const int tlen = len * len * len; // all combos of hkl, convert 3D HKL search to 1D
     double sfr; // real part of structure factor
@@ -2209,7 +2206,7 @@ namespace pflow {
     int ii1 = 0;
     int ii2 = 0;
     int id = 0;
-    const xvector<double> rv(3);
+    xvector<double> rv(3);
     double rvnorm = 0.0;
     double term = 0.0;
     double gdotr;
@@ -2568,8 +2565,8 @@ namespace pflow {
     for (int it = 0; it < nt; it++) {
       const int idA = (nt + 1) * iaA + it;
       const int idB = (nt + 1) * iaB + it;
-      const int tempsh = min((int) rdfsh_all_A[idA].size(), (int) rdfsh_all_B[idB].size());
-      const int nsh = min(tempsh, nsh_max);
+      const int tempsh = aurostd::min((int) rdfsh_all_A[idA].size(), (int) rdfsh_all_B[idB].size());
+      const int nsh = aurostd::min(tempsh, nsh_max);
       for (int ish = 0; ish < nsh; ish++) {
         cnt++;
         rms += (rdfsh_all_A[idA][ish] - rdfsh_all_B[idB][ish]) * (rdfsh_all_A[idA][ish] - rdfsh_all_B[idB][ish]);
@@ -2714,7 +2711,7 @@ namespace pflow {
         const int tna = an.type; // CONVASP_MODE
         const int i = std::min(ta, tna);
         const int j = std::max(ta, tna);
-        const int id = j - i + ntypes1 * i - max(0, i * (i - 1) / 2);
+        const int id = j - i + ntypes1 * i - aurostd::max(0, i * (i - 1) / 2);
         dist1[id].push_back(AtomDist(a, an));
       } // in
     } // ia
@@ -2727,7 +2724,7 @@ namespace pflow {
         const int tna = an.type; // CONVASP_MODE
         const int i = std::min(ta, tna);
         const int j = std::max(ta, tna);
-        const int id = j - i + ntypes2 * i - max(0, i * (i - 1) / 2);
+        const int id = j - i + ntypes2 * i - aurostd::max(0, i * (i - 1) / 2);
         dist2[id].push_back(AtomDist(a, an));
       } // in
     } // ia
@@ -2750,9 +2747,9 @@ namespace pflow {
     dist_diff_n = aurostd::matrix<double>(nprs_min, tmpvec); // CO20200404 pflow::matrix()->aurostd::matrix()
     for (int i = 0; i < ntypes_min; i++) {
       for (int j = i; j < ntypes_min; j++) {
-        const int id1 = j - i + ntypes1 * i - max(0, i * (i - 1) / 2);
-        const int id2 = j - i + ntypes2 * i - max(0, i * (i - 1) / 2);
-        const int idmin = j - i + ntypes_min * i - max(0, i * (i - 1) / 2);
+        const int id1 = j - i + ntypes1 * i - aurostd::max(0, i * (i - 1) / 2);
+        const int id2 = j - i + ntypes2 * i - aurostd::max(0, i * (i - 1) / 2);
+        const int idmin = j - i + ntypes_min * i - aurostd::max(0, i * (i - 1) / 2);
         const int num_dist = std::min((int) dist1[id1].size(), (int) dist2[id2].size());
         for (int ip = 0; ip < num_dist; ip++) {
           const double d1 = dist1[id1][ip];
@@ -4717,7 +4714,7 @@ namespace pflow {
     }
 
     // Projections
-    const aurostd::matrix<std::complex<double>> m(pd.nbands, pd.nlm, 0.0); // CO20200404 pflow::matrix()->aurostd::matrix()
+    const aurostd::matrix<std::complex<double>> m(pd.nbands, pd.nlm, std::complex<double>{0.0, 0.0}); // CO20200404 pflow::matrix()->aurostd::matrix()
     const aurostd::matrix<aurostd::matrix<std::complex<double>>> mm(pd.nkpts, pd.nions, m); // CO20200404 pflow::matrix()->aurostd::matrix()
     pd.pdat_u = vector<aurostd::matrix<aurostd::matrix<std::complex<double>>>>(pd.ntypes, mm); // CO20200404 pflow::matrix()->aurostd::matrix()
     vector<double> rval(pd.nlm);
@@ -4814,7 +4811,7 @@ namespace pflow {
       }
 
       // Projections
-      const aurostd::matrix<std::complex<double>> m(pd.nbands, pd.nlm, 0.0); // CO20200404 pflow::matrix()->aurostd::matrix()
+      const aurostd::matrix<std::complex<double>> m(pd.nbands, pd.nlm, std::complex<double>{0.0, 0.0}); // CO20200404 pflow::matrix()->aurostd::matrix()
       const aurostd::matrix<aurostd::matrix<std::complex<double>>> mm(pd.nkpts, pd.nions, m); // CO20200404 pflow::matrix()->aurostd::matrix()
       pd.pdat_d = vector<aurostd::matrix<aurostd::matrix<std::complex<double>>>>(pd.ntypes, mm); // CO20200404 pflow::matrix()->aurostd::matrix()
       vector<double> rval(pd.nlm);
@@ -6028,7 +6025,7 @@ namespace pflow {
     aurostd::matrix<double> lat2 = pflow::GetLat(str1); // CO20200404 pflow::matrix()->aurostd::matrix()
     aurostd::matrix<double> latdiff(3, 3); // CO20200404 pflow::matrix()->aurostd::matrix()
     cm = aurostd::matrix<double>(2); // CO20200404 pflow::matrix()->aurostd::matrix()
-    const int nat = min(cpos1.size(), cpos2.size());
+    const int nat = aurostd::min(cpos1.size(), cpos2.size());
     aurostd::matrix<double> cposdiff(nat, 3); // CO20200404 pflow::matrix()->aurostd::matrix()
     totdist = 0;
     for (int ic = 0; ic < 3; ic++) {
@@ -7369,9 +7366,9 @@ namespace pflow {
     stringstream KPATH;
     stringstream strline;
     bool foundBZ;
-    const xvector<double> b1(3);
-    const xvector<double> b2(3);
-    const xvector<double> b3(3); // reciprocal lattice
+    xvector<double> b1(3);
+    xvector<double> b2(3);
+    xvector<double> b3(3); // reciprocal lattice
     xmatrix<double> klattice; // Declare a matrix to store reciprocal lattice
 
     lattice = str_sp.bravais_lattice_variation_type;
@@ -7495,7 +7492,7 @@ namespace pflow {
 //  prettyPrintCompound
 namespace pflow {
 
-  static const double ZERO_TOL = 1E-8; // from CHULL
+  static const double ZERO_TOL = 1E-8;
 
   string prettyPrintCompound(const string& compound, vector_reduction_type vred, bool exclude1, filetype ftype) { // char mode  //CO20190629
     vector<double> vcomposition;
@@ -7517,7 +7514,7 @@ namespace pflow {
   }
 
   string prettyPrintCompound(const vector<string>& vspecies, const xvector<uint>& vcomposition, vector_reduction_type vred, bool exclude1, filetype ftype) { // overload //char mode //DX20200727
-    const xvector<double> vcomposition_dbl(vcomposition.rows);
+    xvector<double> vcomposition_dbl(vcomposition.rows);
     for (int i = 1; i <= vcomposition.rows; i++) {
       vcomposition_dbl(i) = (double) vcomposition[i];
     }
@@ -7650,94 +7647,12 @@ namespace pflow {
 } // namespace pflow
 
 namespace pflow {
-  AQueue::AQueue(ostream& oss) : xStream(oss), m_initialized(false) {
-    initialize();
-  }
-  AQueue::AQueue(ofstream& FileMESSAGE, ostream& oss) : xStream(FileMESSAGE, oss), m_initialized(false) {
-    initialize();
-  }
-  AQueue::AQueue(const aurostd::xoption& vpflow, ostream& oss) : xStream(oss), m_initialized(false) {
-    initialize(vpflow);
-  }
-  AQueue::AQueue(const aurostd::xoption& vpflow, ofstream& FileMESSAGE, ostream& oss) : xStream(FileMESSAGE, oss), m_initialized(false) {
-    initialize(vpflow);
-  }
-  AQueue::AQueue(const AQueue& b) : xStream(*b.getOFStream(), *b.getOSS()) {
-    copy(b);
-  } // copy PUBLIC
-
-  AQueue::~AQueue() {
-    xStream::free();
-    free();
-  }
-
-  const AQueue& AQueue::operator=(const AQueue& other) {
-    if (this != &other) {
-      copy(other);
-    }
-    return *this;
-  }
-
-  void AQueue::clear() {
-    free();
-  } // clear PUBLIC
   void AQueue::freeQueue() {
     m_qsys = QUEUE_SLURM;
     m_partitions.clear();
     m_nodes.clear();
     m_jobs.clear();
   }
-  void AQueue::free() {
-    m_initialized = false;
-    m_flags.clear();
-    freeQueue();
-  }
-
-  void AQueue::copy(const AQueue& b) { // copy PRIVATE
-    m_initialized = b.m_initialized;
-    m_flags = b.m_flags;
-    m_qsys = b.m_qsys;
-    m_partitions.clear();
-    for (size_t i = 0; i < b.m_partitions.size(); i++) {
-      m_partitions.push_back(b.m_partitions[i]);
-    }
-    m_nodes.clear();
-    for (size_t i = 0; i < b.m_nodes.size(); i++) {
-      m_nodes.push_back(b.m_nodes[i]);
-    }
-    m_jobs.clear();
-    for (size_t i = 0; i < b.m_jobs.size(); i++) {
-      m_jobs.push_back(b.m_jobs[i]);
-    }
-  }
-
-  bool AQueue::initialize(ostream& oss) {
-    xStream::initialize(oss);
-    return initialize();
-  }
-  bool AQueue::initialize(ofstream& FileMESSAGE, ostream& oss) {
-    xStream::initialize(FileMESSAGE, oss);
-    return initialize();
-  }
-  bool AQueue::initialize(const aurostd::xoption& vpflow, ostream& oss) {
-    xStream::initialize(oss);
-    return initialize(vpflow);
-  }
-  bool AQueue::initialize(const aurostd::xoption& vpflow, ofstream& FileMESSAGE, ostream& oss) {
-    xStream::initialize(FileMESSAGE, oss);
-    return initialize(vpflow);
-  }
-
-  bool AQueue::initialize() {
-    free();
-    return false;
-  }
-  bool AQueue::initialize(const aurostd::xoption& vpflow) {
-    free();
-    setFlags(vpflow);
-    return true;
-  }
-
   void AQueue::setFlags(const aurostd::xoption& vpflow) {
     m_flags = vpflow;
   }
@@ -8728,7 +8643,7 @@ namespace pflow {
       const uint nspecies = xstr.species.size();
       for (uint i = 0; i < nspecies; i++) {
         try {
-          element = xelement::xelement(KBIN::VASP_PseudoPotential_CleanName(xstr.species[i]));
+          element = xelement::xelement(aurostd::VASP_PseudoPotential_CleanName(xstr.species[i]));
         } catch (aurostd::xerror& re) {
           if (LDEBUG) {
             cerr << __AFLOW_FUNC__ << xstr.species[i] << " is not a real element." << endl;
@@ -8881,7 +8796,6 @@ namespace pflow {
     //  3) 3 (SG_SETTING_ANRL) = rhomobhedral: rhl setting, monoclinic: unique-axis b, centrosymmetric: origin on inversion site
     // The mode_default variable is an optional input: --prototype command defaults to the AFLOW setting, while everything else defaults to SG_SETTING_1
 
-
     uint setting = mode_default; // default
 
     // space group setting
@@ -8911,4 +8825,3 @@ namespace pflow {
 // *           Aflow STEFANO CURTAROLO - Duke University 2003-2024           *
 // *                                                                         *
 // ***************************************************************************
-#endif

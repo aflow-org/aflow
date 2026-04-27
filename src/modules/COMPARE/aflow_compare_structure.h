@@ -52,6 +52,8 @@
 
 #define _DEBUG_COMPARE_ false  // DX20201223
 
+// TODO: for this file, split classes into own files, structs can stay
+
 static std::string GENERAL_XTALFINDER_OPTIONS_LIST =
     "general_options: [--usage] [--misfit_match=0.1] [--misfit_match=0.2] [--np=16|--num_proc=16] [--optimize_match] [--no_scale_volume] [--ignore_symmetry] [--ignore_Wyckoff] [--ignore_environment] "
     "[--keep_unmatched!] [--match_to_aflow_prototypes!] [--magmom=<m1,m2,...|INCAR|OUTCAR>:...] [--add_aflow_prototype_designation] [--remove_duplicate_compounds] [--ICSD] [--print_mapping|--print] "
@@ -140,6 +142,7 @@ struct matching_structure {
 struct structure_container {
   // intialization info
   std::string name;                                                  // name of structure
+  std::string link;
   std::string compound;                                              // compound name of structure
   std::vector<uint> stoichiometry;                                   // reduced stoichiometry of structure
   uint natoms;                                                  // number of atoms in unit cell
@@ -192,25 +195,20 @@ private:
 // ---------------------------------------------------------------------------
 class StructurePrototype {
 public:
-    // ---------------------------------------------------------------------------
-    // constructor/destructor/copy/assignment/operator<<
-  StructurePrototype();                                                                   // constructor operator
-  ~StructurePrototype();                                                                  // destructor operator
+  StructurePrototype() = default;                                                                   // constructor operator
   void clear();                                                                           // clear
   friend std::ostream& operator<<(std::ostream& oss, const StructurePrototype& StructurePrototype); // stringstream operator (printing)
-  const StructurePrototype& operator=(const StructurePrototype& b);                       // assignment operator
-  StructurePrototype(const StructurePrototype& b);                                        // copy constructor
-  int iomode;                                                                             // mode for printing
+  int iomode = JSON_MODE;                                                                             // mode for printing
 
     // ---------------------------------------------------------------------------
     // structure prototype information
-  uint natoms;                                                                            // number of atoms in the prototype (from the representative structure; not necessarily reduced)
-  int ntypes;                                                                             // number of types in prototype
+  uint natoms = 0;                                                                            // number of atoms in the prototype (from the representative structure; not necessarily reduced)
+  int ntypes = 0;                                                                             // number of types in prototype
   std::vector<std::string> elements;                                                                // list of elements exhibiting in this protoype (from representative and duplicate structures)
   std::vector<uint> stoichiometry;                                                             // reduced stoichiometry of prototype
   std::vector<std::vector<std::string>> atom_decorations_equivalent;                                    // equivalent atom decorations (permutations) of prototype
   std::string Pearson;                                                                         // Pearson symbol of prototype
-  uint space_group;                                                                       // space group number of prototype
+  uint space_group = 0;                                                                       // space group number of prototype
   std::vector<GroupedWyckoffPosition> grouped_Wyckoff_positions;                               // Wyckoff positions grouped by site type
   std::vector<std::string> wyckoff_site_symmetry;                                                   // vector of Wyckoff site symmetries of prototype
   std::vector<int> wyckoff_multiplicity;                                                       // vector of Wyckoff multiplicities of prototype
@@ -250,9 +248,6 @@ public:
   void copyPrototypeInformation(const StructurePrototype& b); // copy prototype information from one StructurePrototype object to another
   void copyDuplicate(const StructurePrototype& b, uint index, bool copy_misfit = false); // copy duplicate info to another StructurePrototype object
   void removeNonDuplicate(uint index); // remove non-duplicate structures
-private:
-  void free(); // free operator
-  void copy(const StructurePrototype& b); // copy constructor
 };
 
 // ***************************************************************************
@@ -277,13 +272,12 @@ class XtalFinderCalculator : public xStream {
 public:
   // ---------------------------------------------------------------------------
   // constructors
-  XtalFinderCalculator(uint num_proc_input = 1, std::ostream& oss = std::cout);
-  XtalFinderCalculator(std::ofstream& FileMESSAGE, uint num_proc_input = 1, std::ostream& oss = std::cout);
-  XtalFinderCalculator(double misfit_match_input, double misfit_family_input, uint num_proc_input = 1, std::ostream& oss = std::cout);
-  XtalFinderCalculator(double misfit_match_input, double misfit_family_input, std::ofstream& FileMESSAGE, uint num_proc_input = 1, std::ostream& oss = std::cout);
-  // ---------------------------------------------------------------------------
-  // destructors
-  ~XtalFinderCalculator();
+  XtalFinderCalculator(uint num_proc_input = 1, std::ostream& oss = std::cout) : xStream(oss), num_proc(num_proc_input) {}
+  XtalFinderCalculator(std::ofstream& FileMESSAGE, uint num_proc_input = 1, std::ostream& oss = std::cout) : xStream(FileMESSAGE, oss), num_proc(num_proc_input) {}
+  XtalFinderCalculator(double misfit_match_input, double misfit_family_input, uint num_proc_input = 1, std::ostream& oss = std::cout) :
+      xStream(oss), num_proc(num_proc_input), misfit_match(misfit_match_input), misfit_family(misfit_family_input) {}
+  XtalFinderCalculator(double misfit_match_input, double misfit_family_input, std::ofstream& FileMESSAGE, uint num_proc_input = 1, std::ostream& oss = std::cout) :
+      xStream(FileMESSAGE, oss), num_proc(num_proc_input), misfit_match(misfit_match_input), misfit_family(misfit_family_input) {}
   // ---------------------------------------------------------------------------
   // clear
   void clear();
@@ -291,15 +285,10 @@ public:
   // operator<<
   friend std::ostream& operator<<(std::ostream& oss, const XtalFinderCalculator& XtalFinderCalculator);
   // ---------------------------------------------------------------------------
-  // copy/assignment
-  const XtalFinderCalculator& operator=(const XtalFinderCalculator& b);
-  XtalFinderCalculator(const XtalFinderCalculator& b);
-
-  // ---------------------------------------------------------------------------
   // attributes
-  double misfit_match;
-  double misfit_family;
-  uint num_proc;
+  double misfit_match = DEFAULT_XTALFINDER_MISFIT_MATCH;
+  double misfit_family = DEFAULT_XTALFINDER_MISFIT_FAMILY;
+  uint num_proc = 1;
   std::vector<structure_container> structure_containers; // stores structures in a container (pointer for easy manipulation and mobility)
   anrl::ProtoData pd = anrl::ProtoData::get();
 
@@ -538,24 +527,13 @@ public:
   // ---------------------------------------------------------------------------
   // write output to file
   void writeComparisonOutputFile(const std::string& output, const std::string& directory, filetype format, output_file_xtalfinder comparison_mode, bool same_species);
-
-private:
-  void free(); // free operator
-  void copy(const XtalFinderCalculator& b); // copy constructor
 };
 
 namespace compare {
-  using std::cout;
-  using std::deque;
-  using std::ofstream;
-  using std::ostream;
-  using std::string;
-  using std::stringstream;
-  using std::vector;
   // ---------------------------------------------------------------------------
   // pair-wise comparisons (for use by other AFLOW processes)
-  string compareInputStructures(aurostd::xoption& vpflow, std::istream& cin, ostream& logstream = cout); // ME20210206
-  string compareInputStructures(const aurostd::xoption& vpflow, ostream& logstream = cout); // DX //DX20190425
+  std::string compareInputStructures(aurostd::xoption& vpflow, std::istream& cin, std::ostream& logstream = std::cout); // ME20210206
+  std::string compareInputStructures(const aurostd::xoption& vpflow, std::ostream& logstream = std::cout); // DX //DX20190425
   bool aflowCompareStructure(const xstructure& xstr1, const xstructure& xstr2, bool same_species, bool scale_volume, bool optimize_match, double& final_misfit, uint num_proc = 1); // Main function //DX20191108 - remove const & from bools
   bool aflowCompareStructure(const xstructure& xstr1, const xstructure& xstr2, bool same_species, bool scale_volume, bool optimize_match, double& final_misfit, structure_mapping_info& final_misfit_info, uint num_proc = 1); // Main function //DX20191108 - remove const & from bools
   // bool aflowCompareStructure(const xstructure& xstr1, const xstructure& xstr2, bool same_species, uint num_proc=1); //Overco, returns true (match), false (no match) //DX20191108 - remove const & from bools
@@ -568,93 +546,98 @@ namespace compare {
 
   // ---------------------------------------------------------------------------
   // comparisons to AFLOW database
-  vector<StructurePrototype> compare2database(const xstructure& xstrIN, const aurostd::xoption& vpflow, ostream& logstream = cout); // DX20200225
-  vector<StructurePrototype> compare2database(const xstructure& xstrIN, const aurostd::xoption& vpflow, ofstream& FileMESSAGE, ostream& logstream = cout); // DX20200225
-  bool isMatchingStructureInDatabase(const xstructure& xstrIN, const aurostd::xoption& vpflow, ostream& logstream = cout); // DX20200225
-  bool isMatchingStructureInDatabase(const xstructure& xstrIN, const aurostd::xoption& vpflow, ofstream& FileMESSAGE, ostream& logstream = cout); // DX20200225
-  vector<matching_structure> matchingStructuresInDatabase(const xstructure& xstrIN, const aurostd::xoption& vpflow, ostream& logstream = cout); // DX20200225
-  vector<matching_structure> matchingStructuresInDatabase(const xstructure& xstrIN, const aurostd::xoption& vpflow, ofstream& FileMESSAGE, ostream& logstream = cout); // DX20200225
-  string printCompare2Database(std::istream& input, const aurostd::xoption& vpflow, ostream& logstream = cout); // DX20200225
-  string printCompare2Database(std::istream& input, const aurostd::xoption& vpflow, ofstream& FileMESSAGE, ostream& logstream = cout); // CO20200225
-  string printCompare2Database(const xstructure& xstrIN, const aurostd::xoption& vpflow, ofstream& FileMESSAGE, ostream& logstream = cout); // DX20200225
+  std::vector<StructurePrototype> compare2database(const xstructure& xstrIN, const aurostd::xoption& vpflow, std::ostream& logstream = std::cout); // DX20200225
+  std::vector<StructurePrototype> compare2database(const xstructure& xstrIN, const aurostd::xoption& vpflow, std::ofstream& FileMESSAGE, std::ostream& logstream = std::cout); // DX20200225
+  bool isMatchingStructureInDatabase(const xstructure& xstrIN, const aurostd::xoption& vpflow, std::ostream& logstream = std::cout); // DX20200225
+  bool isMatchingStructureInDatabase(const xstructure& xstrIN, const aurostd::xoption& vpflow, std::ofstream& FileMESSAGE, std::ostream& logstream = std::cout); // DX20200225
+  std::vector<matching_structure> matchingStructuresInDatabase(const xstructure& xstrIN, const aurostd::xoption& vpflow, std::ostream& logstream = std::cout); // DX20200225
+  std::vector<matching_structure> matchingStructuresInDatabase(const xstructure& xstrIN, const aurostd::xoption& vpflow, std::ofstream& FileMESSAGE, std::ostream& logstream = std::cout); // DX20200225
+  std::string printCompare2Database(std::istream& input, const aurostd::xoption& vpflow, std::ostream& logstream = std::cout); // DX20200225
+  std::string printCompare2Database(std::istream& input, const aurostd::xoption& vpflow, std::ofstream& FileMESSAGE, std::ostream& logstream = std::cout); // CO20200225
+  std::string printCompare2Database(const xstructure& xstrIN, const aurostd::xoption& vpflow, std::ofstream& FileMESSAGE, std::ostream& logstream = std::cout); // DX20200225
 
   // ---------------------------------------------------------------------------
   // comparisons between entries in AFLOW database
-  string compareDatabaseEntries(const aurostd::xoption& vpflow, ostream& logstream = cout); // DX20191125
-  string compareDatabaseEntries(const aurostd::xoption& vpflow, ofstream& FileMESSAGE, ostream& logstream = cout); // DX20191125
+  std::string compareDatabaseEntries(const aurostd::xoption& vpflow, std::ostream& logstream = std::cout); // DX20191125
+  std::string compareDatabaseEntries(const aurostd::xoption& vpflow, std::ofstream& FileMESSAGE, std::ostream& logstream = std::cout); // DX20191125
 
   // ---------------------------------------------------------------------------
   // comparisons aflowlib entries
-  vector<aflowlib::_aflowlib_entry> getUniqueEntries(vector<aflowlib::_aflowlib_entry>& entries, uint num_proc, bool same_species, bool scale_volume, bool optimize_match); // DX20201111
-  vector<aflowlib::_aflowlib_entry> getUniqueEntries(vector<aflowlib::_aflowlib_entry>& entries, ostream& oss, ofstream& FileMESSAGE, uint num_proc, bool same_species, bool scale_volume, bool optimize_match); // DX20201111
+  std::vector<aflowlib::_aflowlib_entry> getUniqueEntries(std::vector<aflowlib::_aflowlib_entry>& entries, uint num_proc, bool same_species, bool scale_volume, bool optimize_match); // DX20201111
+  std::vector<aflowlib::_aflowlib_entry> getUniqueEntries(std::vector<aflowlib::_aflowlib_entry>& entries, std::ostream& oss, std::ofstream& FileMESSAGE, uint num_proc, bool same_species, bool scale_volume, bool optimize_match); // DX20201111
 
   // ---------------------------------------------------------------------------
   // comparisons to AFLOW prototype library
-  vector<StructurePrototype> compare2prototypes(std::istream& input, const aurostd::xoption& vpflow, ostream& logstream = cout); // DX20181004 //DX20190314 - changed return value
-  vector<StructurePrototype> compare2prototypes(std::istream& input, const aurostd::xoption& vpflow, ofstream& FileMESSAGE, ostream& logstream = cout); // DX20181004 //DX20190314 - changed return value
-  string printMatchingPrototypes(std::istream& cin, const aurostd::xoption& vpflow); // DX20190314
-  vector<string> getMatchingPrototypes(xstructure& xstr, const string& catalog); // DX20190314
-  vector<string> getMatchingPrototypes(xstructure& xstr, const string& catalog); // DX20190314
-  vector<string> getMatchingPrototypes(xstructure& xstr, const aurostd::xoption& vpflow, const string& catalog); // DX20210421
+  std::vector<StructurePrototype> compare2prototypes(std::istream& input, const aurostd::xoption& vpflow, std::ostream& logstream = std::cout); // DX20181004 //DX20190314 - changed return value
+  std::vector<StructurePrototype> compare2prototypes(std::istream& input, const aurostd::xoption& vpflow, std::ofstream& FileMESSAGE, std::ostream& logstream = std::cout); // DX20181004 //DX20190314 - changed return value
+  std::string printMatchingPrototypes(std::istream& cin, const aurostd::xoption& vpflow); // DX20190314
+  std::vector<std::string> getMatchingPrototypes(xstructure& xstr, const std::string& catalog); // DX20190314
+  std::vector<std::string> getMatchingPrototypes(xstructure& xstr, const std::string& catalog); // DX20190314
+  std::vector<std::string> getMatchingPrototypes(xstructure& xstr, const aurostd::xoption& vpflow, const std::string& catalog); // DX20210421
 
   // ---------------------------------------------------------------------------
   // permutaion comparisons
-  string compareAtomDecorations(std::istream& input, const aurostd::xoption& vpflow); // DX20181004
+  std::string compareAtomDecorations(std::istream& input, const aurostd::xoption& vpflow); // DX20181004
 
   // ---------------------------------------------------------------------------
   // isopointal AFLOW prototype functions
-  string isopointalPrototypes(std::istream& input, const aurostd::xoption& vpflow); // DX20200131
-  std::set<string> getIsopointalPrototypes(xstructure& xstr, const string& catalog); // DX20200131
+  std::string isopointalPrototypes(std::istream& input, const aurostd::xoption& vpflow); // DX20200131
+  std::set<std::string> getIsopointalPrototypes(xstructure& xstr, const std::string& catalog); // DX20200131
 
   // ---------------------------------------------------------------------------
   // comparison options
-  aurostd::xoption loadDefaultComparisonOptions(const string& mode = ""); // DX20200103
+  aurostd::xoption loadDefaultComparisonOptions(const std::string& mode = ""); // DX20200103
 
   // ---------------------------------------------------------------------------
   // geneate structures
-  void generateStructures(vector<StructurePrototype>& structures, ostream& oss = cout, uint start_index = 0, uint end_index = AUROSTD_MAX_UINT); // DX20191122
-  bool generateStructure(const string& structure_name, const string& structure_source, uint relaxation_step, xstructure& structure, ostream& oss); // DX20200429 - added relaxation_step
-  void removeNonGeneratedStructures(vector<StructurePrototype>& structures); // DX20191105
+  void generateStructures(std::vector<StructurePrototype>& structures, std::ostream& oss = std::cout, uint start_index = 0, uint end_index = AUROSTD_MAX_UINT); // DX20191122
+  bool generateStructure(const std::string& structure_name, const std::string& structure_source, uint relaxation_step, xstructure& structure, std::ostream& oss); // DX20200429 - added relaxation_step
+  void removeNonGeneratedStructures(std::vector<StructurePrototype>& structures); // DX20191105
 
   // ---------------------------------------------------------------------------
   // functions for determining isopointal structures (same/compatible symmetry)
-  void groupWyckoffPositions(const xstructure& xstr, vector<GroupedWyckoffPosition>& grouped_positions);
-  void groupWyckoffPositions(const vector<wyckoffsite_ITC>& wyckoff_sites_ITC, vector<GroupedWyckoffPosition>& grouped_positions); // DX20200512
-  void groupWyckoffPositionsFromGroupedString(uint space_group_number, uint setting, const vector<vector<string>>& grouped_Wyckoff_string, vector<GroupedWyckoffPosition>& grouped_positions); // DX20200622 - removed pointer to uints
-  string printWyckoffString(const vector<GroupedWyckoffPosition>& grouped_positions, bool alphabetize = false);
-  vector<GroupedWyckoffPosition> sortSiteSymmetryOfGroupedWyckoffPositions(const vector<GroupedWyckoffPosition>& grouped_Wyckoffs); // DX20190219
-  bool matchableWyckoffPositions(const vector<GroupedWyckoffPosition>& grouped_Wyckoffs_str1, const vector<GroupedWyckoffPosition>& grouped_Wyckoffs_str2, bool same_species);
-  bool matchableWyckoffPositionSet(const vector<vector<vector<string>>>& grouped_possible_Wyckoff_letters, const vector<vector<string>>& grouped_Wyckoff_letters);
-  vector<vector<string>> convertANRLWyckoffString2GroupedPositions(const string& label);
-  vector<vector<string>> convertWyckoffString2GroupedPositions(const string& Wyckoff_letter_string);
-  bool sameStoichiometry(const vector<uint>& stoich1, const vector<uint>& stoich2);
+  void groupWyckoffPositions(const xstructure& xstr, std::vector<GroupedWyckoffPosition>& grouped_positions);
+  void groupWyckoffPositions(const std::vector<wyckoffsite_ITC>& wyckoff_sites_ITC, std::vector<GroupedWyckoffPosition>& grouped_positions); // DX20200512
+  void groupWyckoffPositionsFromGroupedString(uint space_group_number, uint setting, const std::vector<std::vector<std::string>>& grouped_Wyckoff_string, std::vector<GroupedWyckoffPosition>& grouped_positions); // DX20200622 - removed pointer to uints
+  std::string printWyckoffString(const std::vector<GroupedWyckoffPosition>& grouped_positions, bool alphabetize = false);
+  std::vector<GroupedWyckoffPosition> sortSiteSymmetryOfGroupedWyckoffPositions(const std::vector<GroupedWyckoffPosition>& grouped_Wyckoffs); // DX20190219
+  bool matchableWyckoffPositions(const std::vector<GroupedWyckoffPosition>& grouped_Wyckoffs_str1, const std::vector<GroupedWyckoffPosition>& grouped_Wyckoffs_str2, bool same_species);
+  bool matchableWyckoffPositionSet(const std::vector<std::vector<std::vector<std::string>>>& grouped_possible_Wyckoff_letters, const std::vector<std::vector<std::string>>& grouped_Wyckoff_letters);
+  std::vector<std::vector<std::string>> convertANRLWyckoffString2GroupedPositions(const std::string& label);
+  std::vector<std::vector<std::string>> convertWyckoffString2GroupedPositions(const std::string& Wyckoff_letter_string);
+  bool sameStoichiometry(const std::vector<uint>& stoich1, const std::vector<uint>& stoich2);
   bool matchableSpaceGroups(uint space_group_1, uint space_group_2);
   bool matchableEnantiomorphicSpaceGroups(uint space_group_1, uint space_group_2);
-  bool filterPrototypes(
-      uint& species_count, string& reduced_stoichiometry, uint& space_group, vector<vector<vector<string>>>& grouped_possible_Wyckoff_letters, vector<string>& prototype_labels, vector<uint>& species_counts, vector<uint>& space_groups);
+  bool filterPrototypes(uint& species_count,
+                        std::string& reduced_stoichiometry,
+                        uint& space_group,
+                        std::vector<std::vector<std::vector<std::string>>>& grouped_possible_Wyckoff_letters,
+                        std::vector<std::string>& prototype_labels,
+                        std::vector<uint>& species_counts,
+                        std::vector<uint>& space_groups);
   bool structuresCompatible(const structure_container& structure1, const structure_container& structure2, bool same_species, bool ignore_symmetry, bool ignore_Wyckoff, bool ignore_environment, bool ignore_environment_angles); // DX20201207
 
   // ---------------------------------------------------------------------------
   // comparing permutations/atom decorations
-  vector<std::pair<uint, uint>> calculateDivisors(uint number);
-  bool checkNumberOfGroupings(const vector<StructurePrototype>& comparison_schemes, uint number);
-  void generatePermutationString(const deque<uint>& stoichiometry, vector<string>& permutation); // DX20190508 //DX20191125 - changed from vector to deque
-  void generatePermutationString(const vector<uint>& stoichiometry, vector<string>& permutation); // DX20190508
+  std::vector<std::pair<uint, uint>> calculateDivisors(uint number);
+  bool checkNumberOfGroupings(const std::vector<StructurePrototype>& comparison_schemes, uint number);
+  void generatePermutationString(const std::deque<uint>& stoichiometry, std::vector<std::string>& permutation); // DX20190508 //DX20191125 - changed from std::vector to std::deque
+  void generatePermutationString(const std::vector<uint>& stoichiometry, std::vector<std::string>& permutation); // DX20190508
   bool generatePermutations(uint& num_elements,
-                            vector<uint>& indices,
-                            vector<string>& names,
-                            vector<GroupedWyckoffPosition>& grouped_Wyckoff_positions,
-                            vector<vector<uint>>& permutations,
-                            vector<vector<string>>& name_order,
-                            vector<vector<GroupedWyckoffPosition>>& permutation_grouped_Wyckoff_positions);
+                            std::vector<uint>& indices,
+                            std::vector<std::string>& names,
+                            std::vector<GroupedWyckoffPosition>& grouped_Wyckoff_positions,
+                            std::vector<std::vector<uint>>& permutations,
+                            std::vector<std::vector<std::string>>& name_order,
+                            std::vector<std::vector<GroupedWyckoffPosition>>& permutation_grouped_Wyckoff_positions);
   bool arePermutationsComparableViaComposition(const xstructure& xstr); // DX20190624
-  bool arePermutationsComparableViaComposition(const vector<uint>& composition, bool reduce_composition = false); // DX20190624
-  bool arePermutationsComparableViaSymmetry(const vector<GroupedWyckoffPosition>& grouped_Wyckoff_positions); // DX20190624
+  bool arePermutationsComparableViaComposition(const std::vector<uint>& composition, bool reduce_composition = false); // DX20190624
+  bool arePermutationsComparableViaSymmetry(const std::vector<GroupedWyckoffPosition>& grouped_Wyckoff_positions); // DX20190624
 
   // ---------------------------------------------------------------------------
   // ICSD comparisons
-  string findICSDName(const string& name);
-  string findMinimumICSDEntry(const vector<string>& ICSD_entries);
+  std::string findICSDName(const std::string& name);
+  std::string findMinimumICSDEntry(const std::vector<std::string>& ICSD_entries);
 
   // ---------------------------------------------------------------------------
   // matchable species/types
@@ -666,36 +649,36 @@ namespace compare {
   void rescaleStructure(xstructure& x1, xstructure& x2);
   void atomicNumberDensity(const xstructure& xstr1, xstructure& xstr2);
   void atomicNumberDensity(const xstructure& xstr1, xstructure& xstr2, double& rescale_factor); // DX20201215
-  void printParameters(const xstructure& xstr, ostream& oss);
+  void printParameters(const xstructure& xstr, std::ostream& oss);
 
   // ---------------------------------------------------------------------------
   // least-frequently occurring atom (LFA) functions
-  bool sortBySecondPair(const std::pair<string, uint>& a, const std::pair<string, uint>& b);
-  vector<string> sortSpeciesByFrequency(const xstructure& xstr);
-  vector<uint> atomIndicesSortedByFrequency(const xstructure& xstr);
+  bool sortBySecondPair(const std::pair<std::string, uint>& a, const std::pair<std::string, uint>& b);
+  std::vector<std::string> sortSpeciesByFrequency(const xstructure& xstr);
+  std::vector<uint> atomIndicesSortedByFrequency(const xstructure& xstr);
   bool similarLatticeParameters(const aurostd::xvector<double> d1, const aurostd::xmatrix<double> d2);
 
   // ---------------------------------------------------------------------------
   // atom mapping functions
   bool consistentAtomMappingType(const _atom& atom1, const _atom& atom2, uint index_x1, uint index_x2, bool same_species, bool is_collinear,
                                  bool is_non_collinear); // DX20201209
-  bool consistentAtomMappingIndex(uint index1, uint index2, const vector<uint>& index1_list,
-                                  const vector<uint>& index2_list); // DX20201209
-  bool consistentAtomSetMappings(const string& atom1_name, const string& atom2_name, const vector<string>& vatoms1_name,
-                                 const vector<string>& vatoms2_name); // DX20201209
-  vector<aurostd::xvector<double>> minimizeMappingDistances(const vector<aurostd::xvector<double>>& distance_vectors); // DX20200909
-  vector<aurostd::xvector<double>> minimizeMappingDistances(const vector<aurostd::xvector<double>>& distance_vectors, aurostd::xvector<double>& origin_shift); // DX20200909
+  bool consistentAtomMappingIndex(uint index1, uint index2, const std::vector<uint>& index1_list,
+                                  const std::vector<uint>& index2_list); // DX20201209
+  bool consistentAtomSetMappings(const std::string& atom1_name, const std::string& atom2_name, const std::vector<std::string>& vatoms1_name,
+                                 const std::vector<std::string>& vatoms2_name); // DX20201209
+  std::vector<aurostd::xvector<double>> minimizeMappingDistances(const std::vector<aurostd::xvector<double>>& distance_vectors); // DX20200909
+  std::vector<aurostd::xvector<double>> minimizeMappingDistances(const std::vector<aurostd::xvector<double>>& distance_vectors, aurostd::xvector<double>& origin_shift); // DX20200909
 
   // ---------------------------------------------------------------------------
   // lattice similarity
-  void cellDiagonal(const xstructure& xstr, vector<double>& diag_sum, vector<double>& diag_diff, const double& scale);
-  void cellDiagonal(const aurostd::xmatrix<double>& lattice, vector<double>& diag_sum, vector<double>& diag_diff, const double& scale);
+  void cellDiagonal(const xstructure& xstr, std::vector<double>& diag_sum, std::vector<double>& diag_diff, const double& scale);
+  void cellDiagonal(const aurostd::xmatrix<double>& lattice, std::vector<double>& diag_sum, std::vector<double>& diag_diff, const double& scale);
 
   // ---------------------------------------------------------------------------
   // environment analysis (near isoconfigurational analysis)
-  void computeLFAEnvironments(vector<StructurePrototype>& structures, uint start_index = 0, uint end_index = AUROSTD_MAX_UINT); // DX20191122
-  vector<AtomEnvironment> computeLFAEnvironment(const xstructure& xstr, bool unique_only = true); // DX20190711
-  bool compatibleEnvironmentSets(const vector<AtomEnvironment>& env_set1, const vector<AtomEnvironment>& env_set2, bool same_species, bool ignore_environment_angles, bool exact_match); // DX20190711 //DX20200320 - added environment angles
+  void computeLFAEnvironments(std::vector<StructurePrototype>& structures, uint start_index = 0, uint end_index = AUROSTD_MAX_UINT); // DX20191122
+  std::vector<AtomEnvironment> computeLFAEnvironment(const xstructure& xstr, bool unique_only = true); // DX20190711
+  bool compatibleEnvironmentSets(const std::vector<AtomEnvironment>& env_set1, const std::vector<AtomEnvironment>& env_set2, bool same_species, bool ignore_environment_angles, bool exact_match); // DX20190711 //DX20200320 - added environment angles
   bool compatibleEnvironments(const AtomEnvironment& env_1,
                               const AtomEnvironment& env_2,
                               bool same_species,
@@ -703,45 +686,46 @@ namespace compare {
                               bool exact_match); // DX20190711 //DX20200320 - added environment angles
   bool compatibleEnvironments(const AtomEnvironment& env_1,
                               const AtomEnvironment& env_2,
-                              vector<vector<string>>& matched_species,
+                              std::vector<std::vector<std::string>>& matched_species,
                               bool same_species,
                               bool ignore_environment_angles,
                               bool exact_match); // DX20190711 //DX20200320 - added environment angles
-  vector<vector<double>> getAnglesBetweenMixedSpeciesEnvironments(const vector<vector<aurostd::xvector<double>>>& neighbor_coordinates); // DX20190715
-  bool compatibleNearestNeighborTypesEnvironments(const vector<vector<double>>& nn_lfa_with_types_1, const vector<vector<double>>& nn_lfa_with_types_2, int type_match);
+  std::vector<std::vector<double>> getAnglesBetweenMixedSpeciesEnvironments(const std::vector<std::vector<aurostd::xvector<double>>>& neighbor_coordinates); // DX20190715
+  bool compatibleNearestNeighborTypesEnvironments(const std::vector<std::vector<double>>& nn_lfa_with_types_1, const std::vector<std::vector<double>>& nn_lfa_with_types_2, int type_match);
 
   // ---------------------------------------------------------------------------
   // cost functions
-  double latticeDeviation(const vector<double>& diag_sum1, const vector<double>& diag_sum2, const vector<double>& diag_diff1, const vector<double>& diag_diff2);
-  void coordinateDeviation(structure_mapping_info& mapping_info, const vector<double>& nn_xstr1,
-                           const vector<double>& nn_xstr2); // DX20201210
+  double latticeDeviation(const std::vector<double>& diag_sum1, const std::vector<double>& diag_sum2, const std::vector<double>& diag_diff1, const std::vector<double>& diag_diff2);
+  void coordinateDeviation(structure_mapping_info& mapping_info, const std::vector<double>& nn_xstr1,
+                           const std::vector<double>& nn_xstr2); // DX20201210
   void magneticDeviation(const xstructure& xstr1, const xstructure& xstr2,
                          structure_mapping_info& mapping_info); // DX20201210
   double computeMisfit(const structure_mapping_info& mapping_info); // DX20201210
   double computeMisfit(double dev, double dis, double fail);
   double computeMisfitMagnetic(const structure_mapping_info& mapping_info); // DX20201210
   double computeMisfitMagnetic(double dev, double dis, double fail, double mag_dis, double mag_fail); // DX20190801
-  double checkLatticeDeviation(const double& xstr1_vol, const aurostd::xmatrix<double>& q2, const vector<double>& D1, const vector<double>& F1);
+  double checkLatticeDeviation(const double& xstr1_vol, const aurostd::xmatrix<double>& q2, const std::vector<double>& D1, const std::vector<double>& F1);
 
   // ---------------------------------------------------------------------------
   // structure manipulation
-  xstructure GetLFASupercell(const xstructure& xstr, const aurostd::xvector<int>& dims, const string& lfa_name); // DX20190530
+  xstructure GetLFASupercell(const xstructure& xstr, const aurostd::xvector<int>& dims, const std::string& lfa_name); // DX20190530
   void getLatticeTransformations(const aurostd::xmatrix<double>& lattice_original,
                                  const aurostd::xmatrix<double>& lattice_ideal,
-                                 const vector<aurostd::xmatrix<double>>& candidate_lattices,
-                                 vector<aurostd::xmatrix<double>>& basis_transformations,
-                                 vector<aurostd::xmatrix<double>>& rotations); // DX20201015
+                                 const std::vector<aurostd::xmatrix<double>>& candidate_lattices,
+                                 std::vector<aurostd::xmatrix<double>>& basis_transformations,
+                                 std::vector<aurostd::xmatrix<double>>& rotations); // DX20201015
   void getLatticeTransformation(const aurostd::xmatrix<double>& lattice_original,
                                 const aurostd::xmatrix<double>& lattice_ideal,
                                 const aurostd::xmatrix<double>& candidate_lattice,
                                 aurostd::xmatrix<double>& basis_transformation,
                                 aurostd::xmatrix<double>& rotation); // DX20201015
-  vector<xstructure> getTransformedStructures(const xstructure& xstr, const vector<aurostd::xmatrix<double>>& basis_transformations,
-                                              const vector<aurostd::xmatrix<double>>& rotations); // DX20201119
+  std::vector<xstructure> getTransformedStructures(const xstructure& xstr,
+                                                   const std::vector<aurostd::xmatrix<double>>& basis_transformations,
+                                                   const std::vector<aurostd::xmatrix<double>>& rotations); // DX20201119
 
   xstructure supercell2newRepresentation(const xstructure& xstr_supercell, const aurostd::xmatrix<double>& lattice);
 
-  void writePythonScript(ostream& oss); // DX20201228
+  void writePythonScript(std::ostream& oss); // DX20201228
 
 } // namespace compare
 

@@ -5,9 +5,6 @@
 // ***************************************************************************
 // Stefano Curtarolo
 
-#ifndef _AUROSTD_MAIN_CPP_
-#define _AUROSTD_MAIN_CPP_
-
 #include <algorithm>
 #include <cctype>
 #include <cerrno>
@@ -50,7 +47,6 @@
 #include "aurostd_xhttp.h"
 #include "aurostd_xmatrix.h"
 #include "aurostd_xoption.h"
-#include "aurostd_xrandom.h"
 #include "aurostd_xscalar.h"
 #include "aurostd_xvector.h"
 
@@ -702,16 +698,36 @@ namespace aurostd {
   }
 
   // ***************************************************************************
-  // Function getPWD
+  // Function getEveryNth //SD20230216
   // ***************************************************************************
-  /// @brief returns the current directory
-  /// @authors
-  /// @mod{CO,20191112,created function}
-  /// @mod{SD,20240312,rewritten using filesystem}
-  /// @note legacy function to work with strings rather than filesystem objects directly
-  string getPWD() {
-    return std::filesystem::absolute(std::filesystem::current_path()).string();
+  template <class utype> vector<utype> getEveryNth(const vector<utype>& vec, uint n) {
+    if (n == 0) {
+      string message = "Cannot increment by 0";
+      throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, message, _VALUE_ILLEGAL_);
+    }
+    vector<utype> vec_n;
+    for (size_t i = 0; i < vec.size(); i += n) {
+      vec_n.push_back(vec[i]);
+    }
+    return vec_n;
   }
+
+  vector<double> getEveryNth(const vector<double>& vec, uint n) {
+    if (n == 0) {
+      string message = "Cannot increment by 0";
+      throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, message, _VALUE_ILLEGAL_);
+    }
+    vector<double> vec_n;
+    for (size_t i = 0; i < vec.size(); i += n) {
+      vec_n.push_back(vec[i]);
+    }
+    return vec_n;
+  }
+
+//#define AST_TEMPLATE(utype) template<class utype> vector<utype> getEveryNth(const vector<utype>& vec, uint n);
+//  AST_GEN_1(AST_UTYPE_NUM)
+//  AST_GEN_1(AST_UTYPE_STRING)
+//#undef AST_TEMPLATE
 
   // ***************************************************************************
   // Function GetNumFields
@@ -3735,34 +3751,49 @@ namespace aurostd {
   template <typename typeTo, typename typeFrom> typeTo stream2stream(const typeFrom& from) { // CO20210315 - cleaned up
     return (typeTo) stream2stream<typeTo>(from, AUROSTD_DEFAULT_PRECISION, DEFAULT_STREAM);
   }
-  template <typename utype> utype string2utype(const string& from, const uint base) {
+
+  /// @brief convert a string to an utype (number)
+  /// @param from string to convert
+  /// @param base number base - default 10
+  /// @return parsed number
+  /// @authors
+  /// @mod{HE,20260218,complete rewrite using C++99/C++11}
+  /// @note failed conversions or empty strings returns a 0 \n
+  /// @note only with base 10 decimals are possible \n
+  /// @note all characters after a valid number are ignored\n
+  /// @note prefixes (0x and 0X) are filtered when using base 16 \n
+  template <typename utype> utype string2utype(const std::string& from, const uint base) {
     if (from.empty()) {
-      return (utype) stream2stream<utype>("0", AUROSTD_DEFAULT_PRECISION, DEFAULT_STREAM);
-    } // CO20210315 - stream2stream behavior is not defined for empty string input: https://stackoverflow.com/questions/4999650/c-how-do-i-check-if-the-cin-buffer-is-empty
-    if (from.find("T") != string::npos || from.find("t") != string::npos || from.find("F") != string::npos || from.find("f") != string::npos) { // CO20221112
-      // CO20221112 - gdb died here when running chull in parallel
-      // seems toupper might have some issues with threaded processes
-      // adding this guard to mitigate the issue
-      const string FROM = aurostd::toupper(from); // CO20210315
-      if (FROM == "true" || FROM == "T" || FROM == ".true.") {
-        return (utype) stream2stream<utype>("1", AUROSTD_DEFAULT_PRECISION, DEFAULT_STREAM);
-        ;
-      } // CO20210315 - safe because inputs are generally digits
-      if (FROM == "false" || FROM == "F" || FROM == ".false.") {
-        return (utype) stream2stream<utype>("0", AUROSTD_DEFAULT_PRECISION, DEFAULT_STREAM);
-        ;
-      } // CO20210315 - safe because inputs are generally digits
+      return 0;
     }
-    if (base != 10) { // HE20220324 add non-decimal bases (will ignore positions behind a point)
-      std::stringstream temp;
-      temp << std::stoll(from, nullptr, base); // stoll -> string to long long
-      return (utype) stream2stream<utype>(temp.str(), AUROSTD_DEFAULT_PRECISION, DEFAULT_STREAM);
+
+    // static bool sets
+    static const std::set<std::string, std::less<>> true_set = {"TRUE", "True", "true", "T", "t", ".TRUE.", ".True.", ".true.", "1"};
+    static const std::set<std::string, std::less<>> false_set = {"FALSE", "False", "false", "F", "f", ".FALSE.", ".False.", ".false.", "0"};
+
+    if (const auto it = true_set.find(from); it != true_set.end()) {
+      return 1;
     }
-    return (utype) stream2stream<utype>(from, AUROSTD_DEFAULT_PRECISION, DEFAULT_STREAM);
+    if (const auto it = false_set.find(from); it != false_set.end()) {
+      return 0;
+    }
+
+    char* p_end{};
+    // if the user wants integer (not bool) values we can use strtol directly
+    if constexpr (std::is_integral_v<utype> and !std::is_same_v<utype, bool>) {
+      return std::strtol(from.data(), &p_end, base);
+    }
+    // for float double and bool it depends on the base
+    if (base == 10) {
+      // decimals are well-defined for base 10
+      return std::strtod(from.data(), &p_end);
+    }
+    // for all others decimal points will be ignored
+    return std::strtol(from.data(), &p_end, base);
   }
-#define AST_TEMPLATE(atype) template atype string2utype(const string& from, const uint base);
+
+#define AST_TEMPLATE(atype) template atype string2utype(const std::string& from, const uint base);
   AST_GEN_1(AST_UTYPE_NUM)
-  AST_GEN_1(AST_UTYPE_STRING)
 #undef AST_TEMPLATE
 
   string string2string(const string& from) {
@@ -5654,6 +5685,44 @@ namespace aurostd {
 // ***************************************************************************
 // FUNCTION HTML LATEX TXT
 
+namespace // anonymous-namespace
+{
+  /// @brief convert between latex and HTML accents
+  /// @authors
+  /// @mod{HE,20260327,created}
+  /// @see
+  /// @xlink{http://en.wikibooks.org/wiki/LaTeX/Accents}
+  /// @xlink{https://en.wikipedia.org/wiki/List_of_XML_and_HTML_character_entity_references#List_of_character_entity_references_in_HTML}
+  void accent_convert(std::string& work_str, const std::string& direction) {
+    const std::vector<std::pair<std::string, std::string>> accent_list({
+        { "\\`", "grave"}, // ò grave accent
+        { "\\'", "acute"}, // ó acute accent
+        { "\\^",  "circ"}, // ô circumflex
+        {"\\\"",   "uml"}, // ö umlaut
+        { "\\H", "dblac"}, // ő	long Hungarian umlaut (double acute)
+        { "\\~", "tilde"}, // õ tilde
+        { "\\c", "cedil"}, // ç cedilla
+        { "\\k",  "ogon"}, // ą	ogonek
+        { "\\=",  "macr"}, // ō	macron accent (a bar over the letter)
+        { "\\.",   "dot"}, // ȯ dot over the letter
+        { "\\r",  "ring"}, // å ring over the letter
+        { "\\u", "breve"}, // ŏ breve over the letter
+        { "\\v", "caron"}, // š caron/háček ("v") over the letter
+    });
+    const std::vector<std::string> letters({"a", "A", "c", "C", "e", "E", "i", "I", "o", "O", "u", "U", "n", "N", "z", "Z"});
+
+    for (const auto& [latex, html] : accent_list) {
+      for (const string& letter : letters) {
+        if (direction == "latex2html") {
+          aurostd::StringSubstInPlace(work_str, latex + "{" + letter + "}", "&" + letter + html + ";");
+        } else if (direction == "html2latex") {
+          aurostd::StringSubstInPlace(work_str, "&" + letter + html + ";", latex + "{" + letter + "}"); // umlaut
+        }
+      }
+    }
+  }
+} // namespace
+
 namespace aurostd {
 
   // http://www.w3schools.com/html/html_entities.asp
@@ -5671,14 +5740,13 @@ namespace aurostd {
     return out;
   }
 
-  /// @brief convert html charecters to their latex varient
+  /// @brief convert HTML characters to their latex variant
   /// @authors
   /// @mod{HE,20241031,compacting and bug fixes}
-  /// @see
-  /// @xlink{http://en.wikibooks.org/wiki/LaTeX/Accents}
+  /// @mod{HE,20260327,use unified accent function}
   string html2latex(const string& str) {
     string out = str;
-    const std::vector<std::pair<std::string, std::string>> simple_replacments = {
+    const std::vector<std::pair<std::string, std::string>> simple_replacements = {
         {       "_",        "\\_"},
         {   "<sub>",        "$_{"},
         {  "</sub>",         "}$"},
@@ -5694,8 +5762,8 @@ namespace aurostd {
         {  "Csanyi",  "Cs\\'anyi"},
         {   "Pólya", "P\\'{o}lya"}  // Legacy special cases
     };
-    for (const auto& [old, replacment] : simple_replacments) {
-      aurostd::StringSubstInPlace(out, old, replacment);
+    for (const auto& [old, replacements] : simple_replacements) {
+      aurostd::StringSubstInPlace(out, old, replacements);
     }
 
     if (!aurostd::substring2bool(out, "Rosenbrock")) {
@@ -5703,16 +5771,8 @@ namespace aurostd {
     }
 
     // Accents
-    for (const string& letter : {"a", "A", "e", "E", "i", "I", "o", "O", "u", "U", "n", "N", "z", "Z"}) {
-      aurostd::StringSubstInPlace(out, "&" + letter + "uml;", "\\\"{" + letter + "}"); // umlaut
-      aurostd::StringSubstInPlace(out, "&" + letter + "grave;", "\\`{" + letter + "}"); // grave accent
-      aurostd::StringSubstInPlace(out, "&" + letter + "acute;", "\\'{" + letter + "}"); // acute accent
-      aurostd::StringSubstInPlace(out, "&" + letter + "tilde;", "\\~{" + letter + "}"); // tilde
-      aurostd::StringSubstInPlace(out, "&" + letter + "circ;", "\\^{" + letter + "}"); // circ
-      aurostd::StringSubstInPlace(out, "&" + letter + "ring;", "\\r{" + letter + "}"); // ring
-      aurostd::StringSubstInPlace(out, "&" + letter + "cedil;", "\\c{" + letter + "}"); // cedil
-      aurostd::StringSubstInPlace(out, "&+letter+caron;", "{\\v{+letter+}}"); // caron
-    }
+    accent_convert(out, "html2latex");
+
     aurostd::StringSubstInPlace(out, "&lstrok;", "\\l{}");
     aurostd::StringSubstInPlace(out, "&Lstrok;", "\\L{}"); // strok
     aurostd::StringSubstInPlace(out, "&oslash;", "{\\o{}}");
@@ -5764,25 +5824,15 @@ namespace aurostd {
     return out;
   }
 
-  /// @brief convert latex charecters to their HTML varient
+  /// @brief convert latex characters to their HTML varient
   /// @authors
   /// @mod{HE,20241031,compacting and bug fixes}
-  /// @see
-  /// @xlink{http://en.wikibooks.org/wiki/LaTeX/Accents}
-  string latex2html(const string& str) {
+  /// @mod{HE,20260327,use unified accent function}
+  std::string latex2html(const std::string& str) {
     string out = str;
 
-    // Accents
-    for (const string& letter : {"a", "A", "e", "E", "i", "I", "o", "O", "u", "U", "n", "N", "z", "Z"}) {
-      aurostd::StringSubstInPlace(out, "\\\"{" + letter + "}", "&" + letter + "uml;"); // umlaut
-      aurostd::StringSubstInPlace(out, "\\`{" + letter + "}", "&" + letter + "grave;"); // grave accent
-      aurostd::StringSubstInPlace(out, "\\'{" + letter + "}", "&" + letter + "acute;"); // acute accent
-      aurostd::StringSubstInPlace(out, "\\~{" + letter + "}", "&" + letter + "tilde;"); // tilde
-      aurostd::StringSubstInPlace(out, "\\^{" + letter + "}", "&" + letter + "circ;"); // circ
-      aurostd::StringSubstInPlace(out, "\\r{" + letter + "}", "&" + letter + "ring;"); // ring
-      aurostd::StringSubstInPlace(out, "\\c{" + letter + "}", "&" + letter + "cedil;"); // cedil
-      aurostd::StringSubstInPlace(out, "{\\v{+letter+}}", "&+letter+caron;"); // caron
-    }
+    accent_convert(out, "latex2html");
+
     aurostd::StringSubstInPlace(out, "\\l{}", "&lstrok;");
     aurostd::StringSubstInPlace(out, "\\L{}", "&Lstrok;"); // strok
     aurostd::StringSubstInPlace(out, "{\\o{}}", "&oslash;");
@@ -5836,7 +5886,7 @@ namespace aurostd {
     return out;
   }
 
-  // CO20190419 - moved from chull
+  // CO20190419
   string fixStringLatex(const string& input, bool double_back_slash, bool symmetry_string) {
     // deals with special characters for LaTeX, like some characters in prototype
     // see http://tex.stackexchange.com/questions/34580/escape-character-in-latex
@@ -5931,7 +5981,6 @@ namespace aurostd {
           if (!found_escaped_char) {
             stringstream message;
             message << "Extraneous backslash found in \"" << input << "\" which may cause problems for LaTeX/gnuplot";
-            //[moved from chull]pflow::logger(__AFLOW_FUNC__,message,m_aflags, *p_FileMESSAGE,*p_oss,_LOGGER_WARNING_);
             cerr << __AFLOW_FUNC__ << " ERROR - " << message.str() << endl;
             return input;
           }
@@ -7569,7 +7618,7 @@ namespace aurostd {
     return joinWDelimiter(rows, ",");
   }
 #define AST_TEMPLATE(utype) template string xmat2String(const xmatrix<utype>&);
-  AST_GEN_1(AST_UTYPE_AINT)
+  AST_GEN_1(AST_UTYPE_NUM)
 #undef AST_TEMPLATE
 } // namespace aurostd
 // DX20170803 START: Matrix to END
@@ -7842,8 +7891,6 @@ namespace aurostd {
     return vstr.size();
   }
 } // namespace aurostd
-
-#endif // _AURO_IMPLEMENTATIONS_
 
 // ***************************************************************************
 // *                                                                         *

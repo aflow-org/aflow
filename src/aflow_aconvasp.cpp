@@ -5,9 +5,6 @@
 // ***************************************************************************
 // Stefano Curtarolo and Dane Morgan
 
-#ifndef _AFLOW_PFLOW_CPP_
-#define _AFLOW_PFLOW_CPP_
-
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -39,9 +36,12 @@
 using std::deque;
 using std::endl;
 using std::ifstream;
+using std::iostream;
 using std::istream;
+using std::istringstream;
 using std::ofstream;
 using std::ostream;
+using std::ostringstream;
 using std::string;
 using std::stringstream;
 using std::vector;
@@ -240,7 +240,7 @@ _atom ConvertAtomToLat(const _atom& in_at, const xmatrix<double>& lattice) {
 double GetXrayScattFactor(const string& _name, double lambda, bool clean) {
   string name = _name;  // CO20190322
   if (clean) {
-    name = KBIN::VASP_PseudoPotential_CleanName(name);
+    name = aurostd::VASP_PseudoPotential_CleanName(name);
   } // CO20190322
   if (lambda) {
     ;
@@ -290,7 +290,7 @@ namespace pflow {
 // ***************************************************************************
 namespace pflow {
   xmatrix<double> RecipLat(const xmatrix<double>& lat) {
-    const xmatrix<double> rlat(3, 3);
+    xmatrix<double> rlat(3, 3);
     xvector<double> rlat1(3);
     xvector<double> rlat2(3);
     xvector<double> rlat3(3);
@@ -643,14 +643,14 @@ namespace pflow {
 // ***************************************************************************
 namespace pflow {
   xstructure SetOrigin(const xstructure& a, const vector<double>& in_origin) {
-    const xstructure b(a);
+    xstructure b(a);
     for (uint i = 1; i <= 3; i++) {
       b.origin[i] = in_origin.at(i - 1);
     }
     return b;
   }
   xstructure SetOrigin(const xstructure& a, const xvector<double>& in_origin) {
-    const xstructure b(a);
+    xstructure b(a);
     for (uint i = 1; i <= 3; i++) {
       b.origin[i] = in_origin[i];
     }
@@ -1289,8 +1289,6 @@ namespace pflow {
     }
   }
 } // namespace pflow
-
-#endif
 
 // ***************************************************************************
 // *                                                                         *

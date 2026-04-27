@@ -154,13 +154,13 @@
 //
 // ----------
 
+#include <fstream>
+#include <istream>
+#include <sstream>
 #ifdef AFLOW_MULTITHREADS_ENABLE
-
-#include "aflow_xthread.h"
 
 #include <algorithm>
 #include <cstddef>
-#include <deque>
 #include <mutex>
 #include <ostream>
 #include <string>
@@ -173,6 +173,7 @@
 
 #include "aflow.h"
 #include "aflow_xhost.h"
+#include "aflow_xthread.h"
 #include "aflowlib/aflowlib_database.h" // NOLINT / behind template
 #include "flow/aflow_pflow.h"
 #include "modules/COMPARE/aflow_compare_structure.h" // NOLINT / behind template
@@ -180,10 +181,19 @@
 
 // Global mutex that prevents two xThread instances from checking the number
 // of available CPUs at the same time.
-static std::mutex xthread_cpu_check;
+namespace {
+  std::mutex xthread_cpu_check;
+}
 
-using std::deque;
+using std::ifstream;
+using std::iostream;
+using std::istream;
+using std::istringstream;
+using std::ofstream;
+using std::ostream;
+using std::ostringstream;
 using std::string;
+using std::stringstream;
 using std::vector;
 
 namespace xthread {
@@ -719,19 +729,39 @@ namespace xthread {
   template void xThread::run<std::function<void(int, const int&)>, int>(int, std::function<void(int, const int&)>&, int&);
 
   // lambda function inside aurostd::multithread_execute
-  template void xThread::run<deque<string>, std::function<void(const deque<string>::const_iterator&)>>(const deque<string>&, std::function<void(const deque<string>::const_iterator&)>&);
+  template void xThread::run<std::deque<string>, std::function<void(const std::deque<string>::const_iterator&)>>(const std::deque<string>&, std::function<void(const std::deque<string>::const_iterator&)>&);
 
   // apl::PhononCalculator::calculateGroupVelocitiesThread
-  template void xThread::run<std::function<void(int, vector<vector<double>>&, vector<xmatrix<xcomplex<double>>>&, vector<vector<xvector<double>>>&)>, vector<vector<double>>, vector<xmatrix<xcomplex<double>>>, vector<vector<xvector<double>>>>(
-      int, std::function<void(int, vector<vector<double>>&, vector<xmatrix<xcomplex<double>>>&, vector<vector<xvector<double>>>&)>&, vector<vector<double>>&, vector<xmatrix<xcomplex<double>>>&, vector<vector<xvector<double>>>&);
+  template void xThread::run<std::function<void(int, vector<vector<double>>&, vector<aurostd::xmatrix<aurostd::xcomplex<double>>>&, vector<vector<aurostd::xvector<double>>>&)>,
+                             vector<vector<double>>,
+                             vector<aurostd::xmatrix<aurostd::xcomplex<double>>>,
+                             vector<vector<aurostd::xvector<double>>>>(int,
+                                                                       std::function<void(int, vector<vector<double>>&, vector<aurostd::xmatrix<aurostd::xcomplex<double>>>&, vector<vector<aurostd::xvector<double>>>&)>&,
+                                                                       vector<vector<double>>&,
+                                                                       vector<aurostd::xmatrix<aurostd::xcomplex<double>>>&,
+                                                                       vector<vector<aurostd::xvector<double>>>&);
 
   // apl::TCONDCalculator::calculateTransitionProbabilitiesPhonon
-  template void xThread::run<std::function<void(int, vector<vector<vector<vector<double>>>>&, const vector<vector<vector<xcomplex<double>>>>&)>, vector<vector<vector<vector<double>>>>, vector<vector<vector<xcomplex<double>>>>>(
-      int, std::function<void(int, vector<vector<vector<vector<double>>>>&, const vector<vector<vector<xcomplex<double>>>>&)>&, vector<vector<vector<vector<double>>>>&, vector<vector<vector<xcomplex<double>>>>&);
+  template void xThread::run<std::function<void(int, vector<vector<vector<vector<double>>>>&, const vector<vector<vector<aurostd::xcomplex<double>>>>&)>,
+                             vector<vector<vector<vector<double>>>>,
+                             vector<vector<vector<aurostd::xcomplex<double>>>>>(int,
+                                                                                std::function<void(int, vector<vector<vector<vector<double>>>>&, const vector<vector<vector<aurostd::xcomplex<double>>>>&)>&,
+                                                                                vector<vector<vector<vector<double>>>>&,
+                                                                                vector<vector<vector<aurostd::xcomplex<double>>>>&);
 
   // POccCalculator::calculatePhononDOSThread
-  template void xThread::run<std::function<void(uint, const vector<uint>&, const aurostd::xoption&, vector<apl::DOSCalculator>&, vector<xDOSCAR>&, std::mutex&)>, vector<uint>, aurostd::xoption, vector<apl::DOSCalculator>, vector<xDOSCAR>, std::mutex>(
-      uint, std::function<void(uint, const vector<uint>&, const aurostd::xoption&, vector<apl::DOSCalculator>&, vector<xDOSCAR>&, std::mutex&)>&, vector<uint>&, aurostd::xoption&, vector<apl::DOSCalculator>&, vector<xDOSCAR>&, std::mutex&);
+  template void xThread::run<std::function<void(uint, const vector<uint>&, const aurostd::xoption&, vector<apl::DOSCalculator>&, vector<xDOSCAR>&, std::mutex&)>,
+                             vector<uint>,
+                             aurostd::xoption,
+                             vector<apl::DOSCalculator>,
+                             vector<xDOSCAR>,
+                             std::mutex>(uint,
+                                         std::function<void(uint, const vector<uint>&, const aurostd::xoption&, vector<apl::DOSCalculator>&, vector<xDOSCAR>&, std::mutex&)>&,
+                                         vector<uint>&,
+                                         aurostd::xoption&,
+                                         vector<apl::DOSCalculator>&,
+                                         vector<xDOSCAR>&,
+                                         std::mutex&);
 
   // POccCalculator::calculatePOccSuperCellUFF
   template void xThread::run<std::function<void(int, vector<pocc::POccSuperCell>&, const vector<pocc::POccUFFEnergyAnalyzer>&, const vector<vector<vector<int>>>&, size_t&, std::mutex&, std::mutex&)>,
@@ -758,44 +788,59 @@ namespace xthread {
       vector<vector<vector<int>>>,
       size_t,
       std::mutex,
-      std::mutex>(
-      int,
-      std::function<void(int, std::map<unsigned long long int, std::unordered_map<long long int, unsigned long int>>&, const vector<pocc::POccSuperCell>&, const vector<pocc::POccUFFEnergyAnalyzer>&, const vector<vector<vector<int>>>&, size_t&, std::mutex&, std::mutex&)>&,
-      std::map<unsigned long long int, std::unordered_map<long long int, unsigned long int>>&,
-      vector<pocc::POccSuperCell>&,
-      vector<pocc::POccUFFEnergyAnalyzer>&,
-      vector<vector<vector<int>>>&,
-      size_t&,
-      std::mutex&,
-      std::mutex&);
+      std::mutex>(int,
+                  std::function<void(int,
+                                     std::map<unsigned long long int, std::unordered_map<long long int, unsigned long int>>&,
+                                     const vector<pocc::POccSuperCell>&,
+                                     const vector<pocc::POccUFFEnergyAnalyzer>&,
+                                     const vector<vector<vector<int>>>&,
+                                     size_t&,
+                                     std::mutex&,
+                                     std::mutex&)>&,
+                  std::map<unsigned long long int, std::unordered_map<long long int, unsigned long int>>&,
+                  vector<pocc::POccSuperCell>&,
+                  vector<pocc::POccUFFEnergyAnalyzer>&,
+                  vector<vector<vector<int>>>&,
+                  size_t&,
+                  std::mutex&,
+                  std::mutex&);
 
   // apl::TCONDCalculator::calculateAnharmonicRates
-  template void xThread::run<std::function<void(int, const vector<vector<double>>&, vector<vector<double>>&)>, const vector<vector<double>>, vector<vector<double>>>(
-      int, std::function<void(int, const vector<vector<double>>&, vector<vector<double>>&)>&, const vector<vector<double>>&, vector<vector<double>>&);
+  template void xThread::run<std::function<void(int, const vector<vector<double>>&, vector<vector<double>>&)>,
+                             const vector<vector<double>>,
+                             vector<vector<double>>>(int, std::function<void(int, const vector<vector<double>>&, vector<vector<double>>&)>&, const vector<vector<double>>&, vector<vector<double>>&);
 
   // apl::TCONDCalculator::calculateDelta
-  template void xThread::run<std::function<void(int, const vector<vector<double>>&, const vector<vector<xvector<double>>>&, vector<vector<xvector<double>>>&)>, const vector<vector<double>>, vector<vector<xvector<double>>>, vector<vector<xvector<double>>>>(
-      int,
-      std::function<void(int, const vector<vector<double>>&, const vector<vector<xvector<double>>>&, vector<vector<xvector<double>>>&)>&,
-      const vector<vector<double>>&,
-      vector<vector<xvector<double>>>&,
-      vector<vector<xvector<double>>>&);
+  template void xThread::run<std::function<void(int, const vector<vector<double>>&, const vector<vector<aurostd::xvector<double>>>&, vector<vector<aurostd::xvector<double>>>&)>,
+                             const vector<vector<double>>,
+                             vector<vector<aurostd::xvector<double>>>,
+                             vector<vector<aurostd::xvector<double>>>>(int,
+                                                                       std::function<void(int, const vector<vector<double>>&, const vector<vector<aurostd::xvector<double>>>&, vector<vector<aurostd::xvector<double>>>&)>&,
+                                                                       const vector<vector<double>>&,
+                                                                       vector<vector<aurostd::xvector<double>>>&,
+                                                                       vector<vector<aurostd::xvector<double>>>&);
 
   // XtalFinderCalculator::performStructureConversions
-  template void xThread::run<std::function<void(uint, const vector<bool>&, const vector<bool>&, const vector<bool>&)>, vector<bool>, vector<bool>, vector<bool>>(
-      uint, std::function<void(uint, const vector<bool>&, const vector<bool>&, const vector<bool>&)>&, vector<bool>&, vector<bool>&, vector<bool>&);
+  template void xThread::run<std::function<void(uint, const vector<bool>&, const vector<bool>&, const vector<bool>&)>,
+                             vector<bool>,
+                             vector<bool>,
+                             vector<bool>>(uint, std::function<void(uint, const vector<bool>&, const vector<bool>&, const vector<bool>&)>&, vector<bool>&, vector<bool>&, vector<bool>&);
 
   // XtalFinderCalculator::runComparisonThreads
-  template void
-  xThread::run<std::function<void(uint, vector<StructurePrototype>&, const vector<std::pair<uint, uint>>&, const vector<std::pair<uint, uint>>&, bool, bool, bool)>, vector<StructurePrototype>, vector<std::pair<uint, uint>>, vector<std::pair<uint, uint>>, bool, bool, bool>(
-      uint,
-      std::function<void(uint, vector<StructurePrototype>&, const vector<std::pair<uint, uint>>&, const vector<std::pair<uint, uint>>&, bool, bool, bool)>&,
-      vector<StructurePrototype>&,
-      vector<std::pair<uint, uint>>&,
-      vector<std::pair<uint, uint>>&,
-      bool&,
-      bool&,
-      bool&);
+  template void xThread::run<std::function<void(uint, vector<StructurePrototype>&, const vector<std::pair<uint, uint>>&, const vector<std::pair<uint, uint>>&, bool, bool, bool)>,
+                             vector<StructurePrototype>,
+                             vector<std::pair<uint, uint>>,
+                             vector<std::pair<uint, uint>>,
+                             bool,
+                             bool,
+                             bool>(uint,
+                                   std::function<void(uint, vector<StructurePrototype>&, const vector<std::pair<uint, uint>>&, const vector<std::pair<uint, uint>>&, bool, bool, bool)>&,
+                                   vector<StructurePrototype>&,
+                                   vector<std::pair<uint, uint>>&,
+                                   vector<std::pair<uint, uint>>&,
+                                   bool&,
+                                   bool&,
+                                   bool&);
 
   // XtalFinderCalculator::getPrototypeDesignations
   template void xThread::run<vector<StructurePrototype>, std::function<void(vector<StructurePrototype>::iterator&)>>(vector<StructurePrototype>&, std::function<void(vector<StructurePrototype>::iterator&)>&);
@@ -811,8 +856,12 @@ namespace xthread {
                                                                                                                                      vector<string>&);
 
   // aflowlib::XPLUG_Directories_ok
-  template void xThread::run<void(uint, uint, const deque<string>&, deque<string>&, deque<bool>&, std::mutex&), uint, deque<string>, deque<string>, deque<bool>, std::mutex>(
-      uint, void (&)(uint, uint, const deque<string>&, deque<string>&, deque<bool>&, std::mutex&), uint&, deque<string>&, deque<string>&, deque<bool>&, std::mutex&);
+  template void xThread::run<void(uint, uint, const std::deque<string>&, std::deque<string>&, std::deque<bool>&, std::mutex&),
+                             uint,
+                             std::deque<string>,
+                             std::deque<string>,
+                             std::deque<bool>,
+                             std::mutex>(uint, void (&)(uint, uint, const std::deque<string>&, std::deque<string>&, std::deque<bool>&, std::mutex&), uint&, std::deque<string>&, std::deque<string>&, std::deque<bool>&, std::mutex&);
 
   // UnitTest::runUnitTest
   template void xThread::run<vector<string>, std::function<void(vector<string>::iterator&, const vector<string>&)>, vector<string>>(vector<string>&,
@@ -837,22 +886,30 @@ namespace xthread {
   template void xThread::runPredistributed<std::function<void(uint, uint)>>(uint, std::function<void(uint, uint)>&);
 
   // XtalFinderCalculator::searchAtomMappings
-  template void
-  xThread::runPredistributed<std::function<bool(uint, uint, const xstructure&, const vector<double>&, const xstructure&, const string&, vector<xmatrix<double>>&, vector<structure_mapping_info>&, bool, bool)>, xstructure, vector<double>, xstructure, string, vector<xmatrix<double>>, vector<structure_mapping_info>, bool, bool>(
-      uint,
-      std::function<bool(uint, uint, const xstructure&, const vector<double>&, const xstructure&, const string&, vector<xmatrix<double>>&, vector<structure_mapping_info>&, bool, bool)>&,
-      xstructure&,
-      vector<double>&,
-      xstructure&,
-      string&,
-      vector<xmatrix<double>>&,
-      vector<structure_mapping_info>&,
-      bool&,
-      bool&);
+  template void xThread::runPredistributed<
+      std::function<bool(uint, uint, const xstructure&, const vector<double>&, const xstructure&, const string&, vector<aurostd::xmatrix<double>>&, vector<structure_mapping_info>&, bool, bool)>,
+      xstructure,
+      vector<double>,
+      xstructure,
+      string,
+      vector<aurostd::xmatrix<double>>,
+      vector<structure_mapping_info>,
+      bool,
+      bool>(uint,
+            std::function<bool(uint, uint, const xstructure&, const vector<double>&, const xstructure&, const string&, vector<aurostd::xmatrix<double>>&, vector<structure_mapping_info>&, bool, bool)>&,
+            xstructure&,
+            vector<double>&,
+            xstructure&,
+            string&,
+            vector<aurostd::xmatrix<double>>&,
+            vector<structure_mapping_info>&,
+            bool&,
+            bool&);
 
   // aflowlib::AflowDB::getColStats
-  template void xThread::runPredistributed<std::function<void(uint, int, const vector<string>&, vector<aflowlib::DBStats>&)>, const vector<string>, vector<aflowlib::DBStats>>(
-      uint, std::function<void(uint, int, const vector<string>&, vector<aflowlib::DBStats>&)>&, const vector<string>&, vector<aflowlib::DBStats>&);
+  template void xThread::runPredistributed<std::function<void(uint, int, const vector<string>&, vector<aflowlib::DBStats>&)>,
+                                           const vector<string>,
+                                           vector<aflowlib::DBStats>>(uint, std::function<void(uint, int, const vector<string>&, vector<aflowlib::DBStats>&)>&, const vector<string>&, vector<aflowlib::DBStats>&);
 
 } // namespace xthread
 

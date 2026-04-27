@@ -7,6 +7,7 @@
 #ifndef _AUROSTD_XFILE_H_
 #define _AUROSTD_XFILE_H_
 
+#include <array>
 #include <cstddef>
 #include <deque>
 #include <filesystem>
@@ -19,12 +20,11 @@
 #include <archive.h>
 
 namespace aurostd {
-  namespace fs = std::filesystem;
 
   // compresion helper //HE20241216
   enum compression_type { None, XZ, ZIP, BZ2, GZ, ZSTD };
   const std::vector<std::string> compression_suffix = {"", ".xz", ".zip", ".bz2", ".gz", ".zst"};
-  compression_type GetCompressionType(const fs::path& path);
+  compression_type GetCompressionType(const std::filesystem::path& path);
 
   // make directories
   bool DirectoryMake(const std::string& directory_raw);
@@ -36,9 +36,11 @@ namespace aurostd {
   bool DirectoryLS(const std::string& directory_raw, std::deque<std::string>& vfiles);
 
   // filename helper
+  std::string getPWD();
   std::string dirname(const std::string& file);  // CO20210315
   std::string basename(const std::string& file); // CO20210315
   std::string GetFileExtension(const std::string& FileName);
+  std::filesystem::path GetRelativePath(const std::filesystem::path& starting_path, const std::string& folder_name);
   std::string CleanFileName(const std::string& fileIN);
 
   // aflow directory status
@@ -59,8 +61,9 @@ namespace aurostd {
   bool CompressFileWithinList(const std::vector<std::string>& list, const std::string& input, std::string& output);
   bool FileEmpty(const std::string& FileNameRaw);
   bool FileNotEmpty(const std::string& FileName);
-  long int GetTimestampModified(const std::string&);  // ME20180712
-  long int SecondsSinceFileModified(const std::string&);  // CO20210315
+  long int GetTimestampModified(const std::string& FileNameRaw);  //HE20261214
+  long int SecondsSinceFileModified(const std::string& FileNameRaw);  //HE20261214
+  long int SecondsSinceDirectoryContentModified(const std::string& FileNameRaw); //HE20261214
   unsigned long long int FileSize(const std::string& FileName);  // ME20191001
   void InFileExistCheck(const std::string& routine, const std::string& FileNameRaw, const std::ifstream& file_to_check);
 
@@ -71,10 +74,14 @@ namespace aurostd {
 
   // copy link move
   bool CopyFile(const std::string& file_from, const std::string& file_to);
+  bool CopyFile_safer(const std::string& file_from, const std::string& file_to);
+  bool CopyDirectory(const std::string& directory_from, const std::string& directory_to); // HE20260129
+  bool CopyDirectory_safer(const std::string& directory_from, const std::string& directory_to); // HE20260129
   bool LinkFile(const std::string& file_from, const std::string& file_to, bool soft = true);
   bool file2directory(const std::string& file, const std::string& destination);
   bool file2directory(const std::vector<std::string>& files, const std::string& destination);
   bool file2file(const std::string& file, const std::string& destination); // CO20171025
+  std::array<std::string, 3> splitFilePath(const std::string& filePath); //HE20230216
 
   // delete
   bool RemoveFile(const std::string& file);
@@ -114,7 +121,7 @@ namespace aurostd {
   void DecompressFiles(const std::string& archive_file, const std::string& directory = "", bool keep = false);
   void DecompressFiles(const std::string& archive_file, bool keep);
   void CompressFile(const std::string& file_raw, compression_type ct = XZ, bool keep = false); // with default
-  fs::path CompressFiles(const std::vector<std::string>& files, const fs::path& relative_to_path, const std::string& archive_name, compression_type ct = XZ, bool keep = false);
+  std::filesystem::path CompressFiles(const std::vector<std::string>& files, const std::filesystem::path& relative_to_path, const std::string& archive_name, compression_type ct = XZ, bool keep = false);
   bool MatchCompressed(const std::string& CompressedFileName, const std::string& FileNameOUT);
   bool compressfile2tempfile(const std::string& FileNameIN, std::string& FileNameOUT);
   bool compressfile2tempfile(const std::string& FileNameRawIN, std::string& FileNameOUT, bool& tempfile_created);

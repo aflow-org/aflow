@@ -1,0 +1,2 @@
+clang-format>=21.0.0
+clang-tidy>=21.0.0

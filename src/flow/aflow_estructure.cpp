@@ -7,9 +7,6 @@
 // 2010-2011: kesong.yang@gmail.com
 // 2018: SC xzip
 
-#ifndef _AFLOW_ESTRUCTURE_CPP_
-#define _AFLOW_ESTRUCTURE_CPP_
-
 #include <cmath>
 #include <cstddef>
 #include <deque>
@@ -27,6 +24,7 @@
 #include "AUROSTD/aurostd_argv.h"
 #include "AUROSTD/aurostd_xerror.h"
 #include "AUROSTD/aurostd_xfile.h"
+#include "AUROSTD/aurostd_xvector.h"
 
 #include "aflow.h"
 #include "aflow_aflowrc.h"
@@ -52,6 +50,8 @@ using std::ostringstream;
 using std::string;
 using std::stringstream;
 using std::vector;
+
+using aurostd::xvector;
 
 const int BANDS_PRECISION = 4;
 
@@ -2269,12 +2269,12 @@ namespace estructure {
     const string anchor_word_NIONS = "NIONS";
     const string anchor_word_vc = "volume of cell";
     const string anchor_word_LSORBIT = "LSORBIT =      T";
-    const xvector<double> a1(3);
-    const xvector<double> a2(3);
-    const xvector<double> a3(3);
-    const xvector<double> b1(3);
-    const xvector<double> b2(3);
-    const xvector<double> b3(3);
+    xvector<double> a1(3);
+    xvector<double> a2(3);
+    xvector<double> a3(3);
+    xvector<double> b1(3);
+    xvector<double> b2(3);
+    xvector<double> b3(3);
     while (getline(ss_outcar, line)) {
       if (line.find(anchor_word_Efermi) != string::npos) {
         strline.clear();
@@ -2840,12 +2840,12 @@ namespace estructure {
     const string anchor_word_NIONS = "NIONS";
     const string anchor_word_vc = "volume of cell";
     const string anchor_word_LSORBIT = "LSORBIT =      T";
-    const xvector<double> a1(3);
-    const xvector<double> a2(3);
-    const xvector<double> a3(3);
-    const xvector<double> b1(3);
-    const xvector<double> b2(3);
-    const xvector<double> b3(3);
+    xvector<double> a1(3);
+    xvector<double> a2(3);
+    xvector<double> a3(3);
+    xvector<double> b1(3);
+    xvector<double> b2(3);
+    xvector<double> b3(3);
     while (getline(ss_outcar, line)) {
       if (line.find(anchor_word_Efermi) != string::npos) {
         strline.clear();
@@ -3392,12 +3392,12 @@ namespace estructure {
     const string anchor_word_NIONS = "NIONS";
     const string anchor_word_vc = "volume of cell";
     const string anchor_word_LSORBIT = "LSORBIT =      T";
-    const xvector<double> a1(3);
-    const xvector<double> a2(3);
-    const xvector<double> a3(3);
-    const xvector<double> b1(3);
-    const xvector<double> b2(3);
-    const xvector<double> b3(3);
+    xvector<double> a1(3);
+    xvector<double> a2(3);
+    xvector<double> a3(3);
+    xvector<double> b1(3);
+    xvector<double> b2(3);
+    xvector<double> b3(3);
     while (getline(straus, line)) {
       if (line.find(anchor_word_Efermi) != string::npos) {
         strline.clear();
@@ -6292,12 +6292,12 @@ namespace estructure {
     const string anchor_word_LSORBIT = "LSORBIT =      T";
 
     aflowlib::vaspfile2stringstream(directory, "OUTCAR", ss_outcar);
-    const xvector<double> a1(3);
-    const xvector<double> a2(3);
-    const xvector<double> a3(3);
-    const xvector<double> b1(3);
-    const xvector<double> b2(3);
-    const xvector<double> b3(3);
+    xvector<double> a1(3);
+    xvector<double> a2(3);
+    xvector<double> a3(3);
+    xvector<double> b1(3);
+    xvector<double> b2(3);
+    xvector<double> b3(3);
 
     while (getline(ss_outcar, line)) {
       if (line.find(anchor_word_Efermi) != string::npos) {
@@ -6806,8 +6806,6 @@ namespace estructure {
   }
 
 } // namespace estructure
-
-#endif // _AFLOW_ESTRUCTURE_CPP_
 
 // ***************************************************************************
 // *                                                                         *

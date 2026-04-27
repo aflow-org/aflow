@@ -1,0 +1,38 @@
+---
+Checks: '
+-*,
+
+misc-use-anonymous-namespace,
+modernize-use-emplace,
+
+
+misc-include-cleaner,
+modernize-use-nullptr,
+modernize-use-nodiscard,
+modernize-use-bool-literals,
+modernize-redundant-void-arg,
+modernize-raw-string-literal,
+readability-braces-around-statements,
+readability-redundant-casting,
+readability-isolate-declaration,
+readability-container-size-empty,
+readability-redundant-string-init,
+'
+WarningsAsErrors: '
+misc-include-cleaner,
+modernize-use-nullptr,
+modernize-use-nodiscard,
+modernize-use-bool-literals,
+modernize-redundant-void-arg,
+modernize-raw-string-literal,
+readability-braces-around-statements,
+readability-redundant-casting,
+readability-isolate-declaration,
+readability-container-size-empty,
+readability-redundant-string-init,
+'
+FormatStyle: file
+CheckOptions:
+  - key: 'misc-include-cleaner.IgnoreHeaders'
+    value: 'bits/.*;linux/.*' # not part of standard
+...

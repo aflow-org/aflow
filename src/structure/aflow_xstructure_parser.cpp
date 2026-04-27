@@ -4,9 +4,13 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdlib>
+#include <deque>
+#include <fstream>
 #include <iomanip>
 #include <ios>
 #include <iostream>
+#include <sstream>
+#include <string>
 #include <vector>
 
 #include "AUROSTD/aurostd.h"
@@ -14,6 +18,7 @@
 #include "AUROSTD/aurostd_xerror.h"
 #include "AUROSTD/aurostd_xmatrix.h"
 #include "AUROSTD/aurostd_xscalar.h"
+#include "AUROSTD/aurostd_xvector.h"
 
 #include "aflow.h"
 #include "aflow_aflowrc.h"
@@ -28,8 +33,25 @@
 #include "structure/aflow_xatom.h"
 #include "structure/aflow_xstructure.h"
 
+using std::cerr;
+using std::cout;
+using std::deque;
+using std::endl;
+using std::ifstream;
 using std::ios_base;
+using std::iostream;
+using std::istream;
+using std::istringstream;
+using std::ofstream;
+using std::ostream;
+using std::ostringstream;
 using std::setw;
+using std::string;
+using std::stringstream;
+using std::vector;
+
+using aurostd::xmatrix;
+using aurostd::xvector;
 
 // **************************************************************************
 // PAULING DETECTOR
@@ -416,12 +438,12 @@ istream& operator>>(istream& cinput, xstructure& a) {
     uint ATAT = 1;
     // count number of entries for axes and fractional cell vectors, check for correct type
     size_t line = 0;
-    for (; line < vinput.size() - 1 && line < 6 && ATAT; line++) {
+    for (; line < vinput.size() && line < 6 && ATAT; line++) {
       aurostd::string2tokens(vinput[line], tokens, " ");
       ATAT = (tokens.size() == 3 && aurostd::isfloat(tokens[0]) && aurostd::isfloat(tokens[1]) && aurostd::isfloat(tokens[2]));
     }
     // count number of entries for atom positions, check for correct type
-    for (; line < vinput.size() - 1 && ATAT; line++) {
+    for (; line < vinput.size() && ATAT; line++) {
       aurostd::string2tokens(vinput[line], tokens, " ");
       ATAT = (tokens.size() == 4 && aurostd::isfloat(tokens[0]) && aurostd::isfloat(tokens[1]) && aurostd::isfloat(tokens[2]));
       if (ATAT && !xelement::xelement::isElement(tokens[3])) {
@@ -1414,7 +1436,7 @@ istream& operator>>(istream& cinput, xstructure& a) {
       }
       // DX20180123 - added ibrav - END
     }
-    const xvector<double> parameters(6);
+    xvector<double> parameters(6);
     uint celldm_count = 0;
     bool isabc = false; // distinguish between celldm and a,b,c,cosAB,cosAC,cosBC
 
@@ -2087,7 +2109,7 @@ istream& operator>>(istream& cinput, xstructure& a) {
         const uint number_tokens = aurostd::string2tokens(atom_line, tokens, " ");
         if (number_tokens == 3) {
           atom_line_count += 1;
-          const xvector<double> coordinate;
+          xvector<double> coordinate;
           coordinate(1) = aurostd::frac2dbl(tokens[0]);
           coordinate(2) = aurostd::frac2dbl(tokens[1]);
           coordinate(3) = aurostd::frac2dbl(tokens[2]);
@@ -2107,7 +2129,7 @@ istream& operator>>(istream& cinput, xstructure& a) {
         } else if (number_tokens == (3 * number_of_atoms_to_read)) {
           for (size_t t = 0; t < tokens.size(); t += 3) {
             atom_line_count += 1;
-            const xvector<double> coordinate;
+            xvector<double> coordinate;
             coordinate(1) = aurostd::frac2dbl(tokens[t]);
             coordinate(2) = aurostd::frac2dbl(tokens[t + 1]);
             coordinate(3) = aurostd::frac2dbl(tokens[t + 2]);
@@ -2234,7 +2256,7 @@ istream& operator>>(istream& cinput, xstructure& a) {
     //   1) scale : isotropic scaling
     //   2) scale1/2/3 : anisotropic scaling
     double isotropic_scaling = 1.0;
-    const xvector<double> anisotropic_scaling;
+    xvector<double> anisotropic_scaling;
     anisotropic_scaling(1) = 1.0;
     anisotropic_scaling(2) = 1.0;
     anisotropic_scaling(3) = 1.0;
@@ -2408,7 +2430,7 @@ istream& operator>>(istream& cinput, xstructure& a) {
             if (number_of_tokens == 6) {
               // subsequent are external magnetic field in Cartesian coords
               // not stored beyond here (for now)
-              const xvector<double> magnetic_field;
+              xvector<double> magnetic_field;
               magnetic_field(1) = aurostd::string2utype<double>(tokens[3]);
               magnetic_field(2) = aurostd::string2utype<double>(tokens[4]);
               magnetic_field(3) = aurostd::string2utype<double>(tokens[5]);
@@ -2897,7 +2919,7 @@ istream& operator>>(istream& cinput, xstructure& a) {
             symbolic::Symbolic result;
             for (size_t i = 0; i < spacegroup_symop_symbolic.size(); i++) {
               const symbolic::Symbolic& eq = spacegroup_symop_symbolic[i];
-              const xvector<double>& fpos = atom_tmp.fpos;
+              xvector<double>& fpos = atom_tmp.fpos;
               result = eq[x == fpos[1], y == fpos[2], z == fpos[3]];
               at = atom_tmp;
               at.fpos[1] = (double) result(0);
@@ -3153,8 +3175,8 @@ istream& operator>>(istream& cinput, xstructure& a) {
     }
     a.scale = 1.0;
     a.neg_scale = false;
-    const xmatrix<double> axes(3, 3);
-    const xmatrix<double> frac_cell(3, 3);
+    xmatrix<double> axes(3, 3);
+    xmatrix<double> frac_cell(3, 3);
 
     // read the axes
     size_t line = 0;
@@ -3189,8 +3211,8 @@ istream& operator>>(istream& cinput, xstructure& a) {
     // read atoms
     deque<_atom> atoms;
     _atom atom;
-    const xvector<double> avec(3);
-    for (; line < vinput.size() - 1; line++) {
+    xvector<double> avec(3);
+    for (; line < vinput.size(); line++) {
       atom.clear();
       aurostd::string2tokens(vinput[line], tokens);
       avec(1) = aurostd::string2utype<double>(tokens[0]);
@@ -3320,7 +3342,7 @@ istream& operator>>(istream& cinput, xstructure& a) {
     }
     deque<_atom> atoms;
     _atom atom;
-    const xvector<double> avec(3);
+    xvector<double> avec(3);
     for (size_t i = i_atoms + 2; i < i_atoms + 2 + natoms; i++) {
       aurostd::string2tokens(vinput[i], tokens);
       atom.clear();
@@ -3636,7 +3658,7 @@ istream& operator>>(istream& cinput, xstructure& a) {
     if (a.atoms[i].cleanname.empty()) {
       a.atoms[i].CleanName();
     }
-    //(KBIN::VASP_PseudoPotential_CleanName(a.atoms[i].name)); //CO20200624 - fixed CleanName()
+    //(aurostd::VASP_PseudoPotential_CleanName(a.atoms[i].name)); //CO20200624 - fixed CleanName()
   }
   // RF20200310 END
   //  CHECKS
@@ -3832,7 +3854,7 @@ ostream& operator<<(ostream& cout, const xstructure& a) {
       cout.precision(_precision_); // SC to cut/paste from matlab in format long
     } else if (a_iomode == IOVASP_WYCKCAR) {
       // DX20210525 - note wyccar uses lattice parameters of the conventional cell
-      const xvector<double> data = Getabc_angles(a.standard_lattice_ITC, DEGREES);
+      xvector<double> data = Getabc_angles(a.standard_lattice_ITC, DEGREES);
       cout << " ";
       cout.precision(10); // SC to cut/paste from matlab in format long
       if (std::abs(data(1)) < 10.0) {
@@ -3888,7 +3910,7 @@ ostream& operator<<(ostream& cout, const xstructure& a) {
     if (a.is_vasp5_poscar_format == true) {
       for (size_t i = 0; i < a.species_pp.size(); i++) {
         // ME20190308 - species is empty when structure is based on vasp4 POSCAR
-        cout << KBIN::VASP_PseudoPotential_CleanName(a.species_pp[i]) << " "; // ME20190308
+        cout << aurostd::VASP_PseudoPotential_CleanName(a.species_pp[i]) << " "; // ME20190308
       }
       cout << endl;
     }
@@ -4234,7 +4256,7 @@ ostream& operator<<(ostream& cout, const xstructure& a) {
     for (size_t iat = 0; iat < a.atoms.size(); iat++) {
       cout << " ";
       if (a.atoms[iat].name_is_given == true) {
-        cout << " " << aurostd::PaddedPOST(KBIN::VASP_PseudoPotential_CleanName(a.atoms[iat].name), 5, " ") << " ";
+        cout << " " << aurostd::PaddedPOST(aurostd::VASP_PseudoPotential_CleanName(a.atoms[iat].name), 5, " ") << " ";
       } else {
         message << "QE needs atoms species names"; // CO20190629
         throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, message, _INPUT_MISSING_); // CO20190629
@@ -4356,7 +4378,7 @@ ostream& operator<<(ostream& cout, const xstructure& a) {
     for (size_t i = 0; i < aa.species.size(); i++) {
       for (size_t e = 0; e < velement.size(); e++) {
         // external variable (see aflow_xelement.h)
-        if (velement[e].symbol == KBIN::VASP_PseudoPotential_CleanName(aa.species[i])) {
+        if (velement[e].symbol == aurostd::VASP_PseudoPotential_CleanName(aa.species[i])) {
           cout << e << " "; // index corresponds to Z value
           break;
         }
@@ -4602,7 +4624,7 @@ ostream& operator<<(ostream& cout, const xstructure& a) {
     const uint _precision_ = _DOUBLE_WRITE_PRECISION_MAX_; // 14; //was 16 SC 10 DM //CO20180515
     cout.precision(_precision_);
     cout.setf(std::ios::fixed, std::ios::floatfield);
-    const xmatrix<double> axes = aurostd::eye<double>(3, 3); // set axes to idenity
+    xmatrix<double> axes = aurostd::eye<double>(3, 3); // set axes to idenity
     // write the axes
     for (uint i = 1; i <= 3; i++) {
       for (uint j = 1; j <= 3; j++) {

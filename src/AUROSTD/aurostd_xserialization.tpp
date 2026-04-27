@@ -2,6 +2,8 @@
 #ifndef AFLOW_XSERIALIZATION_TPP
 #define AFLOW_XSERIALIZATION_TPP
 
+#include "config.h"
+
 #include <string>
 
 #include "aurostd.h"

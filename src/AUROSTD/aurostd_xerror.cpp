@@ -10,9 +10,6 @@
 // as an error code. See README_AFLOW_EXCEPTIONS.TXT for details and examples.
 // If exceptions are added, please update the README as well!
 
-#ifndef _AUROSTD_XERROR_CPP_
-#define _AUROSTD_XERROR_CPP_
-
 #include "aurostd_xerror.h"
 
 #include <ostream>
@@ -25,7 +22,7 @@ namespace aurostd {
   // List of error types and errors ////////////////////////////////////////////
 #define _AFLOW_NUM_ERR_TYPES_ 7  // Number of error types
 
-  string xerror_PID;  // SC20200508
+  std::string xerror_PID;  // SC20200508
 
   static const std::string error_types[_AFLOW_NUM_ERR_TYPES_] = {"", "Input Error", "File Error", "Value Error", "Index Error", "Runtime Error", "Allocation Error"};
 
@@ -143,7 +140,6 @@ namespace aurostd {
     return error_code;
   }
 } // namespace aurostd
-#endif
 
 //****************************************************************************
 // *                                                                         *

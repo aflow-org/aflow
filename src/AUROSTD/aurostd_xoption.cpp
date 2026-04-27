@@ -7,14 +7,14 @@
 // added template<class utype> bool xoption::args2addattachedscheme SC 2017
 // streamline schemes SC 2017
 
-#ifndef _AUROSTD_XOPTION_CPP_
-#define _AUROSTD_XOPTION_CPP_
-
 #include "aurostd_xoption.h"
 
 #include <cstddef>
+#include <fstream>
 #include <iostream>
+#include <sstream>
 #include <string>
+#include <vector>
 
 #include "aurostd.h"
 #include "aurostd_argv.h"
@@ -23,8 +23,14 @@
 
 using std::cerr;
 using std::endl;
-using std::ostream;
+using std::ifstream;
+using std::iostream;
+using std::istringstream;
+using std::ofstream;
+using std::ostringstream;
 using std::string;
+using std::stringstream;
+using std::vector;
 
 #define VERBOSE_XOPTION false // DX20200907
 
@@ -734,8 +740,6 @@ namespace aurostd {
   }
 
 } // namespace aurostd
-
-#endif  // _AUROSTD_XOPTION_CPP_
 
 // **************************************************************************
 // *                                                                        *

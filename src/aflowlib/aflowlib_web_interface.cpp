@@ -8,15 +8,21 @@
 // fixed for new AUID language (SC 2019)
 // fixed for tree search on the AUID directories (SC 2019) super-speed
 
-#ifndef _AFLOWLIB_WEB_INTERFACE_CPP_
-#define _AFLOWLIB_WEB_INTERFACE_CPP_
-
 #include "aflowlib/aflowlib_web_interface.h"
+
+#include "config.h"
 
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
+#include <deque>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <istream>
 #include <map>
+#include <ostream>
+#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -29,6 +35,7 @@
 #include "AUROSTD/aurostd_xfile.h"
 #include "AUROSTD/aurostd_xhttp.h"
 #include "AUROSTD/aurostd_xmatrix.h"
+#include "AUROSTD/aurostd_xoption.h"
 #include "AUROSTD/aurostd_xparser.h"
 #include "AUROSTD/aurostd_xscalar.h"
 #include "AUROSTD/aurostd_xvector.h"
@@ -46,6 +53,26 @@
 #include "modules/COMPARE/aflow_compare_structure.h"
 #include "modules/POCC/aflow_pocc.h" //CO20200624
 #include "modules/SYM/aflow_symmetry_spacegroup.h" //DX20200929
+
+using std::cerr;
+using std::cout;
+using std::deque;
+using std::endl;
+using std::ifstream;
+using std::iostream;
+using std::istream;
+using std::istringstream;
+using std::map;
+using std::ofstream;
+using std::ostream;
+using std::ostringstream;
+using std::pair;
+using std::string;
+using std::stringstream;
+using std::vector;
+
+using aurostd::xmatrix;
+using aurostd::xoption;
 
 const std::vector<std::string> _DEVIL_PROTOTYPES_ = {"64", "65", "549", "550", "f8269", "f9083", "f8819"};
 
@@ -1484,22 +1511,30 @@ namespace aflowlib {
       } break; // CT20181212
       // ME20191105 BEGIN
       case (aurostd::ctcrc64("ael_stiffness_tensor")): {
-        const xmatrix<double> tensor(6, 6);
+        xmatrix<double> tensor(6, 6);
         vector<string> rows;
         vector<double> r;
         aurostd::string2tokens(content, rows, ";");
         if (rows.size() != 6) {
           stringstream message;
-          message << "Could not read ael_stiffness_tensor: wrong number of rows"
-                  << " (found " << rows.size() << ", need 6).";
+          message
+              << "Could not read ael_stiffness_tensor: wrong number of rows"
+              << " (found "
+              << rows.size()
+              << ", need 6).";
           throw aurostd::xerror(__AFLOW_FILE__, function, message, _FILE_CORRUPT_);
         } else {
           for (int i = 0; i < 6; i++) {
             aurostd::string2tokens(rows[i], r, ",");
             if (r.size() != 6) {
               stringstream message;
-              message << "Could not read ael_stiffness_tensor: wrong number of columns"
-                      << " in row " << (i + 1) << " (found " << rows.size() << ", need 6).";
+              message
+                  << "Could not read ael_stiffness_tensor: wrong number of columns"
+                  << " in row "
+                  << (i + 1)
+                  << " (found "
+                  << rows.size()
+                  << ", need 6).";
               throw aurostd::xerror(__AFLOW_FILE__, function, message, _FILE_CORRUPT_);
             } else {
               for (int j = 0; j < 6; j++) {
@@ -1511,22 +1546,30 @@ namespace aflowlib {
         ael_stiffness_tensor = tensor;
       } break;
       case (aurostd::ctcrc64("ael_compliance_tensor")): {
-        const xmatrix<double> tensor(6, 6);
+        xmatrix<double> tensor(6, 6);
         vector<string> rows;
         vector<double> r;
         aurostd::string2tokens(content, rows, ";");
         if (rows.size() != 6) {
           stringstream message;
-          message << "Could not read ael_compliance_tensor: wrong number of rows"
-                  << " (found " << rows.size() << ", need 6).";
+          message
+              << "Could not read ael_compliance_tensor: wrong number of rows"
+              << " (found "
+              << rows.size()
+              << ", need 6).";
           throw aurostd::xerror(__AFLOW_FILE__, function, message, _FILE_CORRUPT_);
         } else {
           for (int i = 0; i < 6; i++) {
             aurostd::string2tokens(rows[i], r, ",");
             if (r.size() != 6) {
               stringstream message;
-              message << "Could not read ael_compliance_tensor: wrong number of columns"
-                      << " in row " << (i + 1) << " (found " << rows.size() << ", need 6).";
+              message
+                  << "Could not read ael_compliance_tensor: wrong number of columns"
+                  << " in row "
+                  << (i + 1)
+                  << " (found "
+                  << rows.size()
+                  << ", need 6).";
               throw aurostd::xerror(__AFLOW_FILE__, function, message, _FILE_CORRUPT_);
             } else {
               for (int j = 0; j < 6; j++) {
@@ -1623,22 +1666,30 @@ namespace aflowlib {
       } break;
       // DIELECTRIC
       case (aurostd::ctcrc64("freq_plasma")): {
-        const xmatrix<double> tensor(3, 3);
+        xmatrix<double> tensor(3, 3);
         vector<string> rows;
         vector<double> r;
         aurostd::string2tokens(content, rows, ";");
         if (rows.size() != 3) {
           stringstream message;
-          message << "Could not read freq_plasma: wrong number of rows"
-                  << " (found " << rows.size() << ", need 3).";
+          message
+              << "Could not read freq_plasma: wrong number of rows"
+              << " (found "
+              << rows.size()
+              << ", need 3).";
           throw aurostd::xerror(__AFLOW_FILE__, function, message, _FILE_CORRUPT_);
         } else {
           for (int i = 0; i < 3; i++) {
             aurostd::string2tokens(rows[i], r, ",");
             if (r.size() != 3) {
               stringstream message;
-              message << "Could not read freq_plasma: wrong number of columns"
-                      << " in row " << (i + 1) << " (found " << rows.size() << ", need 3).";
+              message
+                  << "Could not read freq_plasma: wrong number of columns"
+                  << " in row "
+                  << (i + 1)
+                  << " (found "
+                  << rows.size()
+                  << ", need 3).";
               throw aurostd::xerror(__AFLOW_FILE__, function, message, _FILE_CORRUPT_);
             } else {
               for (int j = 0; j < 3; j++) {
@@ -1650,22 +1701,30 @@ namespace aflowlib {
         freq_plasma = tensor;
       } break;
       case (aurostd::ctcrc64("dielectric_static")): {
-        const xmatrix<double> tensor(3, 3);
+        xmatrix<double> tensor(3, 3);
         vector<string> rows;
         vector<double> r;
         aurostd::string2tokens(content, rows, ";");
         if (rows.size() != 3) {
           stringstream message;
-          message << "Could not read dielectric_static: wrong number of rows"
-                  << " (found " << rows.size() << ", need 3).";
+          message
+              << "Could not read dielectric_static: wrong number of rows"
+              << " (found "
+              << rows.size()
+              << ", need 3).";
           throw aurostd::xerror(__AFLOW_FILE__, function, message, _FILE_CORRUPT_);
         } else {
           for (int i = 0; i < 3; i++) {
             aurostd::string2tokens(rows[i], r, ",");
             if (r.size() != 3) {
               stringstream message;
-              message << "Could not read dielectric_static: wrong number of columns"
-                      << " in row " << (i + 1) << " (found " << rows.size() << ", need 3).";
+              message
+                  << "Could not read dielectric_static: wrong number of columns"
+                  << " in row "
+                  << (i + 1)
+                  << " (found "
+                  << rows.size()
+                  << ", need 3).";
               throw aurostd::xerror(__AFLOW_FILE__, function, message, _FILE_CORRUPT_);
             } else {
               for (int j = 0; j < 3; j++) {
@@ -1801,6 +1860,7 @@ namespace aflowlib {
     fcc = false;
     bcc = false;
     hcp = false;
+    pocc_parent = false;
     stoich_a = AUROSTD_MAX_DOUBLE;
     stoich_b = AUROSTD_MAX_DOUBLE;
     bond_aa = AUROSTD_MAX_DOUBLE;
@@ -5316,12 +5376,15 @@ namespace aflowlib {
     }
     return enthalpy_formation_cell;
   }
-  double _aflowlib_entry::enthalpyFormationAtom(int T) const { // CO20200624
+  double _aflowlib_entry::enthalpyFormationAtom(bool& cce_used, int T = 300) const { // CO20200624
+    cce_used = false;
     if (!XHOST.vflag_control.flag("NEGLECT_CCE")) { // CO20210115
       if (T == 300 && enthalpy_formation_cce_300K_atom != AUROSTD_NAN) {
+        cce_used = true;
         return enthalpy_formation_cce_300K_atom;
       }
       if (T == 0 && enthalpy_formation_cce_0K_atom != AUROSTD_NAN) {
+        cce_used = true;
         return enthalpy_formation_cce_0K_atom;
       }
     }
@@ -5331,81 +5394,6 @@ namespace aflowlib {
 
 // CO20171202 - apennsy fixes!
 namespace aflowlib {
-  void _aflowlib_entry::correctBadDatabase(bool verbose, ostream& oss) {
-    ofstream FileMESSAGE;
-    return correctBadDatabase(FileMESSAGE, verbose, oss);
-  }
-
-  void _aflowlib_entry::correctBadDatabase(ofstream& FileMESSAGE, bool verbose, ostream& oss) {
-    // CO20180828 - LIB2 also contains unaries //so far we only know of bad binaries
-    stringstream message;
-    if (vspecies_pp.size() == 1 || vspecies_pp.size() == 2) {
-      string pseudoA;
-      string pseudoB;
-      pseudoA = vspecies_pp[0];
-      if (vspecies_pp.size() == 2) {
-        pseudoB = vspecies_pp[1];
-      }
-      // tiny corrections
-      // gamma_IrV
-      if (pseudoA == "Cd" && pseudoB == "Pt" && prototype == "181") {
-        enthalpy_formation_atom -= 0.0013;
-        enthalpy_formation_cell = natoms * enthalpy_formation_atom;
-        if (verbose) {
-          message << "Fixing enthalpy_formation of " << pseudoA << pseudoB << ":" << prototype;
-          pflow::logger(__AFLOW_FILE__, __AFLOW_FUNC__, message, FileMESSAGE, oss, _LOGGER_MESSAGE_);
-        }
-      }
-      // gamma_IrV
-      if (pseudoA == "Ir" && pseudoB == "V_sv" && prototype == "291") {
-        enthalpy_formation_cell -= 0.001;
-        enthalpy_formation_atom -= 0.0005;
-        enthalpy_cell -= 0.001;
-        enthalpy_atom -= 0.005;
-        if (verbose) {
-          message << "Fixing enthalpy/enthalpy_formation of " << pseudoA << pseudoB << ":" << prototype;
-          pflow::logger(__AFLOW_FILE__, __AFLOW_FUNC__, message, FileMESSAGE, oss, _LOGGER_MESSAGE_);
-        }
-      }
-      // HfPd
-      if (pseudoA == "Hf_pv" && pseudoB == "Pd_pv" && prototype == "192") {
-        enthalpy_formation_atom -= 0.003;
-        enthalpy_formation_cell = natoms * enthalpy_formation_atom;
-        enthalpy_atom = enthalpy_formation_atom;
-        enthalpy_cell = natoms * enthalpy_atom;
-        if (verbose) {
-          message << "Fixing enthalpy/enthalpy_formation of " << pseudoA << pseudoB << ":" << prototype;
-          pflow::logger(__AFLOW_FILE__, __AFLOW_FUNC__, message, FileMESSAGE, oss, _LOGGER_MESSAGE_);
-        }
-      }
-      // sigma
-      if (pseudoA == "Ir" && pseudoB == "Nb_sv" && prototype == "600.ABBAB") {
-        enthalpy_formation_cell += 0.001;
-        enthalpy_formation_atom += 0.0005;
-        enthalpy_cell += 0.001;
-        enthalpy_atom += 0.005;
-        enthalpy_formation_cell += 0.001;
-        enthalpy_formation_atom += 0.0005;
-        enthalpy_cell += 0.001;
-        enthalpy_atom += 0.005;
-        if (verbose) {
-          message << "Fixing enthalpy/enthalpy_formation of " << pseudoA << pseudoB << ":" << prototype;
-          pflow::logger(__AFLOW_FILE__, __AFLOW_FUNC__, message, FileMESSAGE, oss, _LOGGER_MESSAGE_);
-        }
-      }
-      // sigma
-      if (pseudoA == "Os_pv" && pseudoB == "Re_pv" && prototype == "122") {
-        enthalpy_formation_atom -= 0.001;
-        enthalpy_formation_cell = natoms * enthalpy_formation_atom;
-        enthalpy_atom = enthalpy_formation_atom;
-        enthalpy_cell = natoms * enthalpy_atom;
-        if (verbose) {
-          message << "Fixing enthalpy/enthalpy_formation of " << pseudoA << pseudoB << ":" << prototype;
-          pflow::logger(__AFLOW_FILE__, __AFLOW_FUNC__, message, FileMESSAGE, oss, _LOGGER_MESSAGE_);
-        }
-      }
-    }
-  }
   bool _aflowlib_entry::ignoreBadDatabase() const {
     string reason;
     return ignoreBadDatabase(reason);
@@ -6677,8 +6665,8 @@ namespace aflowlib {
         space_group_summons += ":" + aurostd::utype2string<int>(enantiomorph_space_group_number); // DX20210615
       } else if (relaxation_step == _COMPARE_DATABASE_GEOMETRY_RELAX1_) {
         space_group_summons = squote_encoded + ",\"" + GetSpaceGroupName(space_group_number) + space_encoded + hashtag_encoded + aurostd::utype2string<int>(space_group_number) + "\"," + squote_encoded; // DX20210615
-        space_group_summons += ":" + squote_encoded + ",\"" + GetSpaceGroupName(enantiomorph_space_group_number) + space_encoded + hashtag_encoded + aurostd::utype2string<int>(enantiomorph_space_group_number) +
-                               "\"," + squote_encoded; // DX20210615
+        space_group_summons
+            += ":" + squote_encoded + ",\"" + GetSpaceGroupName(enantiomorph_space_group_number) + space_encoded + hashtag_encoded + aurostd::utype2string<int>(enantiomorph_space_group_number) + "\"," + squote_encoded; // DX20210615
       } else if (relaxation_step == _COMPARE_DATABASE_GEOMETRY_MOST_RELAXED_) {
         space_group_summons = aurostd::utype2string<int>(space_group_number); // DX20210615
         space_group_summons += ":" + aurostd::utype2string<int>(enantiomorph_space_group_number); // DX20210615
@@ -6708,674 +6696,176 @@ namespace aflowlib {
 // DX20200929 - END
 
 namespace aflowlib {
-  uint WEB_Aflowlib_Entry(string options, ostream& oss) {
-    const bool LDEBUG = (false || XHOST.DEBUG);
-    if (LDEBUG) {
-      cout << XPID << "aflowlib::WEB_Aflowlib_Entry: begin<br>" << endl;
-    }
-
-    vector<string> voptions;
-    aurostd::string2tokens(options, voptions, ",");
+  /// @brief prepare aflow entries for the website (like material/?id=aflow:3c1b96dd71b0982a)
+  /// @param option from the web (--www --aflowlib=)
+  /// @param oss output stream
+  /// @note this function needs to be as lean as possible as it is callable from the web running on our servers
+  /// reducing the attack surface and speeding it up is paramount
+  /// @authors
+  /// @mod{HE,20250728,reduce to AUID only}
+  /// @mod{HE,20250728,only one AUID at a time}
+  /// @mod{HE,20250728,only json output}
+  /// @return
+  void WEB_Aflowlib_Entry(const std::string& option, ostream& oss) {
     string errormsg;
-    if (voptions.empty()) {
+    if (option.empty()) {
       errormsg = "--aflowlib= has no arguments.";
-      //[CO+ME20200731 - ErrorOption throws an error, so no need to return]return 0; //CO20200624 - 0 is error here
+    }
+    string auid = aurostd::tolower(option);
+    string directory_AUID_RAW;
+
+    xoption vflags;
+    vflags.flag("FLAG::PREAMBLE", true);
+    vflags.flag("FLAG::CALCULATION", true);
+    vflags.flag("FLAG::JMOL", true);
+    vflags.flag("FLAG::EDATA_ORIG", false);
+    vflags.flag("FLAG::EDATA_RELAX", true);
+    vflags.flag("FLAG::THERMODYNAMICS", true);
+    vflags.flag("FLAG::MAGNETIC", true);
+    vflags.flag("FLAG::ELECTRONIC", false); // will setup later
+    vflags.flag("FLAG::SCINTILLATION", true); // will setup later
+    vflags.flag("FLAG::AGL", false); // will setup later
+    vflags.flag("FLAG::AEL", false); // will setup later
+    vflags.flag("FLAG::BADER", false); // will setup later
+    vflags.flag("FLAG::POCC", false); // will setup later  //CO20201220
+
+    // START SEARCH
+
+    vflags.flag("FLAG::FOUND", false);
+    string strtmp;
+
+    // ME20200707 - Also check for AUIDs without the aflow: prefix
+    if ((auid.size() == 16) && aurostd::_ishex(auid)) {
+      auid = "aflow:" + option;
+    }
+    if (auid.size() == 22 && aurostd::substring2bool(auid, "aflow:")) {
+      // probably a valid AUID
+      const std::string AUID_Project_Folder = init::AFLOW_Projects_Directories("AUID");
+      directory_AUID_RAW = AUID_Project_Folder + "/" + auid.substr(0, 8); // "aflow:XX"
+      for (uint i = 8; i <= 20; i += 2) {
+        directory_AUID_RAW += "/" + auid.substr(i, 2); // splitting aflow:ab/cd/..
+      }
+      directory_AUID_RAW += "/RAW";
+      // fix the folder location if common is not mounted at root (for testing on macOS for example)
+      if (!aurostd::FileExist(directory_AUID_RAW + "/" + DEFAULT_FILE_AFLOWLIB_ENTRY_OUT)) {
+        if (const fs::path link_start(directory_AUID_RAW); fs::is_symlink(link_start)) {
+          const fs::path link_end(fs::read_symlink(link_start));
+          const size_t auid_start = AUID_Project_Folder.find("/AUID");
+          const std::string local_common = AUID_Project_Folder.substr(0, auid_start);
+          directory_AUID_RAW = link_end.string().replace(0, 7, local_common);
+        }
+      }
+      if (!aurostd::FileExist(directory_AUID_RAW + "/" + DEFAULT_FILE_AFLOWLIB_ENTRY_OUT)) {
+        errormsg = "aflowlib::WEB_Aflowlib_Entry:_entry_does_not_exist=" + directory_AUID_RAW + "/" + DEFAULT_FILE_AFLOWLIB_ENTRY_OUT;
+      } else {
+        const _aflowlib_entry entry_tmp(string(directory_AUID_RAW + "/" + DEFAULT_FILE_AFLOWLIB_ENTRY_OUT));
+        vflags.flag("FLAG::AUID", true);
+        vflags.flag("FLAG::FOUND", true);
+      }
+    } else {
+      errormsg = "aflowlib::WEB_Aflowlib_Entry:_error_on_size_of_auid=" + auid;
     }
 
-    // move on
-    for (size_t ioption = 0; ioption < voptions.size(); ioption++) {
-      //  oss << voptions[ioption] << endl;
-      string option = voptions[ioption]; // aurostd::args2attachedstring(argv,"--aflowlib=",(string) "nan");
-      if (option.at(option.size() - 1) == '/' || option.at(option.size() - 1) == '.') {
-        option.erase(option.end() - 1, option.end() - 0); //  some demoronization
-      }
-      if (option.at(0) == '/' || option.at(0) == '.') {
-        option.erase(option.begin(), option.begin() + 1); //  some demoronization
-      }
-      string directory;
-      string directory_RAW;
-      string directory_LIB;
-      string directory_WEB;
-      string directory_AUID_LIB;
-      string directory_AUID_RAW;
-      string directory_AUID_WEB;
-      string url_WEB;
-      string label;
-      // string line_gif="<br><img border=0 width=60% height=2 src=http://materials.duke.edu/auro/images/line.gif><br><br>";
-      // string art058_link=" https://doi.org/10.1016/j.commatsci.2010.05.010";
-      // string art064_link=" https://doi.org/10.1021/co200012w";
-      // string icsd_link=" https://www.fiz-karlsruhe.com/icsd.html";
-      // string aflow_ael_readme=" http://materials.duke.edu/AFLOW/README_AFLOW_AEL.TXT"; //CO20180817
-      // string art096_link=" https://doi.org/10.1103/PhysRevB.90.174107";
-      // string art100_link=" https://www.nature.com/articles/sdata20159";
-      // string aflow_agl_readme=" http://materials.duke.edu/AFLOW/README_AFLOW_AGL.TXT"; //CO20180817
-      // string art115_link=" https://doi.org/10.1103/PhysRevMaterials.1.015401"; //CO20180817
-      // string aflow_sym_readme=" http://materials.duke.edu/AFLOW/README_AFLOW_SYM.TXT"; //CO20180817
-      // string art135_link=" https://doi.org/10.1107/S2053273318003066"; //CO20180817
+    stringstream aflowlib_json;
+    if (vflags.flag("FLAG::FOUND")) {
+      strtmp = aurostd::compressfile2string(directory_AUID_RAW + "/" + DEFAULT_FILE_AFLOWLIB_ENTRY_JSON);
+      aurostd::StringSubstInPlace(strtmp, "}\n", ""); // remove trailing bracket add it at the end
+      aflowlib_json << strtmp;
+    } else {
+      aflowlib_json << "{";
+    }
 
-      // DX20180817
-      //  string bravais_lattice_orig_wiki_link=" http://aflowlib.duke.edu/aflowwiki/doku.php?id=documentation:all_keywords&#bravais_lattice_orig";
-      //  string bravais_lattice_relax_wiki_link=" http://aflowlib.duke.edu/aflowwiki/doku.php?id=documentation:all_keywords&#bravais_lattice_relax";
-      //  string lattice_system_orig_wiki_link=" http://aflowlib.duke.edu/aflowwiki/doku.php?id=documentation:all_keywords&#lattice_system_orig";
-      //  string lattice_variation_orig_wiki_link=" http://aflowlib.duke.edu/aflowwiki/doku.php?id=documentation:all_keywords&#lattice_variation_orig";
-      //  string lattice_system_relax_wiki_link=" http://aflowlib.duke.edu/aflowwiki/doku.php?id=documentation:all_keywords&#lattice_system_relax";
-      //  string lattice_variation_relax_wiki_link=" http://aflowlib.duke.edu/aflowwiki/doku.php?id=documentation:all_keywords&#lattice_variation_relax";
-      //  string Pearson_symbol_orig_wiki_link=" http://aflowlib.duke.edu/aflowwiki/doku.php?id=documentation:all_keywords&#pearson_symbol_orig";
-      //  string Pearson_symbol_relax_wiki_link=" http://aflowlib.duke.edu/aflowwiki/doku.php?id=documentation:all_keywords&#pearson_symbol_relax";
-      //  string sg_wiki_link=" http://aflowlib.duke.edu/aflowwiki/doku.php?id=documentation:all_keywords&#sg";
-      //  string sg2_wiki_link=" http://aflowlib.duke.edu/aflowwiki/doku.php?id=documentation:all_keywords&#sg2";
-      //  string spacegroup_orig_wiki_link=" http://aflowlib.duke.edu/aflowwiki/doku.php?id=documentation:all_keywords&#spacegroup_orig";
-      //  string spacegroup_relax_wiki_link=" http://aflowlib.duke.edu/aflowwiki/doku.php?id=documentation:all_keywords&#spacegroup_relax";
+    // XHOST.hostname
+    aflowlib_json << "," << "\"XHOST.hostname\":" << "\"" << XHOST.hostname << "\"";
+    // option
+    aflowlib_json << "," << "\"XHOST.option\":" << "\"" << option << "\"";
 
-      aflowlib::_aflowlib_entry aentry;
+    if (vflags.flag("FLAG::FOUND")) {
+      // XHOST.FLAG::AUID
+      aflowlib_json << "," << "\"XHOST.FLAG::AUID\":" << (vflags.flag("FLAG::AUID") ? "true" : "false");
+    }
+    // XHOST.FLAG::FOUND
+    aflowlib_json << "," << "\"XHOST.FLAG::FOUND\":" << (vflags.flag("FLAG::FOUND") ? "true" : "false");
+    //   if(!vflags.flag("FLAG::FOUND"))
+    {
+      // errormsg
+      aflowlib_json << "," << "\"XHOST.errormsg\":" << "\"" << errormsg << "\"";
+    }
 
-      xoption vflags;
-      vflags.flag("FLAG::PREAMBLE", true);
-      vflags.flag("FLAG::CALCULATION", true);
-      vflags.flag("FLAG::JMOL", true);
-      vflags.flag("FLAG::EDATA_ORIG", false);
-      vflags.flag("FLAG::EDATA_RELAX", true);
-      vflags.flag("FLAG::THERMODYNAMICS", true);
-      vflags.flag("FLAG::MAGNETIC", true);
-      vflags.flag("FLAG::ELECTRONIC", false); // will setup later
-      vflags.flag("FLAG::SCINTILLATION", true); // will setup later
-      vflags.flag("FLAG::AGL", false); // will setup later
-      vflags.flag("FLAG::AEL", false); // will setup later
-      vflags.flag("FLAG::BADER", false); // will setup later
-      vflags.flag("FLAG::POCC", false); // will setup later  //CO20201220
+    if (vflags.flag("FLAG::FOUND")) {
+      // XHOST.FLAG::PREAMBLE
+      aflowlib_json << "," << "\"XHOST.FLAG::PREAMBLE\":" << (vflags.flag("FLAG::PREAMBLE") ? "true" : "false");
+      // XHOST.FLAG::CALCULATION
+      aflowlib_json << "," << "\"XHOST.FLAG::CALCULATION\":" << (vflags.flag("FLAG::CALCULATION") ? "true" : "false");
+      // XHOST.FLAG::JMOL
+      aflowlib_json << "," << "\"XHOST.FLAG::JMOL\":" << (vflags.flag("FLAG::JMOL") ? "true" : "false");
+      // XHOST.FLAG::EDATA_ORIG
+      aflowlib_json << "," << "\"XHOST.FLAG::EDATA_ORIG\":" << (vflags.flag("FLAG::EDATA_ORIG") ? "true" : "false");
+      // XHOST.FLAG::EDATA_RELAX
+      aflowlib_json << "," << "\"XHOST.FLAG::EDATA_RELAX\":" << (vflags.flag("FLAG::EDATA_RELAX") ? "true" : "false");
+      // XHOST.FLAG::THERMODYNAMICS
+      aflowlib_json << "," << "\"XHOST.FLAG::THERMODYNAMICS\":" << (vflags.flag("FLAG::THERMODYNAMICS") ? "true" : "false");
+      // XHOST.FLAG::MAGNETIC
+      aflowlib_json << "," << "\"XHOST.FLAG::MAGNETIC\":" << (vflags.flag("FLAG::MAGNETIC") ? "true" : "false");
+      // XHOST.FLAG::ELECTRONIC
+      aflowlib_json << "," << "\"XHOST.FLAG::ELECTRONIC\":" << (vflags.flag("FLAG::ELECTRONIC") ? "true" : "false");
+      // XHOST.FLAG::SCINTILLATION
+      aflowlib_json << "," << "\"XHOST.FLAG::SCINTILLATION\":" << (vflags.flag("FLAG::SCINTILLATION") ? "true" : "false");
+      // XHOST.FLAG::AGL
+      aflowlib_json << "," << "\"XHOST.FLAG::AGL\":" << (vflags.flag("FLAG::AGL") ? "true" : "false");
+      // XHOST.FLAG::AEL
+      aflowlib_json << "," << "\"XHOST.FLAG::AEL\":" << (vflags.flag("FLAG::AEL") ? "true" : "false");
+      // XHOST.FLAG::BADER
+      aflowlib_json << "," << "\"XHOST.FLAG::BADER\":" << (vflags.flag("FLAG::BADER") ? "true" : "false");
 
-      // check if ICSD inside (anyway)
-      const vector<string> vline;
-      vector<string> tokens;
-
-      const string html_TAB = " target=\"_blank\"";
-
-      if (LDEBUG) {
-        cout << "WEB_Aflowlib_Entry: [1]<br>" << endl;
-      }
-      if (LDEBUG) {
-        cout << "WEB_Aflowlib_Entry: [4]<br>" << endl;
-      }
-      if (LDEBUG) {
-        cout << "WEB_Aflowlib_Entry: option=" << option << endl;
-      }
-
-      // START SEARCH
-
-      vflags.flag("FLAG::FOUND", false);
-      string catalog;
-      string auid;
-      string strtmp;
-
-      // **********************************************************************************************************
-      // TRY AUID
-      // **********************************************************************************************************
-      // ME20200707 - Also check for AUIDs without the aflow: prefix
-      string option_orig = option;
-      if ((option.size() == 16) && aurostd::_ishex(option)) {
-        option = "aflow:" + option;
-      }
-      if (!vflags.flag("FLAG::FOUND") && aurostd::substring2bool(aurostd::tolower(option), "aflow:")) { // CHECK AUID
-        if (LDEBUG) {
-          cout << "WEB_Aflowlib_Entry: option=" << option << endl;
-        }
-        string auid = aurostd::tolower(option);
-        if (auid.size() != 22) {
-          errormsg = "aflowlib::WEB_Aflowlib_Entry:_error_on_size_of_auid=" + auid;
-        } else {
-          // NEW
-          directory_AUID_LIB = init::AFLOW_Projects_Directories("AUID") + "/" + auid.substr(0, 8);
-          for (uint i = 8; i <= 20; i += 2) {
-            directory_AUID_LIB += "/" + auid.substr(i, 2); // splitting aflow:ab/cd..
-          }
-          directory_AUID_WEB = directory_AUID_LIB + "/WEB";
-          directory_AUID_RAW = directory_AUID_LIB + "/RAW";
-          directory_AUID_LIB = directory_AUID_LIB + "/LIB";
-          if (LDEBUG) {
-            cout << "WEB_Aflowlib_Entry: directory_AUID_LIB=" << directory_AUID_LIB << endl;
-          }
-          if (LDEBUG) {
-            cout << "WEB_Aflowlib_Entry: directory_AUID_RAW=" << directory_AUID_RAW << endl;
-          }
-          if (LDEBUG) {
-            cout << "WEB_Aflowlib_Entry: directory_AUID_WEB=" << directory_AUID_WEB << endl;
-          }
-          directory = "";
-          if (!aurostd::FileExist(directory_AUID_RAW + "/" + DEFAULT_FILE_AFLOWLIB_ENTRY_OUT)) {
-            errormsg = "aflowlib::WEB_Aflowlib_Entry:_entry_does_not_exist=" + directory_AUID_RAW + "/" + DEFAULT_FILE_AFLOWLIB_ENTRY_OUT;
-          } else {
-            const _aflowlib_entry entry_tmp(string(directory_AUID_RAW + "/" + DEFAULT_FILE_AFLOWLIB_ENTRY_OUT));
-            directory = entry_tmp.aurl;
-            auid = entry_tmp.aurl;
-            aurostd::StringSubstInPlace(directory, "aflowlib.duke.edu:", "");
-            aurostd::StringSubstInPlace(directory, "materials.duke.edu:", "");
-            aurostd::StringSubstInPlace(directory, "AFLOWDATA/ICSD_RAW/", "");
-            aurostd::StringSubstInPlace(directory, "AFLOWDATA/ICSD_WEB/", "");
-            aurostd::StringSubstInPlace(directory, "AFLOWDATA/LIB0_RAW/", "");
-            aurostd::StringSubstInPlace(directory, "AFLOWDATA/LIB0_WEB/", "");
-            aurostd::StringSubstInPlace(directory, "AFLOWDATA/LIB1_RAW/", "");
-            aurostd::StringSubstInPlace(directory, "AFLOWDATA/LIB1_WEB/", "");
-            aurostd::StringSubstInPlace(directory, "AFLOWDATA/LIB2_RAW/", "");
-            aurostd::StringSubstInPlace(directory, "AFLOWDATA/LIB2_WEB/", "");
-            aurostd::StringSubstInPlace(directory, "AFLOWDATA/LIB3_RAW/", "");
-            aurostd::StringSubstInPlace(directory, "AFLOWDATA/LIB3_WEB/", "");
-            aurostd::StringSubstInPlace(directory, "AFLOWDATA/LIB4_RAW/", "");
-            aurostd::StringSubstInPlace(directory, "AFLOWDATA/LIB4_WEB/", "");
-            aurostd::StringSubstInPlace(directory, "AFLOWDATA/LIB5_RAW/", "");
-            aurostd::StringSubstInPlace(directory, "AFLOWDATA/LIB5_WEB/", "");
-            aurostd::StringSubstInPlace(directory, "AFLOWDATA/LIB6_RAW/", "");
-            aurostd::StringSubstInPlace(directory, "AFLOWDATA/LIB6_WEB/", "");
-            aurostd::StringSubstInPlace(directory, "AFLOWDATA/LIB7_RAW/", "");
-            aurostd::StringSubstInPlace(directory, "AFLOWDATA/LIB7_WEB/", "");
-            aurostd::StringSubstInPlace(directory, "AFLOWDATA/LIB8_RAW/", "");
-            aurostd::StringSubstInPlace(directory, "AFLOWDATA/LIB8_WEB/", "");
-            aurostd::StringSubstInPlace(directory, "AFLOWDATA/LIB9_RAW/", "");
-            aurostd::StringSubstInPlace(directory, "AFLOWDATA/LIB9_WEB/", "");
-            vflags.flag("FLAG::AUID", true);
-            vflags.flag("FLAG::FOUND", true);
-            catalog = entry_tmp.catalog;
-            label = directory;
-            for (size_t ilat = 0; ilat < BRAVAIS_LATTICES.size(); ilat++) {
-              aurostd::StringSubstInPlace(label, BRAVAIS_LATTICES[ilat] + "/", ""); // HE20220420 switch to global bravais lattices list
-            }
-            aurostd::StringSubstInPlace(label, "/", ".");
-          }
-        }
-      }
-      // ME20200707 - Restore
-      option = option_orig;
-
-      // **********************************************************************************************************
-      // TRY DIRECTORY
-      // **********************************************************************************************************
-      if (!vflags.flag("FLAG::FOUND")) { // tests with proto name
-        string dir2test;
-        dir2test = option;
-
-        vector<string> vdir2test;
-        for (size_t i0 = 0; i0 < dir2test.size(); i0++) { // allow all identical indices...
-          for (size_t i1 = i0; i1 < dir2test.size(); i1++) { // allow all identical indices
-            for (size_t i2 = i1; i2 < dir2test.size(); i2++) { // allow all identical indices
-              //	    for(size_t i3=i2;i3<dir2test.size();i3++) { // allow all identical indices
-              dir2test = option;
-              if (dir2test[i0] == '.') {
-                dir2test[i0] = '/';
-              }
-              if (dir2test[i1] == '.') {
-                dir2test[i1] = '/';
-              }
-              if (dir2test[i2] == '.') {
-                dir2test[i2] = '/';
-              }
-              //      if(dir2test.at(i3)=='.') dir2test.at(i3)='/';
-              bool found = false;
-              for (size_t i = 0; i < vdir2test.size() && !found; i++) {
-                if (dir2test == vdir2test[i]) {
-                  found = true;
-                }
-              }
-              if (!found) {
-                vdir2test.push_back(dir2test);
-              }
-            }
-            //	  }
-          }
-        }
-        if (LDEBUG) {
-          cout << "WEB_Aflowlib_Entry: testing dir2test=" << dir2test << endl;
-        }
-        for (size_t i = 0; i < vdir2test.size() && !vflags.flag("FLAG::FOUND"); i++) { // allow i=j=k so that 1 OR 2 OR 3 dots are also tested
-          dir2test = vdir2test[i];
-          //		cout << "testing(" << i << ") = " << dir2test << endl;
-          for (size_t ilat = 0; ilat < BRAVAIS_LATTICES.size() && !vflags.flag("FLAG::FOUND"); ilat++) { // HE20220420 switch to global bravais lattices list
-            if (!vflags.flag("FLAG::FOUND") && aurostd::FileExist(init::AFLOW_Projects_Directories("ICSD") + "/RAW/" + BRAVAIS_LATTICES[ilat] + "/" + dir2test + "/" + DEFAULT_FILE_AFLOWLIB_ENTRY_OUT)) {
-              catalog = "ICSD";
-              directory = BRAVAIS_LATTICES[ilat] + "/" + dir2test;
-              label = option;
-              vflags.flag("FLAG::FOUND", true);
-            }
-          }
-          if (!vflags.flag("FLAG::FOUND") && aurostd::FileExist(init::AFLOW_Projects_Directories("LIB0") + "/RAW/" + dir2test + "/" + DEFAULT_FILE_AFLOWLIB_ENTRY_OUT)) {
-            catalog = "LIB0";
-            directory = dir2test;
-            label = option;
-            vflags.flag("FLAG::FOUND", true);
-          }
-          if (!vflags.flag("FLAG::FOUND") && aurostd::FileExist(init::AFLOW_Projects_Directories("LIB1") + "/RAW/" + dir2test + "/" + DEFAULT_FILE_AFLOWLIB_ENTRY_OUT)) {
-            catalog = "LIB1";
-            directory = dir2test;
-            label = option;
-            vflags.flag("FLAG::FOUND", true);
-          }
-          if (!vflags.flag("FLAG::FOUND") && aurostd::FileExist(init::AFLOW_Projects_Directories("LIB2") + "/RAW/" + dir2test + "/" + DEFAULT_FILE_AFLOWLIB_ENTRY_OUT)) {
-            catalog = "LIB2";
-            directory = dir2test;
-            label = option;
-            vflags.flag("FLAG::FOUND", true);
-          }
-          if (!vflags.flag("FLAG::FOUND") && aurostd::FileExist(init::AFLOW_Projects_Directories("LIB3") + "/RAW/" + dir2test + "/" + DEFAULT_FILE_AFLOWLIB_ENTRY_OUT)) {
-            catalog = "LIB3";
-            directory = dir2test;
-            label = option;
-            vflags.flag("FLAG::FOUND", true);
-          }
-          if (!vflags.flag("FLAG::FOUND") && aurostd::FileExist(init::AFLOW_Projects_Directories("LIB4") + "/RAW/" + dir2test + "/" + DEFAULT_FILE_AFLOWLIB_ENTRY_OUT)) {
-            catalog = "LIB4";
-            directory = dir2test;
-            label = option;
-            vflags.flag("FLAG::FOUND", true);
-          }
-          if (!vflags.flag("FLAG::FOUND") && aurostd::FileExist(init::AFLOW_Projects_Directories("LIB5") + "/RAW/" + dir2test + "/" + DEFAULT_FILE_AFLOWLIB_ENTRY_OUT)) {
-            catalog = "LIB5";
-            directory = dir2test;
-            label = option;
-            vflags.flag("FLAG::FOUND", true);
-          }
-          if (!vflags.flag("FLAG::FOUND") && aurostd::FileExist(init::AFLOW_Projects_Directories("LIB6") + "/RAW/" + dir2test + "/" + DEFAULT_FILE_AFLOWLIB_ENTRY_OUT)) {
-            catalog = "LIB6";
-            directory = dir2test;
-            label = option;
-            vflags.flag("FLAG::FOUND", true);
-          }
-          if (!vflags.flag("FLAG::FOUND") && aurostd::FileExist(init::AFLOW_Projects_Directories("LIB7") + "/RAW/" + dir2test + "/" + DEFAULT_FILE_AFLOWLIB_ENTRY_OUT)) {
-            catalog = "LIB7";
-            directory = dir2test;
-            label = option;
-            vflags.flag("FLAG::FOUND", true);
-          }
-          if (!vflags.flag("FLAG::FOUND") && aurostd::FileExist(init::AFLOW_Projects_Directories("LIB8") + "/RAW/" + dir2test + "/" + DEFAULT_FILE_AFLOWLIB_ENTRY_OUT)) {
-            catalog = "LIB8";
-            directory = dir2test;
-            label = option;
-            vflags.flag("FLAG::FOUND", true);
-          }
-          if (!vflags.flag("FLAG::FOUND") && aurostd::FileExist(init::AFLOW_Projects_Directories("LIB9") + "/RAW/" + dir2test + "/" + DEFAULT_FILE_AFLOWLIB_ENTRY_OUT)) {
-            catalog = "LIB9";
-            directory = dir2test;
-            label = option;
-            vflags.flag("FLAG::FOUND", true);
-          }
-        }
-      }
-
-      // **********************************************************************************************************
-      // TRY ICSD LINK
-      // **********************************************************************************************************
-      if (!vflags.flag("FLAG::FOUND")) { // icsd link
-        // ME20200707 - Remove possible icsd: prefix
-        option_orig = option;
-        if (option.find("icsd") == 0) {
-          option = option.substr(5);
-        }
-        string directory_ICSD2LINK = init::AFLOW_Projects_Directories("AUID") + "/icsd:/" + option;
-        aurostd::StringSubstInPlace(directory_ICSD2LINK, "ICSD:", "icsd:");
-        aurostd::StringSubstInPlace(directory_ICSD2LINK, "icsd:icsd:", "icsd:");
-        //	cerr << directory_ICSD2LINK << endl;
-        if (aurostd::FileExist(directory_ICSD2LINK + "/RAW/" + DEFAULT_FILE_AFLOWLIB_ENTRY_OUT)) {
-          const _aflowlib_entry entry_tmp(string(directory_ICSD2LINK + "/RAW/" + DEFAULT_FILE_AFLOWLIB_ENTRY_OUT));
-          directory = entry_tmp.aurl;
-          auid = entry_tmp.aurl;
-          aurostd::StringSubstInPlace(directory, "aflowlib.duke.edu:", "");
-          aurostd::StringSubstInPlace(directory, "materials.duke.edu:", "");
-          aurostd::StringSubstInPlace(directory, "AFLOWDATA/ICSD_RAW/", "");
-          aurostd::StringSubstInPlace(directory, "AFLOWDATA/ICSD_WEB/", "");
-          vflags.flag("FLAG::ICSD", true);
-          vflags.flag("FLAG::FOUND", true);
-          catalog = entry_tmp.catalog;
-          // ME20200923 - Use the last subdirectory or XHOST.label will be inconsistent.
-          // For example, using --aflowlib=7bed936e9d5a44ca results in XHOST.label = Ni1Sn1Ti1_ICSD_174568
-          // whereas using --aflowlib=174568 results in XHOST.label=FCC.Ni1Sn1Ti1_ICSD_174568
-          vector<string> tokens;
-          aurostd::string2tokens(directory, tokens, "/");
-          label = tokens.back();
-          //	  cerr << directory_ICSD2LINK+"/RAW/"+DEFAULT_FILE_AFLOWLIB_ENTRY_OUT << endl;
-        }
-        // ME20200707 - Restore
-        option = option_orig;
-      }
-
-      // **********************************************************************************************************
-      // CONSIDERED FOUND
-      // **********************************************************************************************************
-      if (vflags.flag("FLAG::FOUND")) {
-        if (catalog == "ICSD") {
-          vflags.flag("FLAG::ICSD", true);
-          directory_LIB = init::AFLOW_Projects_Directories("ICSD") + "/LIB/" + directory;
-          directory_WEB = init::AFLOW_Projects_Directories("ICSD") + "/WEB/" + directory;
-          directory_RAW = init::AFLOW_Projects_Directories("ICSD") + "/RAW/" + directory;
-          url_WEB = "/AFLOWDATA/ICSD_WEB/" + directory;
-        }
-
-        if (catalog == "LIB0") {
-          vflags.flag("FLAG::LIB0", true);
-          directory_LIB = init::AFLOW_Projects_Directories("LIB0") + "/LIB/" + directory;
-          directory_WEB = init::AFLOW_Projects_Directories("LIB0") + "/WEB/" + directory;
-          directory_RAW = init::AFLOW_Projects_Directories("LIB0") + "/RAW/" + directory;
-          url_WEB = "/AFLOWDATA/LIB0_RAW/" + directory;
-        }
-        if (vflags.flag("FLAG::FOUND") && catalog == "LIB1") {
-          vflags.flag("FLAG::LIB1", true);
-          directory_LIB = init::AFLOW_Projects_Directories("LIB1") + "/LIB/" + directory;
-          directory_WEB = init::AFLOW_Projects_Directories("LIB1") + "/WEB/" + directory;
-          directory_RAW = init::AFLOW_Projects_Directories("LIB1") + "/RAW/" + directory;
-          url_WEB = "/AFLOWDATA/LIB1_RAW/" + directory;
-        }
-        if (catalog == "LIB2") {
-          vflags.flag("FLAG::LIB2", true);
-          directory_LIB = init::AFLOW_Projects_Directories("LIB2") + "/LIB/" + directory;
-          directory_WEB = init::AFLOW_Projects_Directories("LIB2") + "/RAW/" + directory; // June 2016
-          directory_RAW = init::AFLOW_Projects_Directories("LIB2") + "/RAW/" + directory;
-          url_WEB = "/AFLOWDATA/LIB2_RAW/" + directory; // May 2014
-        }
-        if (catalog == "LIB3") {
-          vflags.flag("FLAG::LIB3", true);
-          directory_LIB = init::AFLOW_Projects_Directories("LIB3") + "/LIB/" + directory;
-          directory_WEB = init::AFLOW_Projects_Directories("LIB3") + "/WEB/" + directory;
-          directory_RAW = init::AFLOW_Projects_Directories("LIB3") + "/RAW/" + directory;
-          url_WEB = "/AFLOWDATA/LIB3_WEB/" + directory;
-        }
-        if (catalog == "LIB4") {
-          vflags.flag("FLAG::LIB4", true);
-          directory_LIB = init::AFLOW_Projects_Directories("LIB4") + "/LIB/" + directory;
-          directory_WEB = init::AFLOW_Projects_Directories("LIB4") + "/WEB/" + directory;
-          directory_RAW = init::AFLOW_Projects_Directories("LIB4") + "/RAW/" + directory;
-          url_WEB = "/AFLOWDATA/LIB4_WEB/" + directory;
-        }
-        if (catalog == "LIB5") {
-          vflags.flag("FLAG::LIB5", true);
-          directory_LIB = init::AFLOW_Projects_Directories("LIB5") + "/LIB/" + directory;
-          directory_WEB = init::AFLOW_Projects_Directories("LIB5") + "/WEB/" + directory;
-          directory_RAW = init::AFLOW_Projects_Directories("LIB5") + "/RAW/" + directory;
-          url_WEB = "/AFLOWDATA/LIB5_WEB/" + directory;
-        }
-        if (catalog == "LIB6") {
-          vflags.flag("FLAG::LIB6", true);
-          directory_LIB = init::AFLOW_Projects_Directories("LIB6") + "/LIB/" + directory;
-          directory_WEB = init::AFLOW_Projects_Directories("LIB6") + "/WEB/" + directory;
-          directory_RAW = init::AFLOW_Projects_Directories("LIB6") + "/RAW/" + directory;
-          url_WEB = "/AFLOWDATA/LIB6_WEB/" + directory;
-        }
-        if (catalog == "LIB7") {
-          vflags.flag("FLAG::LIB7", true);
-          directory_LIB = init::AFLOW_Projects_Directories("LIB7") + "/LIB/" + directory;
-          directory_WEB = init::AFLOW_Projects_Directories("LIB7") + "/WEB/" + directory;
-          directory_RAW = init::AFLOW_Projects_Directories("LIB7") + "/RAW/" + directory;
-          url_WEB = "/AFLOWDATA/LIB7_WEB/" + directory;
-        }
-        if (catalog == "LIB8") {
-          vflags.flag("FLAG::LIB8", true);
-          directory_LIB = init::AFLOW_Projects_Directories("LIB8") + "/LIB/" + directory;
-          directory_WEB = init::AFLOW_Projects_Directories("LIB8") + "/WEB/" + directory;
-          directory_RAW = init::AFLOW_Projects_Directories("LIB8") + "/RAW/" + directory;
-          url_WEB = "/AFLOWDATA/LIB8_WEB/" + directory;
-        }
-        if (catalog == "LIB9") {
-          vflags.flag("FLAG::LIB9", true);
-          directory_LIB = init::AFLOW_Projects_Directories("LIB9") + "/LIB/" + directory;
-          directory_WEB = init::AFLOW_Projects_Directories("LIB9") + "/WEB/" + directory;
-          directory_RAW = init::AFLOW_Projects_Directories("LIB9") + "/RAW/" + directory;
-          url_WEB = "/AFLOWDATA/LIB9_WEB/" + directory;
-        }
-      } else {
-        errormsg = "aflowlib::WEB_Aflowlib_Entry:_entry_does_not_exist=" + option;
-      }
-
-      // got it  ?
-      if (!aurostd::FileExist(directory_RAW + "/" + _AFLOWIN_)) {
-        directory_RAW = "";
-      }
-
-      if (!directory.empty()) { // play with aentry.entry
-        aurostd::StringSubstInPlace(label, "/", ".");
-        aentry.file2aflowlib(directory_RAW + "/" + DEFAULT_FILE_AFLOWLIB_ENTRY_OUT, oss); //   oss << aentry.entry << endl;
-        directory_AUID_LIB = init::AFLOW_Projects_Directories("AUID") + "/" + aflowlib::auid2directory(aentry.auid);
-        directory_AUID_WEB = directory_AUID_LIB + "/WEB";
-        directory_AUID_RAW = directory_AUID_LIB + "/RAW";
-        directory_AUID_LIB = directory_AUID_LIB + "/LIB";
-        aurostd::string2tokens(aentry.sg2, tokens, "#");
-        if (!tokens.empty()) {
-          aentry.sg2 = tokens.at(tokens.size() - 1);
-        }
-        if (aentry.vfiles_WEB.empty()) {
-          aentry.vfiles_WEB = aentry.vfiles;
-        }
-      }
-
-      // ME20210209 - Show original structure when symmetry changed
-      if (vflags.flag("FLAG::FOUND")) {
-        const bool same_symmetry = ((aentry.spacegroup_orig == aentry.spacegroup_relax) && (aentry.Wyckoff_multiplicities_orig == aentry.Wyckoff_multiplicities) &&
-                                    (aentry.Wyckoff_site_symmetries_orig == aentry.Wyckoff_site_symmetries_orig));
-        vflags.flag("FLAG::EDATA_ORIG", !same_symmetry);
-      }
-
-      if (vflags.flag("FLAG::FOUND")) {
-        // check AGL/AEL
-        vflags.flag("FLAG::ELECTRONIC", aurostd::substring2bool(aentry.vloop, "bands"));
-        vflags.flag("FLAG::SCINTILLATION", aurostd::substring2bool(aentry.vloop, "bands"));
-        vflags.flag("FLAG::AGL", aurostd::substring2bool(aentry.vloop, "agl"));
-        vflags.flag("FLAG::AEL", aurostd::substring2bool(aentry.vloop, "ael"));
-        vflags.flag("FLAG::BADER", aurostd::substring2bool(aentry.vloop, "bader"));
-        vflags.flag("FLAG::POCC", aurostd::substring2bool(aentry.vloop, "pocc")); // CO20201220
-        if (vflags.flag("FLAG::POCC")) {
-          vflags.flag("FLAG::JMOL", false);
-        } // CO20201220 - no POSCAR/CIF to plot for PARTCAR (yet)
-      }
-      stringstream aflowlib_json;
-      if (vflags.flag("FLAG::FOUND")) {
-        strtmp = aurostd::compressfile2string(directory_RAW + "/" + DEFAULT_FILE_AFLOWLIB_ENTRY_JSON);
-        aurostd::StringSubstInPlace(strtmp, "}\n", ""); // remove trailing bracket add it at the end
-        aflowlib_json << strtmp;
-      } else {
-        aflowlib_json << "{DUMMY"; // will remove at the end
-      }
-      stringstream aflowlib_out;
-      if (vflags.flag("FLAG::FOUND")) {
-        strtmp = aurostd::compressfile2string(directory_RAW + "/" + DEFAULT_FILE_AFLOWLIB_ENTRY_OUT);
-        aurostd::StringSubstInPlace(strtmp, "\n", ""); // remove trailing bracket add it at the end
-        aflowlib_out << strtmp;
-      } else {
-        aflowlib_out << "DUMMY"; // will remove at the end
-      }
-
-      // adding pieces
-      //   aurostd::StringSubst(aflowlib_json,"}\n",""); // remove trailing bracket add it at the end
-
-      // XHOST.hostname
-      aflowlib_json << "," << "\"XHOST.hostname\":" << "\"" << XHOST.hostname << "\"";
-      aflowlib_out << " | " << "XHOST.hostname=" << XHOST.hostname;
-      // option
-      aflowlib_json << "," << "\"XHOST.option\":" << "\"" << option << "\"";
-      aflowlib_out << " | " << "XHOST.option=" << option;
-      // label
-      aflowlib_json << "," << "\"XHOST.label\":" << "\"" << label << "\"";
-      aflowlib_out << " | " << "XHOST.label=" << label;
-      // directory
-      aflowlib_json << "," << "\"XHOST.directory\":" << "\"" << directory << "\"";
-      aflowlib_out << " | " << "XHOST.directory=" << directory;
-
-      if (vflags.flag("FLAG::FOUND")) {
-        // directory_LIB
-        aflowlib_json << "," << "\"XHOST.directory_LIB\":" << "\"" << directory_LIB << "\"";
-        aflowlib_out << " | " << "XHOST.directory_LIB=" << directory_LIB;
-        // directory_RAW
-        aflowlib_json << "," << "\"XHOST.directory_RAW\":" << "\"" << directory_RAW << "\"";
-        aflowlib_out << " | " << "XHOST.directory_RAW=" << directory_RAW;
-        // directory_WEB
-        aflowlib_json << "," << "\"XHOST.directory_WEB\":" << "\"" << directory_WEB << "\"";
-        aflowlib_out << " | " << "XHOST.directory_WEB=" << directory_WEB;
-        // directory_AUID_LIB
-        aflowlib_json << "," << "\"XHOST.directory_AUID_LIB\":" << "\"" << directory_AUID_LIB << "\"";
-        aflowlib_out << " | " << "XHOST.directory_AUID_LIB=" << directory_AUID_LIB;
-        // directory_AUID_RAW
-        aflowlib_json << "," << "\"XHOST.directory_AUID_RAW\":" << "\"" << directory_AUID_RAW << "\"";
-        aflowlib_out << " | " << "XHOST.directory_AUID_RAW=" << directory_AUID_RAW;
-        // directory_AUID_WEB
-        aflowlib_json << "," << "\"XHOST.directory_AUID_WEB\":" << "\"" << directory_AUID_WEB << "\"";
-        aflowlib_out << " | " << "XHOST.directory_AUID_WEB=" << directory_AUID_WEB;
-      }
-
-      if (vflags.flag("FLAG::FOUND")) {
-        // XHOST.FLAG::ICSD
-        aflowlib_json << "," << "\"XHOST.FLAG::ICSD\":" << (vflags.flag("FLAG::ICSD") ? "true" : "false");
-        aflowlib_out << " | " << "XHOST.FLAG::ICSD=" << (vflags.flag("FLAG::ICSD") ? "1" : "0");
-        // XHOST.FLAG::LIB0
-        aflowlib_json << "," << "\"XHOST.FLAG::LIB0\":" << (vflags.flag("FLAG::LIB0") ? "true" : "false");
-        aflowlib_out << " | " << "XHOST.FLAG::LIB0=" << (vflags.flag("FLAG::LIB0") ? "1" : "0");
-        // XHOST.FLAG::LIB1
-        aflowlib_json << "," << "\"XHOST.FLAG::LIB1\":" << (vflags.flag("FLAG::LIB1") ? "true" : "false");
-        aflowlib_out << " | " << "XHOST.FLAG::LIB1=" << (vflags.flag("FLAG::LIB1") ? "1" : "0");
-        // XHOST.FLAG::LIB2
-        aflowlib_json << "," << "\"XHOST.FLAG::LIB2\":" << (vflags.flag("FLAG::LIB2") ? "true" : "false");
-        aflowlib_out << " | " << "XHOST.FLAG::LIB2=" << (vflags.flag("FLAG::LIB2") ? "1" : "0");
-        // XHOST.FLAG::LIB3
-        aflowlib_json << "," << "\"XHOST.FLAG::LIB3\":" << (vflags.flag("FLAG::LIB3") ? "true" : "false");
-        aflowlib_out << " | " << "XHOST.FLAG::LIB3=" << (vflags.flag("FLAG::LIB3") ? "1" : "0");
-        // XHOST.FLAG::LIB4
-        aflowlib_json << "," << "\"XHOST.FLAG::LIB4\":" << (vflags.flag("FLAG::LIB4") ? "true" : "false");
-        aflowlib_out << " | " << "XHOST.FLAG::LIB4=" << (vflags.flag("FLAG::LIB4") ? "1" : "0");
-        // XHOST.FLAG::LIB5
-        aflowlib_json << "," << "\"XHOST.FLAG::LIB5\":" << (vflags.flag("FLAG::LIB5") ? "true" : "false");
-        aflowlib_out << " | " << "XHOST.FLAG::LIB5=" << (vflags.flag("FLAG::LIB5") ? "1" : "0");
-        // XHOST.FLAG::LIB6
-        aflowlib_json << "," << "\"XHOST.FLAG::LIB6\":" << (vflags.flag("FLAG::LIB6") ? "true" : "false");
-        aflowlib_out << " | " << "XHOST.FLAG::LIB6=" << (vflags.flag("FLAG::LIB6") ? "1" : "0");
-        // XHOST.FLAG::LIB7
-        aflowlib_json << "," << "\"XHOST.FLAG::LIB7\":" << (vflags.flag("FLAG::LIB7") ? "true" : "false");
-        aflowlib_out << " | " << "XHOST.FLAG::LIB7=" << (vflags.flag("FLAG::LIB7") ? "1" : "0");
-        // XHOST.FLAG::LIB8
-        aflowlib_json << "," << "\"XHOST.FLAG::LIB8\":" << (vflags.flag("FLAG::LIB8") ? "true" : "false");
-        aflowlib_out << " | " << "XHOST.FLAG::LIB8=" << (vflags.flag("FLAG::LIB8") ? "1" : "0");
-        // XHOST.FLAG::LIB9
-        aflowlib_json << "," << "\"XHOST.FLAG::LIB9\":" << (vflags.flag("FLAG::LIB9") ? "true" : "false");
-        aflowlib_out << " | " << "XHOST.FLAG::LIB9=" << (vflags.flag("FLAG::LIB9") ? "1" : "0");
-        // XHOST.FLAG::AUID
-        aflowlib_json << "," << "\"XHOST.FLAG::AUID\":" << (vflags.flag("FLAG::AUID") ? "true" : "false");
-        aflowlib_out << " | " << "XHOST.FLAG::AUID=" << (vflags.flag("FLAG::AUID") ? "1" : "0");
-      }
-      // XHOST.FLAG::FOUND
-      aflowlib_json << "," << "\"XHOST.FLAG::FOUND\":" << (vflags.flag("FLAG::FOUND") ? "true" : "false");
-      aflowlib_out << " | " << "XHOST.FLAG::FOUND=" << (vflags.flag("FLAG::FOUND") ? "1" : "0");
-      //   if(!vflags.flag("FLAG::FOUND"))
-      {
-        // errormsg
-        aflowlib_json << "," << "\"XHOST.errormsg\":" << "\"" << errormsg << "\"";
-        aflowlib_out << " | " << "XHOST.errormsg=" << errormsg;
-      }
-
-      if (vflags.flag("FLAG::FOUND")) {
-        // XHOST.FLAG::PREAMBLE
-        aflowlib_json << "," << "\"XHOST.FLAG::PREAMBLE\":" << (vflags.flag("FLAG::PREAMBLE") ? "true" : "false");
-        aflowlib_out << " | " << "XHOST.FLAG::PREAMBLE=" << (vflags.flag("FLAG::PREAMBLE") ? "1" : "0");
-        // XHOST.FLAG::CALCULATION
-        aflowlib_json << "," << "\"XHOST.FLAG::CALCULATION\":" << (vflags.flag("FLAG::CALCULATION") ? "true" : "false");
-        aflowlib_out << " | " << "XHOST.FLAG::CALCULATION=" << (vflags.flag("FLAG::CALCULATION") ? "1" : "0");
-        // XHOST.FLAG::JMOL
-        aflowlib_json << "," << "\"XHOST.FLAG::JMOL\":" << (vflags.flag("FLAG::JMOL") ? "true" : "false");
-        aflowlib_out << " | " << "XHOST.FLAG::JMOL=" << (vflags.flag("FLAG::JMOL") ? "1" : "0");
-        // XHOST.FLAG::EDATA_ORIG
-        aflowlib_json << "," << "\"XHOST.FLAG::EDATA_ORIG\":" << (vflags.flag("FLAG::EDATA_ORIG") ? "true" : "false");
-        aflowlib_out << " | " << "XHOST.FLAG::EDATA_ORIG=" << (vflags.flag("FLAG::EDATA_ORIG") ? "1" : "0");
-        // XHOST.FLAG::EDATA_RELAX
-        aflowlib_json << "," << "\"XHOST.FLAG::EDATA_RELAX\":" << (vflags.flag("FLAG::EDATA_RELAX") ? "true" : "false");
-        aflowlib_out << " | " << "XHOST.FLAG::EDATA_RELAX=" << (vflags.flag("FLAG::EDATA_RELAX") ? "1" : "0");
-        // XHOST.FLAG::THERMODYNAMICS
-        aflowlib_json << "," << "\"XHOST.FLAG::THERMODYNAMICS\":" << (vflags.flag("FLAG::THERMODYNAMICS") ? "true" : "false");
-        aflowlib_out << " | " << "XHOST.FLAG::THERMODYNAMICS=" << (vflags.flag("FLAG::THERMODYNAMICS") ? "1" : "0");
-        // XHOST.FLAG::MAGNETIC
-        aflowlib_json << "," << "\"XHOST.FLAG::MAGNETIC\":" << (vflags.flag("FLAG::MAGNETIC") ? "true" : "false");
-        aflowlib_out << " | " << "XHOST.FLAG::MAGNETIC=" << (vflags.flag("FLAG::MAGNETIC") ? "1" : "0");
-        // XHOST.FLAG::ELECTRONIC
-        aflowlib_json << "," << "\"XHOST.FLAG::ELECTRONIC\":" << (vflags.flag("FLAG::ELECTRONIC") ? "true" : "false");
-        aflowlib_out << " | " << "XHOST.FLAG::ELECTRONIC=" << (vflags.flag("FLAG::ELECTRONIC") ? "1" : "0");
-        // XHOST.FLAG::SCINTILLATION
-        aflowlib_json << "," << "\"XHOST.FLAG::SCINTILLATION\":" << (vflags.flag("FLAG::SCINTILLATION") ? "true" : "false");
-        aflowlib_out << " | " << "XHOST.FLAG::SCINTILLATION=" << (vflags.flag("FLAG::SCINTILLATION") ? "1" : "0");
-        // XHOST.FLAG::AGL
-        aflowlib_json << "," << "\"XHOST.FLAG::AGL\":" << (vflags.flag("FLAG::AGL") ? "true" : "false");
-        aflowlib_out << " | " << "XHOST.FLAG::AGL=" << (vflags.flag("FLAG::AGL") ? "1" : "0");
-        // XHOST.FLAG::AEL
-        aflowlib_json << "," << "\"XHOST.FLAG::AEL\":" << (vflags.flag("FLAG::AEL") ? "true" : "false");
-        aflowlib_out << " | " << "XHOST.FLAG::AEL=" << (vflags.flag("FLAG::AEL") ? "1" : "0");
-        // XHOST.FLAG::BADER
-        aflowlib_json << "," << "\"XHOST.FLAG::BADER\":" << (vflags.flag("FLAG::BADER") ? "true" : "false");
-        aflowlib_out << " | " << "XHOST.FLAG::BADER=" << (vflags.flag("FLAG::BADER") ? "1" : "0");
-
-        // ME20191004 START
-        //  Grab compressed files
-        if (XHOST.vflag_control.flag("PRINT_MODE::JSON") || !XHOST.vflag_control.flag("PRINT_MODE::TXT")) {
-          string content;
-          // fgroup for JMOL applet
-          if (aurostd::CompressFileExist(directory_RAW + "/aflow.fgroup.bands.json")) {
-            content = aurostd::compressfile2string(directory_RAW + "/aflow.fgroup.bands.json");
-          } else if (aurostd::CompressFileExist(directory_RAW + "/aflow.fgroup.relax.json")) {
-            content = aurostd::compressfile2string(directory_RAW + "/aflow.fgroup.relax.json");
-          }
-          aflowlib_json << ", \"fgroup\":" << (content.empty() ? "null" : content);
-
-          content = "";
-          if (vflags.flag("FLAG::ELECTRONIC")) {
-            // ME20200616 - Made less dependent on file name conventions
-            // string system_name = KBIN::ExtractSystemName(directory_LIB);
-            vector<string> vfiles;
-            aurostd::DirectoryLS(directory_RAW, vfiles);
-            const uint nfiles = vfiles.size();
-            for (uint f = 0; f < nfiles; f++) {
-              if (vfiles[f].find("_bandsdata.json") != string::npos) {
-                content = aurostd::compressfile2string(directory_RAW + "/" + vfiles[f]);
-              }
-            }
-          }
-          aflowlib_json << ", \"bandsdata\":" << (content.empty() ? "null" : content);
-        }
-        // ME20191004 STOP
-      }
-
-      // ME20191217 START
-      //  additional web output
-      aflowlib_json << "," << R"("aflow_version":")" << AFLOW_VERSION << "\"";
-      aflowlib_out << "|" << "aflow_version=" << AFLOW_VERSION;
-      aflowlib_json << "," << R"("aflow_build_date":")" << TODAY << "\""; // CO20200624 - more semantic
-      aflowlib_out << "|" << "aflow_build_date=" << TODAY; // CO20200624 - more semantic
-      // ME20191217 STOP
-
-      // XHOST.machine_type
-      aflowlib_json << "," << "\"XHOST.machine_type\":" << "\"" << XHOST.machine_type << "\"";
-      aflowlib_out << " | " << "XHOST.machine_type=" << XHOST.machine_type;
-      // XHOST.user
-      aflowlib_json << "," << "\"XHOST.user\":" << "\"" << XHOST.user << "\"";
-      aflowlib_out << " | " << "XHOST.user=" << XHOST.user;
-      // XHOST.group
-      aflowlib_json << "," << "\"XHOST.group\":" << "\"" << XHOST.group << "\"";
-      aflowlib_out << " | " << "XHOST.group=" << XHOST.group;
-      // XHOST.shell
-      aflowlib_json << "," << "\"XHOST.shell\":" << "\"" << XHOST.shell << "\"";
-      aflowlib_out << " | " << "XHOST.shell=" << XHOST.shell;
-      // XHOST.progname
-      aflowlib_json << "," << "\"XHOST.progname\":" << "\"" << XHOST.progname << "\"";
-      aflowlib_out << " | " << "XHOST.progname=" << XHOST.progname;
-      // XHOST.generator
-      aflowlib_json << "," << "\"XHOST.generator\":" << "\"" << "aflowlib::WEB_Aflowlib_Entry" << "\"";
-      aflowlib_out << " | " << "XHOST.generator=" << "aflowlib::WEB_Aflowlib_Entry";
-
-      // wrap up
-      // TXT
-      if (XHOST.vflag_control.flag("PRINT_MODE::TXT")) {
-        oss << aflowlib_out.str() << endl;
-      }
-      // JSON
+      // ME20191004 START
+      //  Grab compressed files
       if (XHOST.vflag_control.flag("PRINT_MODE::JSON") || !XHOST.vflag_control.flag("PRINT_MODE::TXT")) {
-        aflowlib_json << "}";
-        strtmp = aflowlib_json.str();
-        aurostd::StringSubstInPlace(strtmp, "{DUMMY,", "{");
-        //    oss << "[" << option << "]" << endl;
-        oss << strtmp << endl;
+        string content;
+        // fgroup for JMOL applet
+        if (aurostd::CompressFileExist(directory_AUID_RAW + "/aflow.fgroup.bands.json")) {
+          content = aurostd::compressfile2string(directory_AUID_RAW + "/aflow.fgroup.bands.json");
+        } else if (aurostd::CompressFileExist(directory_AUID_RAW + "/aflow.fgroup.relax.json")) {
+          content = aurostd::compressfile2string(directory_AUID_RAW + "/aflow.fgroup.relax.json");
+        }
+        aflowlib_json << ", \"fgroup\":" << (content.empty() ? "null" : content);
+
+        content = "";
+        if (vflags.flag("FLAG::ELECTRONIC")) {
+          // ME20200616 - Made less dependent on file name conventions
+          // string system_name = KBIN::ExtractSystemName(directory_LIB);
+          vector<string> vfiles;
+          aurostd::DirectoryLS(directory_AUID_RAW, vfiles);
+          for (size_t f = 0; f < vfiles.size(); f++) {
+            if (vfiles[f].find("_bandsdata.json") != string::npos) {
+              content = aurostd::compressfile2string(directory_AUID_RAW + "/" + vfiles[f]);
+            }
+          }
+        }
+        aflowlib_json << ", \"bandsdata\":" << (content.empty() ? "null" : content);
       }
+      // ME20191004 STOP
     }
-    return voptions.size();
+
+    // ME20191217 START
+    //  additional web output
+    aflowlib_json << "," << R"("XHOST.aflow_version":")" << AFLOW_VERSION << "\"";
+    // ME20191217 STOP
+
+    // XHOST.machine_name
+    aflowlib_json << "," << "\"XHOST.machine_type\":" << "\"" << XHOST.hostname << "\"";
+    // XHOST.generator
+    aflowlib_json << "," << "\"XHOST.generator\":" << "\"" << "aflowlib::WEB_Aflowlib_Entry" << "\"";
+
+    // write JSON output
+    if (XHOST.vflag_control.flag("PRINT_MODE::JSON") || !XHOST.vflag_control.flag("PRINT_MODE::TXT")) {
+      aflowlib_json << "}";
+      strtmp = aflowlib_json.str();
+      //    oss << "[" << option << "]" << endl;
+      oss << strtmp << endl;
+    }
   }
 } // namespace aflowlib
-
-#endif // _AURO_IMPLEMENTATIONS_
 
 // ***************************************************************************
 // *                                                                         *

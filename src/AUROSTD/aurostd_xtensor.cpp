@@ -8,16 +8,16 @@
 // This class implements n-dimensional tensors using a 1D array to mimic a
 // tensor. See aurostd_xtensor.h for descriptions of the class attributes.
 
-#ifndef _AUROSTD_XTENSOR_CPP_
-#define _AUROSTD_XTENSOR_CPP_
-
 #include "aurostd_xtensor.h"
 
 #include <cstddef>
+#include <fstream>
+#include <functional>
 #include <iostream>
 #include <ostream>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "aurostd.h"
@@ -39,6 +39,19 @@
 
 static const std::string _SUBTENSOR_ERR_PREFIX_ = "aurostd::_subtensor::";
 static const std::string _XTENSOR_ERR_PREFIX_ = "aurostd::xtensor::";
+
+using std::function;
+using std::ifstream;
+using std::iostream;
+using std::istream;
+using std::istringstream;
+using std::ofstream;
+using std::ostream;
+using std::ostringstream;
+using std::pair;
+using std::string;
+using std::stringstream;
+using std::vector;
 
 using aurostd::xerror;
 
@@ -1368,7 +1381,7 @@ namespace aurostd {
       throw xerror(__AFLOW_FILE__, __AFLOW_FUNC__, message, _INDEX_MISMATCH_);
     } else {
       const int rows = tensor.shape[0];
-      const aurostd::xvector<utype> xvec(rows);
+      aurostd::xvector<utype> xvec(rows);
       for (int i = 0; i < rows; i++) {
         xvec(i + xvec.lrows) = tensor[i + tensor.lindex[0]];
       }
@@ -1406,7 +1419,7 @@ namespace aurostd {
       } else {
         cols = 1;
       }
-      const aurostd::xmatrix<utype> mat(rows, cols);
+      aurostd::xmatrix<utype> mat(rows, cols);
       for (int i = 0; i < rows; i++) {
         if (tensor.ndim > 1) {
           for (int j = 0; j < cols; j++) {
@@ -1827,7 +1840,65 @@ namespace aurostd {
 } // namespace aurostd
 /*********************************** EIJK ***********************************/
 
-#endif
+// ----------------------------------------------------------------------------
+namespace aurostd {
+  /// @brief convert a tensor in Voigt notation to a proper tensor
+  ///
+  /// @param cij 6x6 tensor in Voigt notation
+  ///
+  /// @return 3x3x3x3 tensor
+  ///
+  /// @authors
+  /// @mod{SD,20250828,created function}
+  template <class utype> xtensor<utype> convert_voigt_to_tensor(const xmatrix<utype>& cij) {
+    const xtensor<utype> cijkl(vector<int>{3, 3, 3, 3});
+    const std::function<int(int, int)> voigt_imap = [](int i, int j) { return (i == j) ? i : 9 - (i + j); };
+    int ii, jj;
+    for (int i = 1; i <= 3; i++) {
+      for (int j = 1; j <= 3; j++) {
+        for (int k = 1; k <= 3; k++) {
+          for (int l = 1; l <= 3; l++) {
+            ii = voigt_imap(i, j);
+            jj = voigt_imap(k, l);
+            cijkl[i][j][k][l] = cij[ii][jj];
+          }
+        }
+      }
+    }
+    return cijkl;
+  }
+#define AST_TEMPLATE(utype) template xtensor<utype> convert_voigt_to_tensor(const xmatrix<utype>&);
+  AST_GEN_1(AST_UTYPE_NUM)
+#undef AST_TEMPLATE
+
+  /// @brief convert a 3x3x3x3 tensor to a tensor in Voigt notation
+  ///
+  /// @param 3x3x3x3 tensor
+  ///
+  /// @return cij 6x6 tensor in Voigt notation
+  ///
+  /// @authors
+  /// @mod{SD,20250828,created function}
+  template <class utype> xmatrix<utype> convert_tensor_to_voigt(const xtensor<utype>& cijkl) {
+    xmatrix<utype> cij(6, 6);
+    vector<std::pair<int, int>> voigt_map = {{1, 1}, {2, 2}, {3, 3}, {2, 3}, {1, 3}, {1, 2}};
+    int i, j, k, l;
+    for (size_t ii = 1; ii <= 6; ii++) {
+      for (size_t jj = 1; jj <= 6; jj++) {
+        i = voigt_map[ii - 1].first;
+        j = voigt_map[ii - 1].second;
+        k = voigt_map[jj - 1].first;
+        l = voigt_map[jj - 1].second;
+        cij[ii][jj] = cijkl[i][j][k][l];
+      }
+    }
+    return cij;
+  }
+#define AST_TEMPLATE(utype) template xmatrix<utype> convert_tensor_to_voigt(const xtensor<utype>&);
+  AST_GEN_1(AST_UTYPE_NUM)
+#undef AST_TEMPLATE
+} // namespace aurostd
+
 //****************************************************************************
 // *                                                                         *
 // *           Aflow STEFANO CURTAROLO - Duke University 2003-2024           *

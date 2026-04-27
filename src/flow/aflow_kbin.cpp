@@ -4,6 +4,8 @@
 // *                                                                         *
 // ***************************************************************************
 
+#include "config.h"
+
 #include <cstddef>
 #include <deque>
 #include <filesystem>
@@ -15,6 +17,7 @@
 #include <regex>
 #include <set>
 #include <sstream>
+#include <string>
 #include <vector>
 
 #include <pthread.h>
@@ -43,11 +46,13 @@ using std::cout;
 using std::deque;
 using std::endl;
 using std::ifstream;
-using std::istream;
+using std::iostream;
 using std::istringstream;
 using std::ofstream;
 using std::ostream;
 using std::ostringstream;
+using std::set;
+using std::string;
 using std::stringstream;
 using std::vector;
 
@@ -1380,14 +1385,20 @@ namespace KBIN {
         aurostd::PrintMessageStream(FileMESSAGE, aus, XHOST.QUIET);
       }
       // get (string) kflags.KBIN_MPI_COMMAND
-      if (!aurostd::substring2bool(AflowIn, "[AFLOW_MODE_MPI_MODE]COMMAND=", true)) {
-        kflags.KBIN_MPI_COMMAND = MPI_COMMAND_DEFAULT;
-        aus << "00000  MESSAGE MPI: COMMAND string is missing, taking COMMAND=\"" << kflags.KBIN_MPI_COMMAND << "\"  " << Message(__AFLOW_FILE__, aflags) << endl;
+      if (const std::string env_mpi_command = aurostd::getenv2string("AFLOW_MPI_COMMAND"); !env_mpi_command.empty()) {
+        kflags.KBIN_MPI_COMMAND = env_mpi_command;
+        aus << "00000  MESSAGE MPI: COMMAND string set by environment variable to COMMAND=\"" << kflags.KBIN_MPI_COMMAND << "\"  " << Message(__AFLOW_FILE__, aflags) << endl;
         aurostd::PrintMessageStream(FileMESSAGE, aus, XHOST.QUIET);
       } else {
-        kflags.KBIN_MPI_COMMAND = aurostd::RemoveCharacter(aurostd::substring2string(AflowIn, "[AFLOW_MODE_MPI_MODE]COMMAND=", 1, true), '"');
-        aus << "00000  MESSAGE MPI: found COMMAND=\"" << kflags.KBIN_MPI_COMMAND << "\"  " << Message(__AFLOW_FILE__, aflags) << endl;
-        aurostd::PrintMessageStream(FileMESSAGE, aus, XHOST.QUIET);
+        if (!aurostd::substring2bool(AflowIn, "[AFLOW_MODE_MPI_MODE]COMMAND=", true)) {
+          kflags.KBIN_MPI_COMMAND = MPI_COMMAND_DEFAULT;
+          aus << "00000  MESSAGE MPI: COMMAND string is missing, taking COMMAND=\"" << kflags.KBIN_MPI_COMMAND << "\"  " << Message(__AFLOW_FILE__, aflags) << endl;
+          aurostd::PrintMessageStream(FileMESSAGE, aus, XHOST.QUIET);
+        } else {
+          kflags.KBIN_MPI_COMMAND = aurostd::RemoveCharacter(aurostd::substring2string(AflowIn, "[AFLOW_MODE_MPI_MODE]COMMAND=", 1, true), '"');
+          aus << "00000  MESSAGE MPI: found COMMAND=\"" << kflags.KBIN_MPI_COMMAND << "\"  " << Message(__AFLOW_FILE__, aflags) << endl;
+          aurostd::PrintMessageStream(FileMESSAGE, aus, XHOST.QUIET);
+        }
       }
       kflags.KBIN_MPI_AUTOTUNE = aurostd::substring2bool(AflowIn, "[AFLOW_MODE_MPI_MODE]AUTOTUNE", true);
       if (kflags.KBIN_MPI_AUTOTUNE) {
@@ -1439,7 +1450,8 @@ namespace KBIN {
 namespace KBIN {
   void StartStopCheck(const string& AflowIn, string str1, string str2, bool& flag, bool& flagS) {
     flag = aurostd::substring2bool(AflowIn, str1) || aurostd::substring2bool(AflowIn, str2);
-    flagS = (aurostd::substring2bool(AflowIn, str1 + "START") && aurostd::substring2bool(AflowIn, str1 + "STOP")) || (aurostd::substring2bool(AflowIn, str2 + "_START") && aurostd::substring2bool(AflowIn, str2 + "_STOP"));
+    flagS = (aurostd::substring2bool(AflowIn, str1 + "START") && aurostd::substring2bool(AflowIn, str1 + "STOP"))
+         || (aurostd::substring2bool(AflowIn, str2 + "_START") && aurostd::substring2bool(AflowIn, str2 + "_STOP"));
     if (flagS) {
       flag = false;
     }
@@ -1494,20 +1506,15 @@ namespace KBIN {
     }
 
     // ---------------------------------------------------------------------------
-    // make new directory
-    message << "MMMMM create directory \"" << aflags.Directory << "\"" << Message(__AFLOW_FILE__, aflags, "user,host,time") << endl;
+    // copy the dirctory
+    message << "MMMMM copy directory \"" << directory_orig << "\" to \"" << aflags.Directory << "\"" << Message(__AFLOW_FILE__, aflags, "user,host,time") << endl;
     aurostd::PrintMessageStream(message, XHOST.QUIET);
     message.clear();
     message.str(std::string());
-    aurostd::DirectoryMake(aflags.Directory);
+    aurostd::CopyDirectory(directory_orig, aflags.Directory);
 
-    // ---------------------------------------------------------------------------
-    // copy aflow.in to new directory
-    message << "MMMMM copying aflowin from \"" << directory_orig << "\"" << Message(__AFLOW_FILE__, aflags, "user,host,time") << endl;
-    aurostd::PrintMessageStream(message, XHOST.QUIET);
-    message.clear();
-    message.str(std::string());
-    aurostd::CopyFile(directory_orig + "/" + _AFLOWIN_, aflags.Directory + "/" + _AFLOWIN_);
+    // remove LOCK symlink if copied
+    std::filesystem::remove(aflags.Directory + "/" + _AFLOWLOCK_ + _LOCK_LINK_SUFFIX_);
 
     if (LDEBUG) {
       cerr << __AFLOW_FUNC__ << " new full directory " << aflags.Directory << endl;
@@ -1528,8 +1535,10 @@ namespace KBIN {
     // Move aflow run (i.e., aflow.in) to a new directory and add a LOCK
     // to the original directory to prevent machine scrubbers from removing
     // DX20210901
-    if (aflags.AFLOW_MACHINE_GLOBAL.flag("MACHINE::MACHINE001") || aflags.AFLOW_MACHINE_GLOBAL.flag("MACHINE::MACHINE002") || aflags.AFLOW_MACHINE_GLOBAL.flag("MACHINE::MACHINE003") ||
-        aflags.AFLOW_MACHINE_GLOBAL.flag("MACHINE::MACHINE004")) {
+    if (aflags.AFLOW_MACHINE_GLOBAL.flag("MACHINE::MACHINE001")
+        || aflags.AFLOW_MACHINE_GLOBAL.flag("MACHINE::MACHINE002")
+        || aflags.AFLOW_MACHINE_GLOBAL.flag("MACHINE::MACHINE003")
+        || aflags.AFLOW_MACHINE_GLOBAL.flag("MACHINE::MACHINE004")) {
       const std::string subdirectory_orig = aurostd::getenv2string("HOME"); // $HOME    : environment variable pointing to "home" filesystem (specific to machine001/002/003)
       const std::string subdirectory_new = aurostd::getenv2string("WORKDIR"); // $WORKDIR : environment variable pointing to "work" filesystem (specific to machine001/002/003)
       if (subdirectory_new.empty() || subdirectory_orig.empty()) {

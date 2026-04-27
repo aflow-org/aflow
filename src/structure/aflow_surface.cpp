@@ -50,6 +50,7 @@ using std::cerr;
 using std::deque;
 using std::endl;
 using std::ifstream;
+using std::iostream;
 using std::istream;
 using std::istringstream;
 using std::ofstream;
@@ -59,6 +60,9 @@ using std::setprecision;
 using std::string;
 using std::stringstream;
 using std::vector;
+
+using aurostd::xmatrix;
+using aurostd::xvector;
 
 namespace surface {
 
@@ -281,7 +285,7 @@ namespace surface {
   /// @mod{ST,20241205,added doxy\, clean}
   aurostd::xvector<double> PlaneGetHKL(
       const aurostd::xvector<double>& v1, const aurostd::xvector<double>& v2, const aurostd::xvector<double>& v3, const aurostd::xvector<double>& a1, const aurostd::xvector<double>& a2, const aurostd::xvector<double>& a3) {
-    const aurostd::xvector<double> hkl(3);
+    aurostd::xvector<double> hkl(3);
     constexpr double eps = _eps_;
     double a;
     double b;
@@ -655,7 +659,7 @@ namespace surface {
     aurostd::xvector<double> rrr(3);
     aurostd::xvector<double> rrr1(3);
     aurostd::xvector<double> rrr2(3);
-    radius = 1.1 * max(modulus(v1), modulus(v2), modulus(v3), modulus(v4)) + max(modulus(a1), modulus(a2), modulus(a3));
+    radius = 1.1 * aurostd::max(modulus(v1), modulus(v2), modulus(v3), modulus(v4)) + aurostd::max(modulus(a1), modulus(a2), modulus(a3));
     dims = LatticeDimensionSphere(lattice, radius);
 
     for (int ii = dims(1); ii >= -dims(1); ii--) {
@@ -762,7 +766,7 @@ namespace surface {
     const aurostd::xvector<double> a1 = str.lattice(1);
     const aurostd::xvector<double> a2 = str.lattice(2);
     const aurostd::xvector<double> a3 = str.lattice(3);
-    const double radius = 1.5 * max(modulus(a1), modulus(a2), modulus(a3));
+    const double radius = 1.5 * aurostd::max(modulus(a1), modulus(a2), modulus(a3));
     const aurostd::xvector<int> dims = LatticeDimensionSphere(str.lattice, radius);
     double nndistance = 10.0 * radius;
 
@@ -1003,7 +1007,7 @@ namespace surface {
     }
     // THIS ROUTINE SHOULD BE CHANCED IN MULTITHREADS TO SPEED UP THE REDUCTION
     for (size_t i = 0; i < planesreducible.size(); i++) {
-      const aurostd::xvector<double> rhkl(3);
+      aurostd::xvector<double> rhkl(3);
       rhkl(1) = planesreducible[i][0];
       rhkl(2) = planesreducible[i][1];
       rhkl(3) = planesreducible[i][2];
@@ -1014,7 +1018,7 @@ namespace surface {
         bool hkl_found = false;
         for (size_t ii = 0; ii < planesirreducible.size() && !hkl_found; ii++) {
           // check if triplet of vectors are equivalent !
-          const aurostd::xvector<double> ihkl(3);
+          aurostd::xvector<double> ihkl(3);
           ihkl(1) = planesirreducible[ii][0];
           ihkl(2) = planesirreducible[ii][1];
           ihkl(3) = planesirreducible[ii][2];
@@ -1104,7 +1108,7 @@ namespace surface {
     oss.precision(oss_short_precision_aflow_surface);
 
     const double nndist = surface::GetNNeighbors(str);
-    const aurostd::xmatrix<double> nndists(num_types - 1, num_types - 1, 0, 0);
+    aurostd::xmatrix<double> nndists(num_types - 1, num_types - 1, 0, 0);
     aurostd::xmatrix<double> bbdistances(num_types - 1, num_types - 1, 0, 0);
     for (int it1 = 0; it1 < num_types; it1++) {
       for (int it2 = it1; it2 < num_types; it2++) {
@@ -1257,7 +1261,7 @@ namespace surface {
     FFF.precision(oss_short_precision_aflow_surface);
 
     const double nndist = surface::GetNNeighbors(str);
-    const aurostd::xmatrix<double> nndists(num_types - 1, num_types - 1, 0, 0);
+    aurostd::xmatrix<double> nndists(num_types - 1, num_types - 1, 0, 0);
     aurostd::xmatrix<double> bbdistances(num_types - 1, num_types - 1, 0, 0);
     for (int it1 = 0; it1 < num_types; it1++) {
       for (int it2 = it1; it2 < num_types; it2++) {
@@ -1592,7 +1596,7 @@ namespace surface {
                           double d;
                           PlaneGetABCD(a, b, c, d, rrr1, rrr2, rrr3); //  abs(d/sqrt(a*a+b*b+c*c));
                           if (std::abs(d / std::sqrt(a * a + b * b + c * c)) > eps) {
-                            const xvector<double> hkl = PlaneGetHKL(rrr1, rrr2, rrr3, a1, a2, a3);
+                            xvector<double> hkl = PlaneGetHKL(rrr1, rrr2, rrr3, a1, a2, a3);
                             double h = hkl(1);
                             double k = hkl(2);
                             double l = hkl(3);
@@ -1758,7 +1762,7 @@ namespace slab {
     int i;
     int j;
     double VolumeReciprUC;
-    const aurostd::xmatrix<double> ReciprUnitCellVector(3, 3);
+    aurostd::xmatrix<double> ReciprUnitCellVector(3, 3);
     double hkl_Length;
     VolumeReciprUC = UnitCellVector(1, 1) * (UnitCellVector(2, 2) * UnitCellVector(3, 3) - UnitCellVector(3, 2) * UnitCellVector(2, 3)) -
                      UnitCellVector(1, 2) * (UnitCellVector(2, 1) * UnitCellVector(3, 3) - UnitCellVector(3, 1) * UnitCellVector(2, 3)) +
@@ -1846,7 +1850,7 @@ namespace slab {
     }
     // CO20180724 STOP - AddAtom() requires atom types AND names, so assign fake names if necessary, then remove later
 
-    const aurostd::xvector<double> hkl(3);
+    aurostd::xvector<double> hkl(3);
     hkl(1) = 1;
     hkl(2) = 1;
     hkl(3) = 1;
@@ -1876,7 +1880,7 @@ namespace slab {
     }
 
     const int In_Plane_Multiplication[3] = {0, 1, 1};    // In_Plane_Multiplication^2 = number of plane unit cells in slab unit cell
-    vector<int> NumAtomsForElementUC(2, 0);
+    vector<int> NumAtomsForElementUC(str_in.num_each_type.size(), 0); // Adaptive arrray sizing based on number of unique elements in POSCAR
     vector<vector<vector<double>>> AtomDirCoords;
     vector<vector<vector<int>>> LayerSitesDirCoords;
 
@@ -1905,15 +1909,15 @@ namespace slab {
     double LastCandidateCoord3;
     double CurrCandidateCoord3;
     double hkl_Length;
-    const aurostd::xvector<double> SiteCartCoord(3);
-    const aurostd::xvector<double> RS(3);
-    const aurostd::xvector<double> AbsValueSlab_Basis(3);
-    const aurostd::xvector<double> SiteDirectCoordWRTslab(3);
+    aurostd::xvector<double> SiteCartCoord(3);
+    aurostd::xvector<double> RS(3);
+    aurostd::xvector<double> AbsValueSlab_Basis(3);
+    aurostd::xvector<double> SiteDirectCoordWRTslab(3);
     aurostd::xvector<double> hkl_CartCoord(3);
-    const aurostd::xvector<double> SiteDirectCoord(3);
-    const aurostd::xmatrix<double> MATRIX(3, 3);
-    const aurostd::xmatrix<double> INVERSE_MATRIX(3, 3);
-    const aurostd::xmatrix<double> Slab_Basis_CartCoord(3, 3);
+    aurostd::xvector<double> SiteDirectCoord(3);
+    aurostd::xmatrix<double> MATRIX(3, 3);
+    aurostd::xmatrix<double> INVERSE_MATRIX(3, 3);
+    aurostd::xmatrix<double> Slab_Basis_CartCoord(3, 3);
 
     bool Continue;
     bool BasisFound;
@@ -1922,7 +1926,7 @@ namespace slab {
     const string Title = str_in.title;
     const double LattPar = str_in.scale;
 
-    const aurostd::xmatrix<double> UnitCellVector(3, 3);
+    aurostd::xmatrix<double> UnitCellVector(3, 3);
 
     for (i = 1; i < 4; i++) {
       for (j = 1; j < 4; j++) {
@@ -2499,7 +2503,7 @@ namespace slab {
     return HKLPlane2Normal(xstr_in.scale * xstr_in.lattice, h, k, l);
   } // CO20190320
   aurostd::xvector<double> HKLPlane2Normal(const aurostd::xmatrix<double>& lattice, int h, int k, int l) {
-    const xvector<int> hkl;
+    xvector<int> hkl;
     hkl[1] = h;
     hkl[2] = k;
     hkl[3] = l;
@@ -2618,7 +2622,7 @@ namespace slab {
 
     // convert dhkl to hkl (integer)
     for (int i = dhkl.lrows; i <= dhkl.urows; i++) {
-      hkl[i] = (int) nint(dhkl[i]);
+      hkl[i] = (int) aurostd::nint(dhkl[i]);
     }
 
     if (LDEBUG) {
@@ -2637,7 +2641,7 @@ namespace slab {
     return getHKLPlaneIntercepts(xstr_in.scale * xstr_in.lattice, h, k, l);
   } // CO20190320
   vector<aurostd::xvector<double>> getHKLPlaneIntercepts(const aurostd::xmatrix<double>& lattice, int h, int k, int l) {
-    const xvector<int> hkl;
+    xvector<int> hkl;
     hkl[1] = h;
     hkl[2] = k;
     hkl[3] = l;
@@ -2773,7 +2777,7 @@ namespace slab {
     return getSpacingHKLPlane(xstr_in.scale * xstr_in.lattice, h, k, l);
   } // CO20190320
   double getSpacingHKLPlane(const aurostd::xmatrix<double>& lattice, int h, int k, int l) {
-    const xvector<int> hkl;
+    xvector<int> hkl;
     hkl[1] = h;
     hkl[2] = k;
     hkl[3] = l;
@@ -2806,8 +2810,8 @@ namespace slab {
     return getAngleHKLPlanes(xstr_in.scale * xstr_in.lattice, h1, k1, l1, h2, k2, l2);
   } // CO20190320
   double getAngleHKLPlanes(const aurostd::xmatrix<double>& lattice, int h1, int k1, int l1, int h2, int k2, int l2) {
-    const xvector<int> hkl1;
-    const xvector<int> hkl2;
+    xvector<int> hkl1;
+    xvector<int> hkl2;
     hkl1[1] = h1;
     hkl1[2] = k1;
     hkl1[3] = l1;
@@ -2930,7 +2934,7 @@ namespace slab {
       v_line_plane_intersect.push_back(false);
     }
     // borrow instead from LatticeDimensionSphere()
-    const aurostd::xmatrix<double> normals;
+    aurostd::xmatrix<double> normals;
     for (int m = 1; m <= 3; m++) {
       for (int n = 1; n <= 3; n++) {
         for (int l = 1; l <= 3; l++) {
@@ -3476,8 +3480,8 @@ namespace slab {
     double adiff_v1Xv2;
     double adiff_max = AUROSTD_MAX_DOUBLE;
     double vlen = AUROSTD_MAX_DOUBLE;
-    const double vlen_maxv1v2 = max(aurostd::modulus(v1), aurostd::modulus(v2));
-    double vlen_max = min(vlen_maxv1v2, vlen_max_strict);
+    const double vlen_maxv1v2 = aurostd::max(aurostd::modulus(v1), aurostd::modulus(v2));
+    double vlen_max = aurostd::min(vlen_maxv1v2, vlen_max_strict);
     if (LDEBUG) {
       cerr << __AFLOW_FUNC__ << " vlen_max=" << vlen_max << endl;
     }
@@ -3582,7 +3586,7 @@ namespace slab {
     // try linear combinations with v1, v2
     bool try_once = true;
     int multiplier = 1;
-    vlen_max = min(vlen_maxv1v2, vlen_max_strict);
+    vlen_max = aurostd::min(vlen_maxv1v2, vlen_max_strict);
     while (try_once || (double) multiplier * aurostd::modulus(v3) <= vlen_max) {
       v3 *= (double) multiplier++;
       adiff_v1Xv2 = aurostd::angle(v1Xv2, v3); // shouldn't change
@@ -4128,7 +4132,7 @@ namespace slab {
       }
     }
 
-    const aurostd::xvector<int> hkl_test;
+    aurostd::xvector<int> hkl_test;
     aurostd::xvector<double> n_test;
     // test that we can go back and forth between n and hkl
     hkl_test[1] = 7;
@@ -4326,7 +4330,7 @@ namespace slab {
     }
 
     // now create a supercell
-    const aurostd::xmatrix<double> supercell_mat;
+    aurostd::xmatrix<double> supercell_mat;
     supercell_mat(1, 1) = (double) xy_dims;
     supercell_mat(2, 2) = (double) xy_dims;
     supercell_mat(3, 3) = supercell_layers;

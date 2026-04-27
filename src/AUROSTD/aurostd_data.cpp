@@ -5,14 +5,13 @@
 // ***************************************************************************
 // Written by hagen.eckert@duke.edu
 
-#ifndef _AUROSTD_DATA_CPP_
-#define _AUROSTD_DATA_CPP_
-
 #include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <ios>
+#include <istream>
 #include <map>
+#include <sstream>
 #include <string>
 #include <utility>
 
@@ -29,6 +28,16 @@
 #define CMAKE_SOURCE_DIR ""
 #endif
 
+using std::ifstream;
+using std::iostream;
+using std::istringstream;
+using std::map;
+using std::ofstream;
+using std::ostringstream;
+using std::pair;
+using std::string;
+using std::stringstream;
+
 namespace aurostd::EmbData {
 // Include files either as text (INCTXT) or binary (INCBIN) into the aflow binary
 // see AUROSTD/aurostd_incbin_defs.h
@@ -42,20 +51,24 @@ namespace aurostd::EmbData {
   INCBIN(Images, CMAKE_SOURCE_DIR "DATA/IMAGES.tar.xz");
   INCBIN(Scripts, CMAKE_SOURCE_DIR "DATA/SCRIPTS.tar.xz");
   INCBIN(Prototypes, CMAKE_SOURCE_DIR "DATA/PROTO.tar.xz");
+  INCBIN(Pspots, CMAKE_SOURCE_DIR "DATA/PSPOTS.tar.xz");
+  INCBIN(Param, CMAKE_SOURCE_DIR "DATA/PARAM.tar.xz");
   }
 
-  static const std::map<std::string, std::pair<char *, unsigned int>> aflow_data_collections = {
-      { "README",         {(char *) &afdataReadMeData[0], afdataReadMeSize}},
-      {"FINDSYM",       {(char *) &afdataFINDSYMData[0], afdataFINDSYMSize}},
-      { "FROZSL",         {(char *) &afdataFROZSLData[0], afdataFROZSLSize}},
-      { "PHVASP",         {(char *) &afdataPHVASPData[0], afdataPHVASPSize}},
-      {   "TEST",             {(char *) &afdataTestData[0], afdataTestSize}},
-      { "IMAGES",         {(char *) &afdataImagesData[0], afdataImagesSize}},
-      {"SCRIPTS",       {(char *) &afdataScriptsData[0], afdataScriptsSize}},
-      {  "PROTO", {(char *) &afdataPrototypesData[0], afdataPrototypesSize}},
+  static const std::map<std::string, std::pair<char*, unsigned int>> aflow_data_collections = {
+      { "README",         {(char*) &afdataReadMeData[0], afdataReadMeSize}},
+      {"FINDSYM",       {(char*) &afdataFINDSYMData[0], afdataFINDSYMSize}},
+      { "FROZSL",         {(char*) &afdataFROZSLData[0], afdataFROZSLSize}},
+      { "PHVASP",         {(char*) &afdataPHVASPData[0], afdataPHVASPSize}},
+      {   "TEST",             {(char*) &afdataTestData[0], afdataTestSize}},
+      { "IMAGES",         {(char*) &afdataImagesData[0], afdataImagesSize}},
+      {"SCRIPTS",       {(char*) &afdataScriptsData[0], afdataScriptsSize}},
+      {  "PROTO", {(char*) &afdataPrototypesData[0], afdataPrototypesSize}},
+      { "PSPOTS",         {(char*) &afdataPspotsData[0], afdataPspotsSize}},
+      {  "PARAM",           {(char*) &afdataParamData[0], afdataParamSize}},
   };
 
-  std::string read_data(struct archive *ar) {
+  std::string read_data(struct archive* ar) {
     std::string content;
     const size_t buff_size = 16384;
     char buff[buff_size + 1];
@@ -244,7 +257,8 @@ namespace aurostd::EmbData {
   }
 
   /// @brief write a embedded file into the filesystem
-  /// @param filename name of the file (as in the DATA folder)
+  /// @param filename name of the file (as in the collection folder)
+  /// @param collection name of the collection
   /// @param target_path target location
   /// @authors
   /// @mod{HE,20230413,create function}
@@ -259,6 +273,7 @@ namespace aurostd::EmbData {
 
   /// @brief write a embedded file into the filesystem
   /// @param path path a folder in the archive (must end in '/')
+  /// @param collection name of the collection
   /// @param target_path target location
   /// @authors
   /// @mod{HE,20240403,create function}
@@ -272,5 +287,3 @@ namespace aurostd::EmbData {
   }
 
 } // end namespace aurostd::EmbData
-
-#endif  //_AUROSTD_DATA_CPP_

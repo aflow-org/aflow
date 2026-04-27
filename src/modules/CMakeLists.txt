@@ -41,12 +41,22 @@ set(compare_source
         COMPARE/aflow_compare_structure_function.cpp
 )
 
+set(cumulants_source
+        CUMULANTS/aflow_cumulants.cpp
+)
+
 set(gfa_source
         GFA/aflow_gfa.cpp
 )
 
 set(hull_source
-        HULL/aflow_chull.cpp
+        HULL/aflow_nhull.cpp
+        HULL/aflow_nhull_entry.cpp
+        HULL/aflow_nhull_latex.cpp
+        HULL/aflow_nhull_stats.cpp
+        HULL/aflow_nhull_util.cpp
+        HULL/aflow_nhull_facet.cpp
+        HULL/aflow_nhull_facet.h
 )
 
 set(pocc_source
@@ -79,6 +89,10 @@ set(sym_source
         SYM/aflow_symmetry_spacegroup_functions.cpp
         SYM/aflow_symmetry_spacegroup_ITC_library.cpp
         SYM/aflow_wyckoff.cpp
+        HULL/aflow_nhull_entry.cpp
+        HULL/aflow_nhull_entry.h
+        HULL/aflow_nhull_facet.cpp
+        HULL/aflow_nhull_facet.h
 )
 
 add_library(modules OBJECT
@@ -87,6 +101,7 @@ add_library(modules OBJECT
         ${apl_source}
         ${cce_source}
         ${compare_source}
+        ${cumulants_source}
         ${gfa_source}
         ${hull_source}
         ${pocc_source}
@@ -96,7 +111,13 @@ add_library(modules OBJECT
         ${sym_source}
 )
 
-target_include_directories(modules PUBLIC ${CMAKE_SOURCE_DIR})
+target_include_directories(modules
+        PRIVATE
+        ${CMAKE_SOURCE_DIR}
+        ${CMAKE_BINARY_DIR}
+)
+
+target_link_libraries(modules PRIVATE config)
 
 # reduce optimize for certain data files to avoid extreme long build times in RELEASE builds
 SET_SOURCE_FILES_PROPERTIES(SYM/aflow_wyckoff.cpp PROPERTIES COMPILE_FLAGS -O0)

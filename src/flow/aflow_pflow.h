@@ -68,360 +68,445 @@ namespace pflow {
   bool XXX(std::vector<std::string>, std::istream& input);
 } // namespace pflow
 namespace pflow {
-  using std::cout;
-  using std::deque;
-  using std::ofstream;
-  using std::ostream;
-  using std::string;
-  using std::stringstream;
-  using std::vector;
   xstructure ABCCAR(std::istream& input);
   void ACE(std::istream& input);
-  bool AddSpinToXstructure(xstructure& a, vector<double>& vmag); // DX20170927 - Magnetic symmetry
-  bool AddSpinToXstructure(xstructure& a, vector<aurostd::xvector<double>>& vmag_noncoll); // DX20171205 - Magnetic symmetry (non-collinear)
+  bool AddSpinToXstructure(xstructure& a, std::vector<double>& vmag); // DX20170927 - Magnetic symmetry
+  bool AddSpinToXstructure(xstructure& a, std::vector<aurostd::xvector<double>>& vmag_noncoll); // DX20171205 - Magnetic symmetry (non-collinear)
   void AGROUP(_aflags& aflags, std::istream& input);
   void AGROUP2(std::istream& input);
   void AGROUP2m(std::istream& input);
   xstructure ALPHABETIC(std::istream& input);
-  string ALPHACompound(const string& options);
-  string ALPHASpecies(const string& options);
-  string AFLOWIN(std::istream& input);
-  void ANGLES(const string& options, std::istream& input);
-  string ATOMSMAX(const string& options, std::istream& input);
-  void BANDS(const string& options, std::istream& input);
-  void BANDGAP(aurostd::xoption& vpflow, ostream& oss = cout); // CAMILO  //CO20171006
-  void BANDGAP_DOS(aurostd::xoption& vpflow, ostream& oss = cout); // CAMILO  //CO20171006  //CO20191110
+  std::string ALPHACompound(const std::string& options);
+  std::string ALPHASpecies(const std::string& options);
+  std::string AFLOWIN(std::istream& input);
+  void ANGLES(const std::string& options, std::istream& input);
+  std::string ATOMSMAX(const std::string& options, std::istream& input);
+  void BANDS(const std::string& options, std::istream& input);
+  void BANDGAP(aurostd::xoption& vpflow, std::ostream& oss = std::cout); // CAMILO  //CO20171006
+  void BANDGAP_DOS(aurostd::xoption& vpflow, std::ostream& oss = std::cout); // CAMILO  //CO20171006  //CO20191110
   void BANDSTRUCTURE(_aflags& aflags);
-  string BZDirectionsLATTICE(const string& options);
-  string BZDirectionsSTRUCTURE(std::istream& input, aurostd::xoption& vpflow); // DX20181102 - add options
-  void CAGES(_aflags& aflags, const string& options, std::istream& input);
+  std::string BZDirectionsLATTICE(const std::string& options);
+  std::string BZDirectionsSTRUCTURE(std::istream& input, aurostd::xoption& vpflow); // DX20181102 - add options
+  void CAGES(_aflags& aflags, const std::string& options, std::istream& input);
   // DX+CO START
   bool PerformFullSymmetry(xstructure& a);
-  bool PerformFullSymmetry(xstructure& a, ofstream& FileMESSAGE, const string& directory, _kflags& kflags, bool osswrite, ostream& oss, string format = "txt");  // ME20200224
-  bool PerformFullSymmetry(xstructure& a, ofstream& FileMESSAGE, _aflags& aflags, _kflags& kflags, bool osswrite, ostream& oss, string format = "txt");
-  bool PerformFullSymmetry(xstructure& a, double& tolerance, bool no_scan, bool force_perform, ofstream& FileMESSAGE, _aflags& aflags, _kflags& kflags, bool osswrite, ostream& oss, string format = "txt");
-  void ProcessAndAddSpinToXstructure(xstructure& a, const string& magmom_info); // DX20190801
+  bool PerformFullSymmetry(xstructure& a, std::ofstream& FileMESSAGE, const std::string& directory, _kflags& kflags, bool osswrite, std::ostream& oss, std::string format = "txt");  // ME20200224
+  bool PerformFullSymmetry(xstructure& a, std::ofstream& FileMESSAGE, _aflags& aflags, _kflags& kflags, bool osswrite, std::ostream& oss, std::string format = "txt");
+  bool PerformFullSymmetry(xstructure& a,
+                           double& tolerance,
+                           bool no_scan,
+                           bool force_perform,
+                           std::ofstream& FileMESSAGE,
+                           _aflags& aflags,
+                           _kflags& kflags,
+                           bool osswrite,
+                           std::ostream& oss,
+                           std::string format = "txt");
+  void ProcessAndAddSpinToXstructure(xstructure& a, const std::string& magmom_info); // DX20190801
   void defaultKFlags4SymWrite(_kflags& kflags, bool write = true);
   void defaultKFlags4SymCalc(_kflags& kflags, bool calc = true);
-  bool CalculateFullSymmetry(std::istream& input, aurostd::xoption& vpflow, ostream& oss = cout);
-  bool CalculateFullSymmetry(_aflags& aflags, _kflags& kflags, xstructure& a, aurostd::xoption& vpflow, bool osswrite, ostream& oss = cout);
+  bool CalculateFullSymmetry(std::istream& input, aurostd::xoption& vpflow, std::ostream& oss = std::cout);
+  bool CalculateFullSymmetry(_aflags& aflags, _kflags& kflags, xstructure& a, aurostd::xoption& vpflow, bool osswrite, std::ostream& oss = std::cout);
   bool fixEmptyAtomNames(xstructure& xstr, bool force_fix = false);  // force_fix=true if you want to override what is already in species
   // DX+CO END
   xstructure CART(std::istream& input);
   xstructure CORNERS(std::istream& input);
-  void ChangeSuffix(const string& options);
-  string CHGDIFF(aurostd::xoption vpflow);
-  bool CHGDIFF(const string& chgcar1_file, const string& chgcar2_file, const string& output_File, ostream& oss = cout);
+  void ChangeSuffix(const std::string& options);
+  std::string CHGDIFF(aurostd::xoption vpflow);
+  bool CHGDIFF(const std::string& chgcar1_file, const std::string& chgcar2_file, const std::string& output_File, std::ostream& oss = std::cout);
   // DX+CO START
-  void CHGINT(vector<string>);
+  void CHGINT(std::vector<std::string>);
   // DX+CO END
-  string CHGSUM(aurostd::xoption vpflow);
-  bool CHGSUM(const string& chgcar_in1, const string& chgcar_in2, ostream& oss = cout);
-  bool CHGSUM(string& species_header, const string& chgcar_in1, const string& chgcar_in2, const string& output_file, ostream& oss = cout);
-  bool CHGSUM(const string& chgcar_in1, const string& chgcar_in2, const string& output_file, ostream& oss = cout);
-  bool CHGSUM(const vector<string>& chgcar_files, ostream& oss = cout);
-  bool CHGSUM(const vector<string>& chgcar_files, const string& output, ostream& oss = cout);
-  bool CHGSUM(string& species_header, const vector<string>& chgcar_files, ostream& oss = cout);
-  bool CHGSUM(string& species_header, const vector<string>& chgcar_files, const string& output_file, ostream& oss = cout);
+  std::string CHGSUM(aurostd::xoption vpflow);
+  bool CHGSUM(const std::string& chgcar_in1, const std::string& chgcar_in2, std::ostream& oss = std::cout);
+  bool CHGSUM(std::string& species_header, const std::string& chgcar_in1, const std::string& chgcar_in2, const std::string& output_file, std::ostream& oss = std::cout);
+  bool CHGSUM(const std::string& chgcar_in1, const std::string& chgcar_in2, const std::string& output_file, std::ostream& oss = std::cout);
+  bool CHGSUM(const std::vector<std::string>& chgcar_files, std::ostream& oss = std::cout);
+  bool CHGSUM(const std::vector<std::string>& chgcar_files, const std::string& output, std::ostream& oss = std::cout);
+  bool CHGSUM(std::string& species_header, const std::vector<std::string>& chgcar_files, std::ostream& oss = std::cout);
+  bool CHGSUM(std::string& species_header, const std::vector<std::string>& chgcar_files, const std::string& output_file, std::ostream& oss = std::cout);
   void CIF(std::istream& input, aurostd::xoption& vpflow);
   void getCIFOptions(xstructure& a, aurostd::xoption& vpflow); // DX20250319
-  void CLAT(const string& options);
-  void CLEAN(vector<string>);
+  void CLAT(const std::string& options);
+  void CLEAN(std::vector<std::string>);
   void CLEANALL(std::istream& input);
-  void CMPSTR(vector<string>);
-  void COMPARE(const string& options);
-  bool DATA(std::istream& input, const aurostd::xoption& vpflow, const string& smode = "DATA", ostream& oss = cout); // DX20170901 - SGDATA + JSON //DX20210302 - added const to vpflow
-  void DEBYE(const string& options);
-  void DISP(const string& options, std::istream& input);
-  void DIST(const string& options, std::istream& input);
-  void DYNADIEL(vector<string>& argv); // CAMILO
-  void EDOS(vector<string>);
-  void EFFMASS(vector<string>& argv, ostream& oss = cout); // CAMILO
-  void EIGCURV(const string& options, ostream& oss = cout); // CAMILO
-  string EQUIVALENT(_aflags& aflags, std::istream& input, aurostd::xoption& vpflow);
-  void EWALD(const string& options, std::istream& input);
-  string EXTRACT_xcar(_aflags& aflags, vector<string>, string, string);
-  string EXTRACT_Symmetry(_aflags& aflags, vector<string>);
+  void CMPSTR(std::vector<std::string>);
+  void COMPARE(const std::string& options);
+  bool DATA(std::istream& input, const aurostd::xoption& vpflow, const std::string& smode = "DATA", std::ostream& oss = std::cout); // DX20170901 - SGDATA + JSON //DX20210302 - added const to vpflow
+  void DEBYE(const std::string& options);
+  void DISP(const std::string& options, std::istream& input);
+  void DIST(const std::string& options, std::istream& input);
+  void DYNADIEL(std::vector<std::string>& argv); // CAMILO
+  void EDOS(std::vector<std::string>);
+  void EFFMASS(std::vector<std::string>& argv, std::ostream& oss = std::cout); // CAMILO
+  void EIGCURV(const std::string& options, std::ostream& oss = std::cout); // CAMILO
+  std::string EQUIVALENT(_aflags& aflags, std::istream& input, aurostd::xoption& vpflow);
+  void EWALD(const std::string& options, std::istream& input);
+  std::string EXTRACT_xcar(_aflags& aflags, std::vector<std::string>, std::string, std::string);
+  std::string EXTRACT_Symmetry(_aflags& aflags, std::vector<std::string>);
   void FGROUP(_aflags& aflags, std::istream& input);
-  bool FIXBANDS(_aflags& aflags, string opts);
+  bool FIXBANDS(_aflags& aflags, std::string opts);
   void FINDSYM(aurostd::xoption& vpflow, uint mode, std::istream& input);
   xstructure FRAC(std::istream& input);
-  string FROZSL_VASPSETUP(vector<string> argv, int mode);
-  string FROZSL_ANALYZE(std::istream& input);
-  string FROZSL_INPUT();
-  string FROZSL_OUTPUT();
-  string GEOMETRY(std::istream& input); // CO20191110
-  bool GetCollinearMagneticInfo(uint num_atoms, const string& magmom_info, vector<double>& vmag); // DX20170927 - Magnetic symmetry //DX20191107 - int to uint
-  bool GetNonCollinearMagneticInfo(uint num_atoms, const string& magmom_info, vector<aurostd::xvector<double>>& vmag_noncoll); // DX20171205 - Magnetic symmetry non-collinear //DX20191107 - int to uint
+  std::string FROZSL_VASPSETUP(std::vector<std::string> argv, int mode);
+  std::string FROZSL_ANALYZE(std::istream& input);
+  std::string FROZSL_INPUT();
+  std::string FROZSL_OUTPUT();
+  std::string GEOMETRY(std::istream& input); // CO20191110
+  bool GetCollinearMagneticInfo(uint num_atoms, const std::string& magmom_info, std::vector<double>& vmag); // DX20170927 - Magnetic symmetry //DX20191107 - int to uint
+  bool GetNonCollinearMagneticInfo(uint num_atoms, const std::string& magmom_info, std::vector<aurostd::xvector<double>>& vmag_noncoll); // DX20171205 - Magnetic symmetry non-collinear //DX20191107 - int to uint
   void GLASS_FORMING_ABILITY(aurostd::xoption& vpflow); // DF20190329
   void ATOMIC_ENVIRONMENT(const aurostd::xoption& vpflow); // HE20210331
   void GULP(std::istream& input);
-  void HKL(const string& options, _aflags& aflags, std::istream& input);
-  void HKLSearch(const string& options, _aflags& aflags, std::istream& input, const string& smode);
-  bool setPOCCTOL(xstructure& xstr, const string& pocc_tol_string); // CO20181226
-  bool POCC_COMMAND_LINE(aurostd::xoption& vpflow, std::istream& input, ostream& oss = cout); // CO20181226
+  void HKL(const std::string& options, _aflags& aflags, std::istream& input);
+  void HKLSearch(const std::string& options, _aflags& aflags, std::istream& input, const std::string& smode);
+  bool setPOCCTOL(xstructure& xstr, const std::string& pocc_tol_string); // CO20181226
+  bool POCC_COMMAND_LINE(aurostd::xoption& vpflow, std::istream& input, std::ostream& oss = std::cout); // CO20181226
   void ICSD_2WYCK(std::istream& input, bool SOF);
-  void ICSD(vector<string> argv, std::istream& input);
+  void ICSD(std::vector<std::string> argv, std::istream& input);
   xstructure IDENTICAL(std::istream& input);
   xstructure INCELL(std::istream& input);
   xstructure INCOMPACT(std::istream& input);
-  void INTPOL(const string& options);
+  void INTPOL(const std::string& options);
   xstructure INWS(std::istream& input);
-  void JMOL(const string& options, std::istream& input);
-  void KBAND(vector<string>);
-  xstructure INFLATE_LATTICE(const string& options, std::istream& input);
-  xstructure INFLATE_VOLUME(const string& options, std::istream& input);
+  void JMOL(const std::string& options, std::istream& input);
+  void KBAND(std::vector<std::string>);
+  xstructure INFLATE_LATTICE(const std::string& options, std::istream& input);
+  xstructure INFLATE_VOLUME(const std::string& options, std::istream& input);
   void KPATH(std::istream& input, bool WWW);
   void KPATH(std::istream& input, double grid, bool WWW);
-  xstructure KPOINTS(const string& options, std::istream& input, ostream& oss = cout);
-  xstructure KPOINTS_DELTA(aurostd::xoption& vpflow, std::istream& input, ostream& oss = cout);
-  void JOINSTRLIST(vector<string>);
-  void MAKESTRLIST(vector<string>);
+  xstructure KPOINTS(const std::string& options, std::istream& input, std::ostream& oss = std::cout);
+  xstructure KPOINTS_DELTA(aurostd::xoption& vpflow, std::istream& input, std::ostream& oss = std::cout);
+  void JOINSTRLIST(std::vector<std::string>);
+  void MAKESTRLIST(std::vector<std::string>);
   xstructure LATTICEREDUCTION(std::istream& input);
-  string LATTICE_TYPE(std::istream& input, aurostd::xoption& vpflow); // DX20200820 - added vpflow
-  string LATTICE_LATTICE_TYPE(std::istream& input, aurostd::xoption& vpflow); // DX20200820
-  string listPrototypeLabels(aurostd::xoption& vpflow); // DX20181004
+  std::string LATTICE_TYPE(std::istream& input, aurostd::xoption& vpflow); // DX20200820 - added vpflow
+  std::string LATTICE_LATTICE_TYPE(std::istream& input, aurostd::xoption& vpflow); // DX20200820
+  std::string listPrototypeLabels(aurostd::xoption& vpflow); // DX20181004
   ////////////////////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////////////
   // START - all relevent functions for loading entries here
   // Added by Corey Oses - May 2017
   // load entries is heavily overloaded, mostly to accommodate entries separated as
-  // vector<vector<vector<> > > entries (unaries vs. binaries, then species-specific, good for convex hull),
-  // vector<vector<> > entries (unaries vs. binaries), OR
-  // vector<> entries (all together)
+  // std::vector<std::vector<std::vector<> > > entries (unaries vs. binaries, then species-specific, good for convex hull),
+  // std::vector<std::vector<> > entries (unaries vs. binaries), OR
+  // std::vector<> entries (all together)
   ////////////////////////////////////////////////////////////////////////////////
-  string arity_string(uint arity, bool capital = false, bool plural = false); // CO20180329
+  std::string arity_string(uint arity, bool capital = false, bool plural = false); // CO20180329
   // loadEntries
-  bool loadEntries(vector<string>& velements, vector<vector<vector<aflowlib::_aflowlib_entry>>>& entries, ostream& oss = cout);
-  bool loadEntries(vector<string>& velements, vector<vector<vector<aflowlib::_aflowlib_entry>>>& entries, ofstream& FileMESSAGE, ostream& oss = cout);
-  bool loadEntries(vector<string>& velements, string server, vector<vector<vector<aflowlib::_aflowlib_entry>>>& entries, ostream& oss = cout);
-  bool loadEntries(vector<string>& velements, string server, vector<vector<vector<aflowlib::_aflowlib_entry>>>& entries, ofstream& FileMESSAGE, ostream& oss = cout);
-  bool loadEntries(aurostd::xoption& vpflow, vector<string>& velements, vector<vector<vector<aflowlib::_aflowlib_entry>>>& entries, ostream& oss = cout);
-  bool loadEntries(aurostd::xoption& vpflow, vector<string>& velements, vector<vector<vector<aflowlib::_aflowlib_entry>>>& entries, ofstream& FileMESSAGE, ostream& oss = cout);
-  bool loadEntries(aurostd::xoption& vpflow, vector<string>& velements, string server, vector<vector<vector<aflowlib::_aflowlib_entry>>>& entries, ostream& oss = cout);
-  bool loadEntries(aurostd::xoption& vpflow, vector<string>& velements, string server, vector<vector<vector<aflowlib::_aflowlib_entry>>>& entries, ofstream& FileMESSAGE, ostream& oss = cout);
-  ////////////////////////////////////////////////////////////////////////////////
-  // loadEntries
-  bool loadEntries(vector<string>& velements, vector<vector<aflowlib::_aflowlib_entry>>& entries, ostream& oss = cout);
-  bool loadEntries(vector<string>& velements, vector<vector<aflowlib::_aflowlib_entry>>& entries, ofstream& FileMESSAGE, ostream& oss = cout);
-  bool loadEntries(vector<string>& velements, string server, vector<vector<aflowlib::_aflowlib_entry>>& entries, ostream& oss = cout);
-  bool loadEntries(vector<string>& velements, string server, vector<vector<aflowlib::_aflowlib_entry>>& entries, ofstream& FileMESSAGE, ostream& oss = cout);
-  bool loadEntries(aurostd::xoption& vpflow, vector<string>& velements, vector<vector<aflowlib::_aflowlib_entry>>& entries, ostream& oss = cout);
-  bool loadEntries(aurostd::xoption& vpflow, vector<string>& velements, vector<vector<aflowlib::_aflowlib_entry>>& entries, ofstream& FileMESSAGE, ostream& oss = cout);
-  bool loadEntries(aurostd::xoption& vpflow, vector<string>& velements, string server, vector<vector<aflowlib::_aflowlib_entry>>& entries, ostream& oss = cout);
-  bool loadEntries(aurostd::xoption& vpflow, vector<string>& velements, string server, vector<vector<aflowlib::_aflowlib_entry>>& entries, ofstream& FileMESSAGE, ostream& oss = cout);
+  bool loadEntries(std::vector<std::string>& velements, std::vector<std::vector<std::vector<aflowlib::_aflowlib_entry>>>& entries, std::ostream& oss = std::cout);
+  bool loadEntries(std::vector<std::string>& velements, std::vector<std::vector<std::vector<aflowlib::_aflowlib_entry>>>& entries, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout);
+  bool loadEntries(std::vector<std::string>& velements, std::string server, std::vector<std::vector<std::vector<aflowlib::_aflowlib_entry>>>& entries, std::ostream& oss = std::cout);
+  bool loadEntries(std::vector<std::string>& velements, std::string server, std::vector<std::vector<std::vector<aflowlib::_aflowlib_entry>>>& entries, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout);
+  bool loadEntries(aurostd::xoption& vpflow, std::vector<std::string>& velements, std::vector<std::vector<std::vector<aflowlib::_aflowlib_entry>>>& entries, std::ostream& oss = std::cout);
+  bool loadEntries(aurostd::xoption& vpflow, std::vector<std::string>& velements, std::vector<std::vector<std::vector<aflowlib::_aflowlib_entry>>>& entries, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout);
+  bool loadEntries(aurostd::xoption& vpflow, std::vector<std::string>& velements, std::string server, std::vector<std::vector<std::vector<aflowlib::_aflowlib_entry>>>& entries, std::ostream& oss = std::cout);
+  bool loadEntries(aurostd::xoption& vpflow,
+                   std::vector<std::string>& velements,
+                   std::string server,
+                   std::vector<std::vector<std::vector<aflowlib::_aflowlib_entry>>>& entries,
+                   std::ofstream& FileMESSAGE,
+                   std::ostream& oss = std::cout);
   ////////////////////////////////////////////////////////////////////////////////
   // loadEntries
-  bool loadEntries(vector<string>& velements, vector<aflowlib::_aflowlib_entry>& entries, ostream& oss = cout);
-  bool loadEntries(vector<string>& velements, vector<aflowlib::_aflowlib_entry>& entries, ofstream& FileMESSAGE, ostream& oss = cout);
-  bool loadEntries(vector<string>& velements, string server, vector<aflowlib::_aflowlib_entry>& entries, ostream& oss = cout);
-  bool loadEntries(vector<string>& velements, string server, vector<aflowlib::_aflowlib_entry>& entries, ofstream& FileMESSAGE, ostream& oss = cout);
-  bool loadEntries(aurostd::xoption& vpflow, vector<string>& velements, vector<aflowlib::_aflowlib_entry>& entries, ostream& oss = cout);
-  bool loadEntries(aurostd::xoption& vpflow, vector<string>& velements, vector<aflowlib::_aflowlib_entry>& entries, ofstream& FileMESSAGE, ostream& oss = cout);
-  bool loadEntries(aurostd::xoption& vpflow, vector<string>& velements, string server, vector<aflowlib::_aflowlib_entry>& entries, ostream& oss = cout);
-  bool loadEntries(aurostd::xoption& vpflow, vector<string>& velements, string server, vector<aflowlib::_aflowlib_entry>& entries, ofstream& FileMESSAGE, ostream& oss = cout);
+  bool loadEntries(std::vector<std::string>& velements, std::vector<std::vector<aflowlib::_aflowlib_entry>>& entries, std::ostream& oss = std::cout);
+  bool loadEntries(std::vector<std::string>& velements, std::vector<std::vector<aflowlib::_aflowlib_entry>>& entries, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout);
+  bool loadEntries(std::vector<std::string>& velements, std::string server, std::vector<std::vector<aflowlib::_aflowlib_entry>>& entries, std::ostream& oss = std::cout);
+  bool loadEntries(std::vector<std::string>& velements, std::string server, std::vector<std::vector<aflowlib::_aflowlib_entry>>& entries, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout);
+  bool loadEntries(aurostd::xoption& vpflow, std::vector<std::string>& velements, std::vector<std::vector<aflowlib::_aflowlib_entry>>& entries, std::ostream& oss = std::cout);
+  bool loadEntries(aurostd::xoption& vpflow, std::vector<std::string>& velements, std::vector<std::vector<aflowlib::_aflowlib_entry>>& entries, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout);
+  bool loadEntries(aurostd::xoption& vpflow, std::vector<std::string>& velements, std::string server, std::vector<std::vector<aflowlib::_aflowlib_entry>>& entries, std::ostream& oss = std::cout);
+  bool loadEntries(aurostd::xoption& vpflow, std::vector<std::string>& velements, std::string server, std::vector<std::vector<aflowlib::_aflowlib_entry>>& entries, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout);
+  ////////////////////////////////////////////////////////////////////////////////
+  // loadEntries
+  bool loadEntries(std::vector<std::string>& velements, std::vector<aflowlib::_aflowlib_entry>& entries, std::ostream& oss = std::cout);
+  bool loadEntries(std::vector<std::string>& velements, std::vector<aflowlib::_aflowlib_entry>& entries, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout);
+  bool loadEntries(std::vector<std::string>& velements, std::string server, std::vector<aflowlib::_aflowlib_entry>& entries, std::ostream& oss = std::cout);
+  bool loadEntries(std::vector<std::string>& velements, std::string server, std::vector<aflowlib::_aflowlib_entry>& entries, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout);
+  bool loadEntries(aurostd::xoption& vpflow, std::vector<std::string>& velements, std::vector<aflowlib::_aflowlib_entry>& entries, std::ostream& oss = std::cout);
+  bool loadEntries(aurostd::xoption& vpflow, std::vector<std::string>& velements, std::vector<aflowlib::_aflowlib_entry>& entries, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout);
+  bool loadEntries(aurostd::xoption& vpflow, std::vector<std::string>& velements, std::string server, std::vector<aflowlib::_aflowlib_entry>& entries, std::ostream& oss = std::cout);
+  bool loadEntries(aurostd::xoption& vpflow, std::vector<std::string>& velements, std::string server, std::vector<aflowlib::_aflowlib_entry>& entries, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout);
   ////////////////////////////////////////////////////////////////////////////////
   bool loadFromCommon(aurostd::xoption& vpflow);
   ////////////////////////////////////////////////////////////////////////////////
   // load and merging LIBX
-  bool loadAndMergeLIBX(string combination, string LIB, string server, vector<vector<vector<aflowlib::_aflowlib_entry>>>& naries, ostream& oss = cout);
-  bool loadAndMergeLIBX(string _combination, string LIB, string server, vector<vector<vector<aflowlib::_aflowlib_entry>>>& naries, ofstream& FileMESSAGE, ostream& oss = cout);
-  bool loadAndMergeLIBX(vector<string>& combination, string LIB, string server, vector<vector<vector<aflowlib::_aflowlib_entry>>>& naries, ostream& oss = cout);
-  bool loadAndMergeLIBX(vector<string>& combination, string LIB, string server, vector<vector<vector<aflowlib::_aflowlib_entry>>>& naries, ofstream& FileMESSAGE, ostream& oss = cout);
-  bool loadAndMergeLIBX(aurostd::xoption& vpflow, string combination, string LIB, string server, vector<vector<vector<aflowlib::_aflowlib_entry>>>& naries, ostream& oss = cout);
-  bool loadAndMergeLIBX(aurostd::xoption& vpflow, string _combination, string LIB, string server, vector<vector<vector<aflowlib::_aflowlib_entry>>>& naries, ofstream& FileMESSAGE, ostream& oss = cout);
-  bool loadAndMergeLIBX(aurostd::xoption& vpflow, vector<string>& combination, string LIB, string server, vector<vector<vector<aflowlib::_aflowlib_entry>>>& naries, ostream& oss = cout);
-  bool loadAndMergeLIBX(aurostd::xoption& vpflow, vector<string>& combination, string LIB, string server, vector<vector<vector<aflowlib::_aflowlib_entry>>>& naries, ofstream& FileMESSAGE, ostream& oss = cout);
+  bool loadAndMergeLIBX(std::string combination, std::string LIB, std::string server, std::vector<std::vector<std::vector<aflowlib::_aflowlib_entry>>>& naries, std::ostream& oss = std::cout);
+  bool loadAndMergeLIBX(std::string _combination, std::string LIB, std::string server, std::vector<std::vector<std::vector<aflowlib::_aflowlib_entry>>>& naries, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout);
+  bool loadAndMergeLIBX(std::vector<std::string>& combination, std::string LIB, std::string server, std::vector<std::vector<std::vector<aflowlib::_aflowlib_entry>>>& naries, std::ostream& oss = std::cout);
+  bool loadAndMergeLIBX(std::vector<std::string>& combination, std::string LIB, std::string server, std::vector<std::vector<std::vector<aflowlib::_aflowlib_entry>>>& naries, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout);
+  bool loadAndMergeLIBX(aurostd::xoption& vpflow, std::string combination, std::string LIB, std::string server, std::vector<std::vector<std::vector<aflowlib::_aflowlib_entry>>>& naries, std::ostream& oss = std::cout);
+  bool loadAndMergeLIBX(aurostd::xoption& vpflow,
+                        std::string _combination,
+                        std::string LIB,
+                        std::string server,
+                        std::vector<std::vector<std::vector<aflowlib::_aflowlib_entry>>>& naries,
+                        std::ofstream& FileMESSAGE,
+                        std::ostream& oss = std::cout);
+  bool loadAndMergeLIBX(aurostd::xoption& vpflow, std::vector<std::string>& combination, std::string LIB, std::string server, std::vector<std::vector<std::vector<aflowlib::_aflowlib_entry>>>& naries, std::ostream& oss = std::cout);
+  bool loadAndMergeLIBX(aurostd::xoption& vpflow,
+                        std::vector<std::string>& combination,
+                        std::string LIB,
+                        std::string server,
+                        std::vector<std::vector<std::vector<aflowlib::_aflowlib_entry>>>& naries,
+                        std::ofstream& FileMESSAGE,
+                        std::ostream& oss = std::cout);
   ////////////////////////////////////////////////////////////////////////////////
-  uint SubLayersRestAPILS(const string& url, vector<string>& vsuburl); // CO20200731
+  uint SubLayersRestAPILS(const std::string& url, std::vector<std::string>& vsuburl); // CO20200731
   ////////////////////////////////////////////////////////////////////////////////
-  // loadLIBX string elements
-  bool loadLIBX(string LIB, string elements, vector<aflowlib::_aflowlib_entry>& entries, ostream& oss = cout);
-  bool loadLIBX(string LIB, string elements, vector<aflowlib::_aflowlib_entry>& entries, ofstream& FileMESSAGE, ostream& oss = cout);
-  bool loadLIBX(string LIB, string elements, string server, vector<aflowlib::_aflowlib_entry>& entries, ostream& oss = cout);
-  bool loadLIBX(string LIB, string elements, string server, vector<aflowlib::_aflowlib_entry>& entries, ofstream& FileMESSAGE, ostream& oss = cout);
-  bool loadLIBX(aurostd::xoption& vpflow, string LIB, string elements, vector<aflowlib::_aflowlib_entry>& entries, ostream& oss = cout);
-  bool loadLIBX(aurostd::xoption& vpflow, string LIB, string elements, vector<aflowlib::_aflowlib_entry>& entries, ofstream& FileMESSAGE, ostream& oss = cout);
-  bool loadLIBX(aurostd::xoption& vpflow, string LIB, string elements, string server, vector<aflowlib::_aflowlib_entry>& entries, ostream& oss = cout);
-  bool loadLIBX(aurostd::xoption& vpflow, string LIB, string elements, string server, vector<aflowlib::_aflowlib_entry>& entries, ofstream& FileMESSAGE, ostream& oss = cout);
-  // loadLIBX vector elements
-  bool loadLIBX(string LIB, vector<string>& velements, vector<aflowlib::_aflowlib_entry>& entries, ostream& oss = cout);
-  bool loadLIBX(string LIB, vector<string>& velements, vector<aflowlib::_aflowlib_entry>& entries, ofstream& FileMESSAGE, ostream& oss = cout);
-  bool loadLIBX(string LIB, vector<string>& velements, string server, vector<aflowlib::_aflowlib_entry>& entries, ostream& oss = cout);
-  bool loadLIBX(string LIB, vector<string>& velements, string server, vector<aflowlib::_aflowlib_entry>& entries, ofstream& FileMESSAGE, ostream& oss = cout);
-  bool loadLIBX(aurostd::xoption& vpflow, string LIB, vector<string>& velements, vector<aflowlib::_aflowlib_entry>& entries, ostream& oss = cout);
-  bool loadLIBX(aurostd::xoption& vpflow, string LIB, vector<string>& velements, vector<aflowlib::_aflowlib_entry>& entries, ofstream& FileMESSAGE, ostream& oss = cout);
-  bool loadLIBX(aurostd::xoption& vpflow, string LIB, vector<string>& velements, string server, vector<aflowlib::_aflowlib_entry>& entries, ostream& oss = cout);
-  bool loadLIBX(aurostd::xoption& vpflow, string LIB, vector<string>& velements, string server, vector<aflowlib::_aflowlib_entry>& entries, ofstream& FileMESSAGE, ostream& oss = cout);
+  // loadLIBX std::string elements
+  bool loadLIBX(std::string LIB, std::string elements, std::vector<aflowlib::_aflowlib_entry>& entries, std::ostream& oss = std::cout);
+  bool loadLIBX(std::string LIB, std::string elements, std::vector<aflowlib::_aflowlib_entry>& entries, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout);
+  bool loadLIBX(std::string LIB, std::string elements, std::string server, std::vector<aflowlib::_aflowlib_entry>& entries, std::ostream& oss = std::cout);
+  bool loadLIBX(std::string LIB, std::string elements, std::string server, std::vector<aflowlib::_aflowlib_entry>& entries, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout);
+  bool loadLIBX(aurostd::xoption& vpflow, std::string LIB, std::string elements, std::vector<aflowlib::_aflowlib_entry>& entries, std::ostream& oss = std::cout);
+  bool loadLIBX(aurostd::xoption& vpflow, std::string LIB, std::string elements, std::vector<aflowlib::_aflowlib_entry>& entries, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout);
+  bool loadLIBX(aurostd::xoption& vpflow, std::string LIB, std::string elements, std::string server, std::vector<aflowlib::_aflowlib_entry>& entries, std::ostream& oss = std::cout);
+  bool loadLIBX(aurostd::xoption& vpflow, std::string LIB, std::string elements, std::string server, std::vector<aflowlib::_aflowlib_entry>& entries, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout);
+  // loadLIBX std::vector elements
+  bool loadLIBX(std::string LIB, std::vector<std::string>& velements, std::vector<aflowlib::_aflowlib_entry>& entries, std::ostream& oss = std::cout);
+  bool loadLIBX(std::string LIB, std::vector<std::string>& velements, std::vector<aflowlib::_aflowlib_entry>& entries, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout);
+  bool loadLIBX(std::string LIB, std::vector<std::string>& velements, std::string server, std::vector<aflowlib::_aflowlib_entry>& entries, std::ostream& oss = std::cout);
+  bool loadLIBX(std::string LIB, std::vector<std::string>& velements, std::string server, std::vector<aflowlib::_aflowlib_entry>& entries, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout);
+  bool loadLIBX(aurostd::xoption& vpflow, std::string LIB, std::vector<std::string>& velements, std::vector<aflowlib::_aflowlib_entry>& entries, std::ostream& oss = std::cout);
+  bool loadLIBX(aurostd::xoption& vpflow, std::string LIB, std::vector<std::string>& velements, std::vector<aflowlib::_aflowlib_entry>& entries, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout);
+  bool loadLIBX(aurostd::xoption& vpflow, std::string LIB, std::vector<std::string>& velements, std::string server, std::vector<aflowlib::_aflowlib_entry>& entries, std::ostream& oss = std::cout);
+  bool loadLIBX(aurostd::xoption& vpflow, std::string LIB, std::vector<std::string>& velements, std::string server, std::vector<aflowlib::_aflowlib_entry>& entries, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout);
   ////////////////////////////////////////////////////////////////////////////////
-  // loadLIBX string elements, organized by -naries
-  bool loadLIBX(string LIB, string elements, vector<vector<aflowlib::_aflowlib_entry>>& entries, ostream& oss = cout);
-  bool loadLIBX(string LIB, string elements, vector<vector<aflowlib::_aflowlib_entry>>& entries, ofstream& FileMESSAGE, ostream& oss = cout);
-  bool loadLIBX(string LIB, string elements, string server, vector<vector<aflowlib::_aflowlib_entry>>& entries, ostream& oss = cout);
-  bool loadLIBX(string LIB, string elements, string server, vector<vector<aflowlib::_aflowlib_entry>>& entries, ofstream& FileMESSAGE, ostream& oss = cout);
-  bool loadLIBX(aurostd::xoption& vpflow, string LIB, string elements, vector<vector<aflowlib::_aflowlib_entry>>& entries, ostream& oss = cout);
-  bool loadLIBX(aurostd::xoption& vpflow, string LIB, string elements, vector<vector<aflowlib::_aflowlib_entry>>& entries, ofstream& FileMESSAGE, ostream& oss = cout);
-  bool loadLIBX(aurostd::xoption& vpflow, string LIB, string elements, string server, vector<vector<aflowlib::_aflowlib_entry>>& entries, ostream& oss = cout);
-  bool loadLIBX(aurostd::xoption& vpflow, string LIB, string elements, string server, vector<vector<aflowlib::_aflowlib_entry>>& entries, ofstream& FileMESSAGE, ostream& oss = cout);
-  // loadLIBX_nested vector elements
-  bool loadLIBX(string LIB, vector<string>& velements, vector<vector<aflowlib::_aflowlib_entry>>& entries, ostream& oss = cout);
-  bool loadLIBX(string LIB, vector<string>& velements, vector<vector<aflowlib::_aflowlib_entry>>& entries, ofstream& FileMESSAGE, ostream& oss = cout);
-  bool loadLIBX(string LIB, vector<string>& velements, string server, vector<vector<aflowlib::_aflowlib_entry>>& entries, ostream& oss = cout);
-  bool loadLIBX(string LIB, vector<string>& velements, string server, vector<vector<aflowlib::_aflowlib_entry>>& entries, ofstream& FileMESSAGE, ostream& oss = cout);
-  bool loadLIBX(aurostd::xoption& vpflow, string LIB, vector<string>& velements, vector<vector<aflowlib::_aflowlib_entry>>& entries, ostream& oss = cout);
-  bool loadLIBX(aurostd::xoption& vpflow, string LIB, vector<string>& velements, vector<vector<aflowlib::_aflowlib_entry>>& entries, ofstream& FileMESSAGE, ostream& oss = cout);
-  bool loadLIBX(aurostd::xoption& vpflow, string LIB, vector<string>& velements, string server, vector<vector<aflowlib::_aflowlib_entry>>& entries, ostream& oss = cout);
-  bool loadLIBX(aurostd::xoption& vpflow, string LIB, vector<string>& velements, string server, vector<vector<aflowlib::_aflowlib_entry>>& entries, ofstream& FileMESSAGE, ostream& oss = cout);
+  // loadLIBX std::string elements, organized by -naries
+  bool loadLIBX(std::string LIB, std::string elements, std::vector<std::vector<aflowlib::_aflowlib_entry>>& entries, std::ostream& oss = std::cout);
+  bool loadLIBX(std::string LIB, std::string elements, std::vector<std::vector<aflowlib::_aflowlib_entry>>& entries, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout);
+  bool loadLIBX(std::string LIB, std::string elements, std::string server, std::vector<std::vector<aflowlib::_aflowlib_entry>>& entries, std::ostream& oss = std::cout);
+  bool loadLIBX(std::string LIB, std::string elements, std::string server, std::vector<std::vector<aflowlib::_aflowlib_entry>>& entries, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout);
+  bool loadLIBX(aurostd::xoption& vpflow, std::string LIB, std::string elements, std::vector<std::vector<aflowlib::_aflowlib_entry>>& entries, std::ostream& oss = std::cout);
+  bool loadLIBX(aurostd::xoption& vpflow, std::string LIB, std::string elements, std::vector<std::vector<aflowlib::_aflowlib_entry>>& entries, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout);
+  bool loadLIBX(aurostd::xoption& vpflow, std::string LIB, std::string elements, std::string server, std::vector<std::vector<aflowlib::_aflowlib_entry>>& entries, std::ostream& oss = std::cout);
+  bool loadLIBX(aurostd::xoption& vpflow, std::string LIB, std::string elements, std::string server, std::vector<std::vector<aflowlib::_aflowlib_entry>>& entries, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout);
+  // loadLIBX_nested std::vector elements
+  bool loadLIBX(std::string LIB, std::vector<std::string>& velements, std::vector<std::vector<aflowlib::_aflowlib_entry>>& entries, std::ostream& oss = std::cout);
+  bool loadLIBX(std::string LIB, std::vector<std::string>& velements, std::vector<std::vector<aflowlib::_aflowlib_entry>>& entries, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout);
+  bool loadLIBX(std::string LIB, std::vector<std::string>& velements, std::string server, std::vector<std::vector<aflowlib::_aflowlib_entry>>& entries, std::ostream& oss = std::cout);
+  bool loadLIBX(std::string LIB, std::vector<std::string>& velements, std::string server, std::vector<std::vector<aflowlib::_aflowlib_entry>>& entries, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout);
+  bool loadLIBX(aurostd::xoption& vpflow, std::string LIB, std::vector<std::string>& velements, std::vector<std::vector<aflowlib::_aflowlib_entry>>& entries, std::ostream& oss = std::cout);
+  bool loadLIBX(aurostd::xoption& vpflow, std::string LIB, std::vector<std::string>& velements, std::vector<std::vector<aflowlib::_aflowlib_entry>>& entries, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout);
+  bool loadLIBX(aurostd::xoption& vpflow, std::string LIB, std::vector<std::string>& velements, std::string server, std::vector<std::vector<aflowlib::_aflowlib_entry>>& entries, std::ostream& oss = std::cout);
+  bool loadLIBX(aurostd::xoption& vpflow, std::string LIB, std::vector<std::string>& velements, std::string server, std::vector<std::vector<aflowlib::_aflowlib_entry>>& entries, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout);
   ////////////////////////////////////////////////////////////////////////////////
   // get elemental combinations (recursively)
-  vector<vector<string>> elementalCombinations(const vector<string>& velements, uint nary);
+  std::vector<std::vector<std::string>> elementalCombinations(const std::vector<std::string>& velements, uint nary);
   ////////////////////////////////////////////////////////////////////////////////
   // easy way to think about it:  do compounds belong to the hull?
-  bool compoundsBelong(const vector<string>& velements, const string& input, ostream& oss = cout, bool clean = true, bool sort_elements = false, elements_string_type e_str_type = composition_string, bool shortcut_pp_string_AFLOW_database = false);
-  bool compoundsBelong(const vector<string>& velements,
-                       const string& input,
-                       vector<string>& input_velements,
-                       vector<double>& input_vcomposition,
-                       ostream& oss = cout,
+  bool compoundsBelong(const std::vector<std::string>& velements,
+                       const std::string& input,
+                       std::ostream& oss = std::cout,
                        bool clean = true,
                        bool sort_elements = false,
                        elements_string_type e_str_type = composition_string,
                        bool shortcut_pp_string_AFLOW_database = false);
-  bool compoundsBelong(const vector<string>& velements,
-                       const string& input,
-                       ofstream& FileMESSAGE,
-                       ostream& oss = cout,
+  bool compoundsBelong(const std::vector<std::string>& velements,
+                       const std::string& input,
+                       std::vector<std::string>& input_velements,
+                       std::vector<double>& input_vcomposition,
+                       std::ostream& oss = std::cout,
                        bool clean = true,
                        bool sort_elements = false,
                        elements_string_type e_str_type = composition_string,
                        bool shortcut_pp_string_AFLOW_database = false);
-  bool compoundsBelong(const vector<string>& velements,
-                       const string& input,
-                       vector<string>& input_velements,
-                       vector<double>& input_vcomposition,
-                       ofstream& FileMESSAGE,
-                       ostream& oss = cout,
+  bool compoundsBelong(const std::vector<std::string>& velements,
+                       const std::string& input,
+                       std::ofstream& FileMESSAGE,
+                       std::ostream& oss = std::cout,
                        bool clean = true,
                        bool sort_elements = false,
                        elements_string_type e_str_type = composition_string,
                        bool shortcut_pp_string_AFLOW_database = false);
-  bool compoundsBelong(const vector<string>& velements, const vector<string>& elements, ostream& oss = cout, bool sort_elements = false);
-  bool compoundsBelong(const vector<string>& velements, const vector<string>& elements, ofstream& FileMESSAGE, ostream& oss = cout, bool sort_elements = false);
+  bool compoundsBelong(const std::vector<std::string>& velements,
+                       const std::string& input,
+                       std::vector<std::string>& input_velements,
+                       std::vector<double>& input_vcomposition,
+                       std::ofstream& FileMESSAGE,
+                       std::ostream& oss = std::cout,
+                       bool clean = true,
+                       bool sort_elements = false,
+                       elements_string_type e_str_type = composition_string,
+                       bool shortcut_pp_string_AFLOW_database = false);
+  bool compoundsBelong(const std::vector<std::string>& velements, const std::vector<std::string>& elements, std::ostream& oss = std::cout, bool sort_elements = false);
+  bool compoundsBelong(const std::vector<std::string>& velements, const std::vector<std::string>& elements, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout, bool sort_elements = false);
   ////////////////////////////////////////////////////////////////////////////////
   // loads xstructures
-  bool loadXstructures(aflowlib::_aflowlib_entry& entry, ostream& oss = cout, bool relaxed_only = true, string path = "", bool is_url_path = false);
-  bool loadXstructures(aflowlib::_aflowlib_entry& entry, ofstream& FileMESSAGE, ostream& oss = cout, bool relaxed_only = true, string path = "", bool is_url_path = false);
-  bool loadXstructures(aflowlib::_aflowlib_entry& entry, vector<string>& structure_files, ofstream& FileMESSAGE, ostream& oss = cout, bool relaxed_only = true, string path = "", bool is_url_path = false); // DX20200224
+  bool loadXstructures(aflowlib::_aflowlib_entry& entry, std::ostream& oss = std::cout, bool relaxed_only = true, std::string path = "", bool is_url_path = false);
+  bool loadXstructures(aflowlib::_aflowlib_entry& entry, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout, bool relaxed_only = true, std::string path = "", bool is_url_path = false);
+  bool loadXstructures(aflowlib::_aflowlib_entry& entry, std::vector<std::string>& structure_files, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout, bool relaxed_only = true, std::string path = "", bool is_url_path = false); // DX20200224
   bool loadXstructureLibEntry(const aflowlib::_aflowlib_entry& entry, xstructure& new_structure); // HE20220606
   ////////////////////////////////////////////////////////////////////////////////
   // sets default flags
-  void defaultLoadEntriesFlags(aurostd::xoption& vpflow, ostream& oss = cout, string input = "A", bool entry_output = true, bool silent = false);
-  void defaultLoadEntriesFlags(aurostd::xoption& vpflow, ofstream& FileMESSAGE, ostream& oss = cout, string input = "A", bool entry_output = true, bool silent = false);
+  void defaultLoadEntriesFlags(aurostd::xoption& vpflow, std::ostream& oss = std::cout, std::string input = "A", bool entry_output = true, bool silent = false);
+  void defaultLoadEntriesFlags(aurostd::xoption& vpflow, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout, std::string input = "A", bool entry_output = true, bool silent = false);
   ////////////////////////////////////////////////////////////////////////////////
-  bool prototypeMatch(string proto_database, string proto_search); // smarter than == for prototype matches, deals with 549 vs. 549.bis
+  bool prototypeMatch(std::string proto_database, std::string proto_search); // smarter than == for prototype matches, deals with 549 vs. 549.bis
   ////////////////////////////////////////////////////////////////////////////////
   // Added by Corey Oses - May 2017
   // END - all relevent functions for loading entries here
   ////////////////////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////////////
   // START - added by Corey Oses - May 2017
-  // effectively logs EVERYTHING, deals with cout and logger
-  void updateProgressBar(unsigned long long int current, unsigned long long int end, ostream& oss = std::cout);
-  void logger(const string& filename, const string& function_name, stringstream& message, const char& type, ostream& oss = cout, bool silent = false, const string& message_metadata = _AFLOW_MESSAGE_DEFAULTS_); // overload
-  void logger(const string& filename, const string& function_name, stringstream& message, ostream& oss = cout, const char& type = _LOGGER_MESSAGE_, bool silent = false, const string& message_metadata = _AFLOW_MESSAGE_DEFAULTS_); // overload
-  void logger(const string& filename, const string& function_name, stringstream& message, ofstream& FileMESSAGE, ostream& oss = cout, const char& type = _LOGGER_MESSAGE_, bool silent = false, const string& message_metadata = _AFLOW_MESSAGE_DEFAULTS_); // overload
-  void logger(const string& filename, const string& function_name, stringstream& message, const string& directory, ostream& oss = cout, const char& type = _LOGGER_MESSAGE_, bool silent = false, const string& message_metadata = _AFLOW_MESSAGE_DEFAULTS_); // overload
-  void logger(const string& filename,
-              const string& function_name,
-              stringstream& message,
-              const string& directory,
-              ofstream& FileMESSAGE,
-              ostream& oss = cout,
+  // effectively logs EVERYTHING, deals with std::cout and logger
+  void updateProgressBar(unsigned long long int current, unsigned long long int end, std::ostream& oss = std::cout);
+  void logger(const std::string& filename, const std::string& function_name, std::stringstream& message, const char& type, std::ostream& oss = std::cout, bool silent = false, const std::string& message_metadata = _AFLOW_MESSAGE_DEFAULTS_); // overload
+  void logger(const std::string& filename,
+              const std::string& function_name,
+              std::stringstream& message,
+              std::ostream& oss = std::cout,
               const char& type = _LOGGER_MESSAGE_,
               bool silent = false,
-              const string& message_metadata = _AFLOW_MESSAGE_DEFAULTS_); // overload
-  void logger(const string& filename, const string& function_name, stringstream& message, const _aflags& aflags, ostream& oss = cout, const char& type = _LOGGER_MESSAGE_, bool silent = false, const string& message_metadata = _AFLOW_MESSAGE_DEFAULTS_); // overload
-  void logger(const string& filename,
-              const string& function_name,
-              stringstream& message,
+              const std::string& message_metadata = _AFLOW_MESSAGE_DEFAULTS_); // overload
+  void logger(const std::string& filename,
+              const std::string& function_name,
+              std::stringstream& message,
+              std::ofstream& FileMESSAGE,
+              std::ostream& oss = std::cout,
+              const char& type = _LOGGER_MESSAGE_,
+              bool silent = false,
+              const std::string& message_metadata = _AFLOW_MESSAGE_DEFAULTS_); // overload
+  void logger(const std::string& filename,
+              const std::string& function_name,
+              std::stringstream& message,
+              const std::string& directory,
+              std::ostream& oss = std::cout,
+              const char& type = _LOGGER_MESSAGE_,
+              bool silent = false,
+              const std::string& message_metadata = _AFLOW_MESSAGE_DEFAULTS_); // overload
+  void logger(const std::string& filename,
+              const std::string& function_name,
+              std::stringstream& message,
+              const std::string& directory,
+              std::ofstream& FileMESSAGE,
+              std::ostream& oss = std::cout,
+              const char& type = _LOGGER_MESSAGE_,
+              bool silent = false,
+              const std::string& message_metadata = _AFLOW_MESSAGE_DEFAULTS_); // overload
+  void logger(const std::string& filename,
+              const std::string& function_name,
+              std::stringstream& message,
               const _aflags& aflags,
-              ofstream& FileMESSAGE,
-              ostream& oss = cout,
+              std::ostream& oss = std::cout,
               const char& type = _LOGGER_MESSAGE_,
               bool silent = false,
-              const string& message_metadata = _AFLOW_MESSAGE_DEFAULTS_); // overload
-  void logger(const string& filename, const string& function_name, const string& _message, const char& type = _LOGGER_MESSAGE_, ostream& oss = cout, bool silent = false, const string& message_metadata = _AFLOW_MESSAGE_DEFAULTS_); // overload
-  void logger(const string& filename, const string& function_name, const string& _message, ostream& oss = cout, const char& type = _LOGGER_MESSAGE_, bool silent = false, const string& message_metadata = _AFLOW_MESSAGE_DEFAULTS_); // overload
-  void logger(const string& filename, const string& function_name, const string& _message, ofstream& FileMESSAGE, ostream& oss = cout, const char& type = _LOGGER_MESSAGE_, bool silent = false, const string& message_metadata = _AFLOW_MESSAGE_DEFAULTS_); // overload
-  void logger(const string& filename, const string& function_name, const string& _message, const string& directory, ostream& oss = cout, const char& type = _LOGGER_MESSAGE_, bool silent = false, const string& message_metadata = _AFLOW_MESSAGE_DEFAULTS_); // overload
-  void logger(const string& filename, const string& function_name, const string& _message, const _aflags& aflags, ostream& oss = cout, const char& type = _LOGGER_MESSAGE_, bool silent = false, const string& message_metadata = _AFLOW_MESSAGE_DEFAULTS_); // overload
-  void logger(const string& filename,
-              const string& function_name,
-              const string& _message,
-              const string& directory,
-              ofstream& FileMESSAGE,
-              ostream& oss = cout,
-              const char& type = _LOGGER_MESSAGE_,
-              bool silent = false,
-              const string& message_metadata = _AFLOW_MESSAGE_DEFAULTS_); // main function
-  void logger(const string& filename,
-              const string& function_name,
-              const string& _message,
+              const std::string& message_metadata = _AFLOW_MESSAGE_DEFAULTS_); // overload
+  void logger(const std::string& filename,
+              const std::string& function_name,
+              std::stringstream& message,
               const _aflags& aflags,
-              ofstream& FileMESSAGE,
-              ostream& oss = cout,
+              std::ofstream& FileMESSAGE,
+              std::ostream& oss = std::cout,
               const char& type = _LOGGER_MESSAGE_,
               bool silent = false,
-              const string& message_metadata = _AFLOW_MESSAGE_DEFAULTS_); // main function
+              const std::string& message_metadata = _AFLOW_MESSAGE_DEFAULTS_); // overload
+  void logger(const std::string& filename,
+              const std::string& function_name,
+              const std::string& _message,
+              const char& type = _LOGGER_MESSAGE_,
+              std::ostream& oss = std::cout,
+              bool silent = false,
+              const std::string& message_metadata = _AFLOW_MESSAGE_DEFAULTS_); // overload
+  void logger(const std::string& filename,
+              const std::string& function_name,
+              const std::string& _message,
+              std::ostream& oss = std::cout,
+              const char& type = _LOGGER_MESSAGE_,
+              bool silent = false,
+              const std::string& message_metadata = _AFLOW_MESSAGE_DEFAULTS_); // overload
+  void logger(const std::string& filename,
+              const std::string& function_name,
+              const std::string& _message,
+              std::ofstream& FileMESSAGE,
+              std::ostream& oss = std::cout,
+              const char& type = _LOGGER_MESSAGE_,
+              bool silent = false,
+              const std::string& message_metadata = _AFLOW_MESSAGE_DEFAULTS_); // overload
+  void logger(const std::string& filename,
+              const std::string& function_name,
+              const std::string& _message,
+              const std::string& directory,
+              std::ostream& oss = std::cout,
+              const char& type = _LOGGER_MESSAGE_,
+              bool silent = false,
+              const std::string& message_metadata = _AFLOW_MESSAGE_DEFAULTS_); // overload
+  void logger(const std::string& filename,
+              const std::string& function_name,
+              const std::string& _message,
+              const _aflags& aflags,
+              std::ostream& oss = std::cout,
+              const char& type = _LOGGER_MESSAGE_,
+              bool silent = false,
+              const std::string& message_metadata = _AFLOW_MESSAGE_DEFAULTS_); // overload
+  void logger(const std::string& filename,
+              const std::string& function_name,
+              const std::string& _message,
+              const std::string& directory,
+              std::ofstream& FileMESSAGE,
+              std::ostream& oss = std::cout,
+              const char& type = _LOGGER_MESSAGE_,
+              bool silent = false,
+              const std::string& message_metadata = _AFLOW_MESSAGE_DEFAULTS_); // main std::function
+  void logger(const std::string& filename,
+              const std::string& function_name,
+              const std::string& _message,
+              const _aflags& aflags,
+              std::ofstream& FileMESSAGE,
+              std::ostream& oss = std::cout,
+              const char& type = _LOGGER_MESSAGE_,
+              bool silent = false,
+              const std::string& message_metadata = _AFLOW_MESSAGE_DEFAULTS_); // main function
   // END - added by Corey Oses - May 2017
-  xstructure LTCELL(const string& options, std::istream& input);
-  void MagneticParameters(string _directory, ostream& oss = cout);
+  xstructure LTCELL(const std::string& options, std::istream& input);
+  void MagneticParameters(std::string _directory, std::ostream& oss = std::cout);
   xstructure MINKOWSKIBASISREDUCTION(std::istream& input);
-  string MISCIBILITY(vector<string> argv);
+  std::string MISCIBILITY(std::vector<std::string> argv);
   void MOM(std::istream& input);
   void MSI(std::istream& input);
   uint NATOMS(std::istream& input);
   //[CO20190520 - not in pflow]xmatrix<double> GetDistMatrix(const xstructure& a); //CO20171025
-  string NBONDXX(std::istream& input, bool aflowlib_legacy_format = false); // CO20171025
-  string NBONDXX(const xstructure& a, bool aflowlib_legacy_format = false); // CO20171025
-  xstructure NAMES(vector<string>, std::istream& input);
+  std::string NBONDXX(std::istream& input, bool aflowlib_legacy_format = false); // CO20171025
+  std::string NBONDXX(const xstructure& a, bool aflowlib_legacy_format = false); // CO20171025
+  xstructure NAMES(std::vector<std::string>, std::istream& input);
   xstructure NANOPARTICLE(std::istream& input, const aurostd::xvector<double>& iparams);
   xstructure NIGGLI(std::istream& input);
   void NDATA(std::istream& input);
   double NNDIST(std::istream& input);
   xstructure NOORDERPARAMETER(std::istream& input);
   xstructure NOSD(std::istream& input);
-  xstructure NUMNAMES(vector<string>, std::istream& input);
+  xstructure NUMNAMES(std::vector<std::string>, std::istream& input);
   uint NSPECIES(std::istream& input);
-  bool OPARAMETER(vector<string>, std::istream& input);
-  bool SHIRLEY(vector<string>, std::istream& input);
-  bool SHIRLEY2(vector<string>, std::istream& input);
-  string PEARSON_SYMBOL(std::istream& input);
-  string PEARSON_SYMBOL(std::istream& input, const aurostd::xoption& vpflow); // DX20210611 - added vpflow
-  bool POCCUPATION(vector<string>, std::istream& input);
+  bool OPARAMETER(std::vector<std::string>, std::istream& input);
+  bool SHIRLEY(std::vector<std::string>, std::istream& input);
+  bool SHIRLEY2(std::vector<std::string>, std::istream& input);
+  std::string PEARSON_SYMBOL(std::istream& input);
+  std::string PEARSON_SYMBOL(std::istream& input, const aurostd::xoption& vpflow); // DX20210611 - added vpflow
+  bool POCCUPATION(std::vector<std::string>, std::istream& input);
   void PDB(std::istream& input);
-  void PDOS(vector<string>);
+  void PDOS(std::vector<std::string>);
   void PHONONS(_aflags& aflags, std::istream& input, const double& radius);
   void PGROUP(_aflags& aflags, std::istream& input);
   void PGROUPXTAL(_aflags& aflags, std::istream& input);
   void PGROUPK(_aflags& aflags, std::istream& input);
-  void PLANEDENS(vector<string>);
-  string PLATON(const string& options, std::istream& input);
-  string SG(aurostd::xoption& vpflow, std::istream& input, string mode, string print);
-  void STATDIEL(vector<string>& argv); // CAMILO
-  bool SYMMETRY_GROUPS(_aflags& aflags, std::istream& input, aurostd::xoption& vpflow, ostream& oss = cout); // DX20170818 - Add no_scan option to all symmetry Xgroups
-  void POCC(vector<string>);
-  string POSCAR2AFLOWIN(std::istream& input, const string& = ""); // Modified ME20181113
+  void PLANEDENS(std::vector<std::string>);
+  std::string PLATON(const std::string& options, std::istream& input);
+  std::string SG(aurostd::xoption& vpflow, std::istream& input, std::string mode, std::string print);
+  void STATDIEL(std::vector<std::string>& argv); // CAMILO
+  bool SYMMETRY_GROUPS(_aflags& aflags, std::istream& input, aurostd::xoption& vpflow, std::ostream& oss = std::cout); // DX20170818 - Add no_scan option to all symmetry Xgroups
+  void POCC(std::vector<std::string>);
+  std::string POSCAR2AFLOWIN(std::istream& input, const std::string& = ""); // Modified ME20181113
   void POSCAR2WYCKOFF(std::istream& input);
-  vector<string> GENERATE_CERAMICS(const vector<string>& nonmetals, const vector<string>& metals, uint metal_arity); // CO20200731
-  vector<string> GENERATE_CERAMICS(const aurostd::xoption& vpflow); // CO20200731
-  string GENERATE_CERAMICS_PRINT(const aurostd::xoption& vpflow); // CO20200731
-  bool PSEUDOPOTENTIALS_CHECK(const aurostd::xoption& vpflow, const string& file, ostream& oss = cout); // SC20200330
-  void PYTHON_MODULES(const string& modules, ostream& oss = std::cout); // ME20211103
-  void PYTHON_MODULES(const string& modules, ofstream& FileMESSAGE, ostream& oss = std::cout); // ME20211103
-  void PYTHON_MODULES(const vector<string>& vmodules, ostream& oss = std::cout); // ME20211103
-  void PYTHON_MODULES(const vector<string>& vmodules, ofstream& FileMESSAGE, ostream& oss = std::cout); // ME20211103
-  bool QMVASP(aurostd::xoption& vpflow); // vector<string> argv); //CO20180703
+  std::vector<std::string> GENERATE_CERAMICS(const std::vector<std::string>& nonmetals, const std::vector<std::string>& metals, uint metal_arity); // CO20200731
+  std::vector<std::string> GENERATE_CERAMICS(const aurostd::xoption& vpflow); // CO20200731
+  std::string GENERATE_CERAMICS_PRINT(const aurostd::xoption& vpflow); // CO20200731
+  bool PSEUDOPOTENTIALS_CHECK(const aurostd::xoption& vpflow, const std::string& file, std::ostream& oss = std::cout); // SC20200330
+  void PYTHON_MODULES(const std::string& modules, std::ostream& oss = std::cout); // ME20211103
+  void PYTHON_MODULES(const std::string& modules, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // ME20211103
+  void PYTHON_MODULES(const std::vector<std::string>& vmodules, std::ostream& oss = std::cout); // ME20211103
+  void PYTHON_MODULES(const std::vector<std::string>& vmodules, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // ME20211103
+  bool QMVASP(aurostd::xoption& vpflow); // std::vector<std::string> argv); //CO20180703
   xstructure POSCAR(std::istream& input);
   void RENDER(std::istream& input, const std::filesystem::path& output);
   aurostd::xmatrix<double> QE_ibrav2lattice(const int& ibrav, const aurostd::xvector<double>& parameters, const bool& isabc); // DX20180123 - added more robust QE reader
@@ -433,167 +518,183 @@ bool AlphabetizePrototypeLabelSpecies(std::deque<std::string>& species, std::deq
 bool AlphabetizePrototypeLabelSpecies(std::deque<std::string>& species, std::string& label);
 std::string AlphabetizePrototypeLabelSpeciesArgv(std::vector<std::string>& argv);
 namespace pflow {
-  using std::cout;
-  using std::deque;
-  using std::ofstream;
-  using std::string;
-  using std::stringstream;
-  using std::vector;
-  bool PROTO_PARSE_INPUT(const vector<string>& params, vector<vector<string>>& vstr, vector<vector<double>>& vnum, bool ignore_label = false, bool reverse = false); // CO20181226
-  bool PROTO_TEST_INPUT(const vector<vector<string>>& vvstr, const vector<vector<double>>& vvnum, uint& nspeciesHTQC, bool patch_nspecies = false); // CO20181226
-  bool sortPOCCSites(const string& p1, const string& p2); // CO20181226
-  bool sortPOCCOccs(const string& occ1, const string& occ2); // CO20181226
-  bool FIX_PRECISION_POCC(const string& occ, string& new_occ); // CO20181226
-  void FIX_POCC_PARAMS(const xstructure& xstr, string& pocc_params); // CO20181226
+  bool PROTO_PARSE_INPUT(const std::vector<std::string>& params, std::vector<std::vector<std::string>>& vstr, std::vector<std::vector<double>>& vnum, bool ignore_label = false, bool reverse = false); // CO20181226
+  bool PROTO_TEST_INPUT(const std::vector<std::vector<std::string>>& vvstr, const std::vector<std::vector<double>>& vvnum, uint& nspeciesHTQC, bool patch_nspecies = false); // CO20181226
+  bool sortPOCCSites(const std::string& p1, const std::string& p2); // CO20181226
+  bool sortPOCCOccs(const std::string& occ1, const std::string& occ2); // CO20181226
+  bool FIX_PRECISION_POCC(const std::string& occ, std::string& new_occ); // CO20181226
+  void FIX_POCC_PARAMS(const xstructure& xstr, std::string& pocc_params); // CO20181226
   bool checkAnionSublattice(const xstructure& xstr); // CO20210201
-  bool convertXStr2POCC(xstructure& xstr, const string& pocc_params, const vector<string>& vspecies, const vector<double>& vvolumes); // CO20181226
-  bool POccInputs2Xstr(const string& pocc_input, aurostd::xoption& pocc_settings, xstructure& xstr, ostream& oss); // CO20211130
-  bool POccInputs2Xstr(const string& pocc_input, aurostd::xoption& pocc_settings, xstructure& xstr, ofstream& FileMESSAGE, ostream& oss); // CO20211130
+  bool convertXStr2POCC(xstructure& xstr, const std::string& pocc_params, const std::vector<std::string>& vspecies, const std::vector<double>& vvolumes); // CO20181226
+  bool POccInputs2Xstr(const std::string& pocc_input, aurostd::xoption& pocc_settings, xstructure& xstr, std::ostream& oss); // CO20211130
+  bool POccInputs2Xstr(const std::string& pocc_input, aurostd::xoption& pocc_settings, xstructure& xstr, std::ofstream& FileMESSAGE, std::ostream& oss); // CO20211130
   xstructure PROTO_LIBRARIES(aurostd::xoption vpflow);
   bool PROTO_AFLOW(aurostd::xoption vpflow, bool flag_REVERSE); // too many options
-  bool PROTO_ICSD_AFLOWIN(vector<string>& argv);
+  bool PROTO_ICSD_AFLOWIN(std::vector<std::string>& argv);
   xstructure PRIM(std::istream& input, uint mode);
-  void RASMOL(const string& options, std::istream& input);
-  void RBANAL(vector<string>);
-  void RBDIST(vector<string>);
+  void RASMOL(const std::string& options, std::istream& input);
+  void RBANAL(std::vector<std::string>);
+  void RBDIST(std::vector<std::string>);
   xstructure RMATOM(std::istream& input, const int& iatom);
   xstructure RMCOPIES(std::istream& input);
-  void RAYTRACE(vector<string>);
-  xstructure SCALE(const string& options, std::istream& input);
-  void RDF(const string& options, std::istream& input, bool raw_counts = false); // CO20220627
-  void RDFCMP(const string& options);
-  void RSM(vector<string>, std::istream& input);
-  xstructure SD(vector<string>, std::istream& input);
+  void RAYTRACE(std::vector<std::string>);
+  xstructure SCALE(const std::string& options, std::istream& input);
+  void RDF(const std::string& options, std::istream& input, bool raw_counts = false); // CO20220627
+  void RDFCMP(const std::string& options);
+  void RSM(std::vector<std::string>, std::istream& input);
+  xstructure SD(std::vector<std::string>, std::istream& input);
   xstructure SETCM(std::istream& input, const aurostd::xvector<double>& cm);
   xstructure SETORIGIN(std::istream& input, const aurostd::xvector<double>& origin);
   xstructure SETORIGIN(std::istream& input, const int& natom);
-  void SEWALD(vector<string>, std::istream& input);
+  void SEWALD(std::vector<std::string>, std::istream& input);
   void SG(std::istream& input);
   void SGROUP(_aflags& aflags, std::istream& input, double radius);
-  void SHELL(const string& options, std::istream& input);
-  string SPECIES(std::istream& input);
-  xstructure SHIFT(const string& options, std::istream& input);
-  void SPLINE(vector<string>);
-  void SUMPDOS(vector<string>);
-  xstructure SUPERCELL(const string& options, std::istream& input);
-  void SUPERCELLSTRLIST(const string& options);
-  xstructure xstrSWAP(vector<string>, std::istream& input);
-  xstructure VOLUME(const string& options, std::istream& input);
-  string WyckoffPositions(aurostd::xoption& vpflow, std::istream& input); // DX20180807 - added wyccar to pflow //DX20210525 - changed name and generalized function
-  xstructure WYCKOFF(vector<string>, std::istream& input);
-  void XRAY(const string& options, std::istream& input);
+  void SHELL(const std::string& options, std::istream& input);
+  std::string SPECIES(std::istream& input);
+  xstructure SHIFT(const std::string& options, std::istream& input);
+  void SPLINE(std::vector<std::string>);
+  void SUMPDOS(std::vector<std::string>);
+  xstructure SUPERCELL(const std::string& options, std::istream& input);
+  void SUPERCELLSTRLIST(const std::string& options);
+  xstructure xstrSWAP(std::vector<std::string>, std::istream& input);
+  xstructure VOLUME(const std::string& options, std::istream& input);
+  std::string WyckoffPositions(aurostd::xoption& vpflow, std::istream& input); // DX20180807 - added wyccar to pflow //DX20210525 - changed name and generalized std::function
+  xstructure WYCKOFF(std::vector<std::string>, std::istream& input);
+  void XRAY(const std::string& options, std::istream& input);
   void XRAY_PEAKS(const aurostd::xoption& vpflow, std::istream& input); // CO20190409
-  void READ_XRAY_DATA(const string& filename, vector<double>& v_twotheta, vector<double>& intensity); // CO20190620
+  void READ_XRAY_DATA(const std::string& filename, std::vector<double>& v_twotheta, std::vector<double>& intensity); // CO20190620
   void PRINT_XRAY_DATA_PLOT(const aurostd::xoption& vpflow, std::istream& input); // CO20190409
   void PRINT_XRAY_DATA_PLOT(const aurostd::xoption& vpflow, const xstructure& str); // CO20190409
-  void PRINT_XRAY_DATA_PLOT(std::istream& input, double lambda = XRAY_RADIATION_COPPER_Kalpha, const string& directory = ""); // CO20190409
-  void PRINT_XRAY_DATA_PLOT(const xstructure& str, double lambda = XRAY_RADIATION_COPPER_Kalpha, const string& directory = ""); // CO20190409
-  void PRINT_XRAY_DATA_PLOT(const aurostd::xoption& vpflow, const string& directory = ""); // CO20190620
-  void PRINT_XRAY_DATA_PLOT(const string& filename, const string& directory = ""); // CO20190620
-  void PRINT_XRAY_DATA_PLOT(const vector<double>& v_twotheta, const vector<double>& v_intensity, const string& directory = ""); // CO20190620
+  void PRINT_XRAY_DATA_PLOT(std::istream& input, double lambda = XRAY_RADIATION_COPPER_Kalpha, const std::string& directory = ""); // CO20190409
+  void PRINT_XRAY_DATA_PLOT(const xstructure& str, double lambda = XRAY_RADIATION_COPPER_Kalpha, const std::string& directory = ""); // CO20190409
+  void PRINT_XRAY_DATA_PLOT(const aurostd::xoption& vpflow, const std::string& directory = ""); // CO20190620
+  void PRINT_XRAY_DATA_PLOT(const std::string& filename, const std::string& directory = ""); // CO20190620
+  void PRINT_XRAY_DATA_PLOT(const std::vector<double>& v_twotheta, const std::vector<double>& v_intensity, const std::string& directory = ""); // CO20190620
   void PLOT_XRAY(const aurostd::xoption& vpflow, std::istream& input); // CO20190409
   void PLOT_XRAY(const aurostd::xoption& vpflow, const xstructure& str); // CO20190409
-  void PLOT_XRAY(std::istream& input, double lambda = XRAY_RADIATION_COPPER_Kalpha, const string& directory = "", bool keep_gp = false, bool force_generic_title = false); // CO20190409
-  void PLOT_XRAY(const xstructure& str, double lambda = XRAY_RADIATION_COPPER_Kalpha, const string& directory = "", bool keep_gp = false, bool force_generic_title = false); // CO20190409
-  void PLOT_XRAY(const aurostd::xoption& vpflow, const string& title = "", const string& directory = "", bool keep_gp = false); // CO20190620
-  void PLOT_XRAY(const string& filename, const string& title = "", const string& directory = "", bool keep_gp = false); // CO20190620
-  void PLOT_XRAY(const vector<double>& v_twotheta, const vector<double>& v_intensity, const string& title = "", const string& directory = "", bool keep_gp = false); // CO20190620
-  void XYZ(const string& options, std::istream& input);
+  void PLOT_XRAY(std::istream& input, double lambda = XRAY_RADIATION_COPPER_Kalpha, const std::string& directory = "", bool keep_gp = false, bool force_generic_title = false); // CO20190409
+  void PLOT_XRAY(const xstructure& str, double lambda = XRAY_RADIATION_COPPER_Kalpha, const std::string& directory = "", bool keep_gp = false, bool force_generic_title = false); // CO20190409
+  void PLOT_XRAY(const aurostd::xoption& vpflow, const std::string& title = "", const std::string& directory = "", bool keep_gp = false); // CO20190620
+  void PLOT_XRAY(const std::string& filename, const std::string& title = "", const std::string& directory = "", bool keep_gp = false); // CO20190620
+  void PLOT_XRAY(const std::vector<double>& v_twotheta, const std::vector<double>& v_intensity, const std::string& title = "", const std::string& directory = "", bool keep_gp = false); // CO20190620
+  void XYZ(const std::string& options, std::istream& input);
   void XYZINSPHERE(std::istream& input, double radius);
   void XYZWS(std::istream& input);
-  void XelementPrint(const string& options, ostream& oss = cout);
-  void ZVAL(const string& options);
+  void XelementPrint(const std::string& options, std::ostream& oss = std::cout);
+  void ZVAL(const std::string& options);
 } // namespace pflow
 
 // aflow_pflow_print.cpp
 namespace pflow {
-  using std::cout;
-  using std::deque;
-  using std::ofstream;
-  using std::string;
-  using std::stringstream;
-  using std::vector;
-  void PrintACE(const xstructure&, ostream& oss = cout);
-  void PrintAngles(xstructure str, const double& cutoff, ostream& oss = cout);
+  void PrintACE(const xstructure&, std::ostream& oss = std::cout);
+  void PrintAngles(xstructure str, const double& cutoff, std::ostream& oss = std::cout);
   class projdata;
   void PrintBands(const pflow::projdata& pd);
-  bool PrintCHGCAR(const xstructure& str, const stringstream& chgcar_header, const vector<int>& ngrid, const vector<int>& format_dim, const vector<double>& chg_tot, const vector<double>& chg_diff, const string& output_name, ostream& oss = cout);
-  void PrintChgInt(vector<aurostd::matrix<double>>& rad_chg_int, aurostd::matrix<double>& vor_chg_int, ostream& oss = cout); // CO20200404 pflow::matrix()->aurostd::matrix()
-  void PrintCIF(ostream& oss, const xstructure&, int = 1, int = 1); // DX20180806 - added setting default
-  void PrintClat(const aurostd::xvector<double>& data, ostream& oss = cout);
-  void PrintCmpStr(const xstructure& str1, const xstructure& str2, const double& rcut, ostream& oss = cout);
-  string PrintData(const xstructure& xstr, const string& smode = "DATA", filetype ftype = txt_ft, bool already_calculated = false, double sym_eps = AUROSTD_MAX_DOUBLE, bool no_scan = false, int setting = 1); // DX20210301
-  string PrintData(const xstructure& xstr, aurostd::xoption& vpflow, const string& smode = "DATA", filetype ftype = txt_ft, bool already_calculated = false, double sym_eps = AUROSTD_MAX_DOUBLE, bool no_scan = false, int setting = 1); // DX20210301
-  string PrintData(const xstructure& xstr,
-                   xstructure& str_sp,
-                   xstructure& str_sc,
-                   aurostd::xoption& vpflow,
-                   const string& smode = "DATA",
-                   filetype ftype = txt_ft,
-                   bool already_calculated = false,
-                   double sym_eps = AUROSTD_MAX_DOUBLE,
-                   bool no_scan = false,
-                   int setting = 1); // DX20210301
-  string PrintData(const xstructure& xstr,
-                   xstructure& str_sym,
-                   xstructure& str_sp,
-                   xstructure& str_sc,
-                   const string& smode = "DATA",
-                   filetype ftype = txt_ft,
-                   bool already_calculated = false,
-                   double sym_eps = AUROSTD_MAX_DOUBLE,
-                   bool no_scan = false,
-                   int setting = 1); // DX20210301
-  string PrintData(const xstructure& xstr,
-                   xstructure& str_sym,
-                   xstructure& str_sp,
-                   xstructure& str_sc,
-                   aurostd::xoption& vpflow,
-                   const string& smode = "DATA",
-                   filetype ftype = txt_ft,
-                   bool already_calculated = false,
-                   double sym_eps = AUROSTD_MAX_DOUBLE,
-                   bool no_scan = false,
-                   int setting = 1); // DX20210301
-  string PrintRealLatticeData(const xstructure& xstr, const string& smode = "DATA", filetype ftype = txt_ft, bool standalone = true, bool already_calculated = false, double sym_eps = AUROSTD_MAX_DOUBLE); // DX20210211
-  string PrintRealLatticeData(const xstructure& xstr, aurostd::xoption& vpflow, const string& smode = "DATA", filetype ftype = txt_ft, bool standalone = true, bool already_calculated = false, double sym_eps = AUROSTD_MAX_DOUBLE); // DX20210211
-  string PrintRealLatticeData(
-      const xstructure& xstr, aurostd::xoption& vpflow, aurostd::JSON::object& json, const string& smode = "DATA", filetype ftype = txt_ft, bool standalone = true, bool already_calculated = false, double sym_eps = AUROSTD_MAX_DOUBLE); // HE20240221
+  bool PrintCHGCAR(const xstructure& str,
+                   const std::stringstream& chgcar_header,
+                   const std::vector<int>& ngrid,
+                   const std::vector<int>& format_dim,
+                   const std::vector<double>& chg_tot,
+                   const std::vector<double>& chg_diff,
+                   const std::string& output_name,
+                   std::ostream& oss = std::cout);
+  void PrintChgInt(std::vector<aurostd::matrix<double>>& rad_chg_int, aurostd::matrix<double>& vor_chg_int, std::ostream& oss = std::cout); // CO20200404 pflow::matrix()->aurostd::matrix()
+  void PrintCIF(std::ostream& oss, const xstructure&, int = 1, int = 1); // DX20180806 - added setting default
+  void PrintClat(const aurostd::xvector<double>& data, std::ostream& oss = std::cout);
+  void PrintCmpStr(const xstructure& str1, const xstructure& str2, const double& rcut, std::ostream& oss = std::cout);
+  std::string PrintData(const xstructure& xstr, const std::string& smode = "DATA", filetype ftype = txt_ft, bool already_calculated = false, double sym_eps = AUROSTD_MAX_DOUBLE, bool no_scan = false, int setting = 1); // DX20210301
+  std::string PrintData(const xstructure& xstr,
+                        aurostd::xoption& vpflow,
+                        const std::string& smode = "DATA",
+                        filetype ftype = txt_ft,
+                        bool already_calculated = false,
+                        double sym_eps = AUROSTD_MAX_DOUBLE,
+                        bool no_scan = false,
+                        int setting = 1); // DX20210301
+  std::string PrintData(const xstructure& xstr,
+                        xstructure& str_sp,
+                        xstructure& str_sc,
+                        aurostd::xoption& vpflow,
+                        const std::string& smode = "DATA",
+                        filetype ftype = txt_ft,
+                        bool already_calculated = false,
+                        double sym_eps = AUROSTD_MAX_DOUBLE,
+                        bool no_scan = false,
+                        int setting = 1); // DX20210301
+  std::string PrintData(const xstructure& xstr,
+                        xstructure& str_sym,
+                        xstructure& str_sp,
+                        xstructure& str_sc,
+                        const std::string& smode = "DATA",
+                        filetype ftype = txt_ft,
+                        bool already_calculated = false,
+                        double sym_eps = AUROSTD_MAX_DOUBLE,
+                        bool no_scan = false,
+                        int setting = 1); // DX20210301
+  std::string PrintData(const xstructure& xstr,
+                        xstructure& str_sym,
+                        xstructure& str_sp,
+                        xstructure& str_sc,
+                        aurostd::xoption& vpflow,
+                        const std::string& smode = "DATA",
+                        filetype ftype = txt_ft,
+                        bool already_calculated = false,
+                        double sym_eps = AUROSTD_MAX_DOUBLE,
+                        bool no_scan = false,
+                        int setting = 1); // DX20210301
+  std::string PrintRealLatticeData(const xstructure& xstr, const std::string& smode = "DATA", filetype ftype = txt_ft, bool standalone = true, bool already_calculated = false, double sym_eps = AUROSTD_MAX_DOUBLE); // DX20210211
+  std::string PrintRealLatticeData(const xstructure& xstr, aurostd::xoption& vpflow, const std::string& smode = "DATA", filetype ftype = txt_ft, bool standalone = true, bool already_calculated = false, double sym_eps = AUROSTD_MAX_DOUBLE); // DX20210211
+  std::string PrintRealLatticeData(const xstructure& xstr,
+                                   aurostd::xoption& vpflow,
+                                   aurostd::JSON::object& json,
+                                   const std::string& smode = "DATA",
+                                   filetype ftype = txt_ft,
+                                   bool standalone = true,
+                                   bool already_calculated = false,
+                                   double sym_eps = AUROSTD_MAX_DOUBLE); // HE20240221
 
-  string PrintLatticeLatticeData(const xstructure& xstr, filetype ftype = txt_ft, bool standalone = true, bool already_calculated = false, double sym_eps = AUROSTD_MAX_DOUBLE); // DX20210211
-  string PrintLatticeLatticeData(const xstructure& xstr, aurostd::xoption& vpflow, filetype ftype = txt_ft, bool standalone = true, bool already_calculated = false, double sym_eps = AUROSTD_MAX_DOUBLE); // DX20210211
-  string PrintLatticeLatticeData(const xstructure& xstr, aurostd::xoption& vpflow, aurostd::JSON::object& json, filetype ftype = txt_ft, bool standalone = true, bool already_calculated = false, double sym_eps = AUROSTD_MAX_DOUBLE); // HE20240221
+  std::string PrintLatticeLatticeData(const xstructure& xstr, filetype ftype = txt_ft, bool standalone = true, bool already_calculated = false, double sym_eps = AUROSTD_MAX_DOUBLE); // DX20210211
+  std::string PrintLatticeLatticeData(const xstructure& xstr, aurostd::xoption& vpflow, filetype ftype = txt_ft, bool standalone = true, bool already_calculated = false, double sym_eps = AUROSTD_MAX_DOUBLE); // DX20210211
+  std::string PrintLatticeLatticeData(const xstructure& xstr, aurostd::xoption& vpflow, aurostd::JSON::object& json, filetype ftype = txt_ft, bool standalone = true, bool already_calculated = false, double sym_eps = AUROSTD_MAX_DOUBLE); // HE20240221
 
-  string PrintCrystalPointGroupData(const xstructure& xstr, filetype ftype = txt_ft, bool standalone = true, bool already_calculated = false, double sym_eps = AUROSTD_MAX_DOUBLE); // DX20210211
-  string PrintCrystalPointGroupData(const xstructure& xstr, aurostd::xoption& vpflow, filetype ftype = txt_ft, bool standalone = true, bool already_calculated = false, double sym_eps = AUROSTD_MAX_DOUBLE); // DX20210211
-  string PrintCrystalPointGroupData(const xstructure& xstr, aurostd::xoption& vpflow, aurostd::JSON::object& json, filetype ftype = txt_ft, bool standalone = true, bool already_calculated = false, double sym_eps = AUROSTD_MAX_DOUBLE); // HE20240221
+  std::string PrintCrystalPointGroupData(const xstructure& xstr, filetype ftype = txt_ft, bool standalone = true, bool already_calculated = false, double sym_eps = AUROSTD_MAX_DOUBLE); // DX20210211
+  std::string PrintCrystalPointGroupData(const xstructure& xstr, aurostd::xoption& vpflow, filetype ftype = txt_ft, bool standalone = true, bool already_calculated = false, double sym_eps = AUROSTD_MAX_DOUBLE); // DX20210211
+  std::string PrintCrystalPointGroupData(const xstructure& xstr, aurostd::xoption& vpflow, aurostd::JSON::object& json, filetype ftype = txt_ft, bool standalone = true, bool already_calculated = false, double sym_eps = AUROSTD_MAX_DOUBLE); // HE20240221
 
-  string PrintReciprocalLatticeData(const xstructure& xstr, filetype ftype = txt_ft, bool standalone = true, bool already_calculated = false, double sym_eps = AUROSTD_MAX_DOUBLE); // DX20210209
-  string PrintReciprocalLatticeData(const xstructure& xstr, aurostd::xoption& vpflow, filetype ftype = txt_ft, bool standalone = true, bool already_calculated = false, double sym_eps = AUROSTD_MAX_DOUBLE); // DX20210209
-  string PrintReciprocalLatticeData(const xstructure& xstr, aurostd::xoption& vpflow, aurostd::JSON::object& json, filetype ftype = txt_ft, bool standalone = true, bool already_calculated = false, double sym_eps = AUROSTD_MAX_DOUBLE); // HE20240221
+  std::string PrintReciprocalLatticeData(const xstructure& xstr, filetype ftype = txt_ft, bool standalone = true, bool already_calculated = false, double sym_eps = AUROSTD_MAX_DOUBLE); // DX20210209
+  std::string PrintReciprocalLatticeData(const xstructure& xstr, aurostd::xoption& vpflow, filetype ftype = txt_ft, bool standalone = true, bool already_calculated = false, double sym_eps = AUROSTD_MAX_DOUBLE); // DX20210209
+  std::string PrintReciprocalLatticeData(const xstructure& xstr, aurostd::xoption& vpflow, aurostd::JSON::object& json, filetype ftype = txt_ft, bool standalone = true, bool already_calculated = false, double sym_eps = AUROSTD_MAX_DOUBLE); // HE20240221
 
-  string PrintSuperlatticeData(const xstructure& xstr, filetype ftype = txt_ft, bool standalone = true, bool already_calculated = false, double sym_eps = AUROSTD_MAX_DOUBLE); // DX20210209
-  string PrintSuperlatticeData(const xstructure& xstr, aurostd::xoption& vpflow, filetype ftype = txt_ft, bool standalone = true, bool already_calculated = false, double sym_eps = AUROSTD_MAX_DOUBLE); // DX20210209
-  string PrintSuperlatticeData(const xstructure& xstr, aurostd::xoption& vpflow, aurostd::JSON::object& json, filetype ftype = txt_ft, bool standalone = true, bool already_calculated = false, double sym_eps = AUROSTD_MAX_DOUBLE); // DX20210209
+  std::string PrintSuperlatticeData(const xstructure& xstr, filetype ftype = txt_ft, bool standalone = true, bool already_calculated = false, double sym_eps = AUROSTD_MAX_DOUBLE); // DX20210209
+  std::string PrintSuperlatticeData(const xstructure& xstr, aurostd::xoption& vpflow, filetype ftype = txt_ft, bool standalone = true, bool already_calculated = false, double sym_eps = AUROSTD_MAX_DOUBLE); // DX20210209
+  std::string PrintSuperlatticeData(const xstructure& xstr, aurostd::xoption& vpflow, aurostd::JSON::object& json, filetype ftype = txt_ft, bool standalone = true, bool already_calculated = false, double sym_eps = AUROSTD_MAX_DOUBLE); // DX20210209
 
-  void PrintDisplacements(xstructure str, const double cutoff, ostream& oss = cout);
-  void PrintDistances(xstructure str, const double cutoff, ostream& oss = cout);
-  void PrintEwald(const xstructure& in_str, double& epoint, double& ereal, double& erecip, double& eewald, double& eta, const double& SUMTOL, ostream& oss = cout);
-  void PrintGulp(const xstructure&, ostream& oss = cout);
-  string PrintSGData(xstructure& xstr, filetype ftype = txt_ft, bool standalone = true, bool already_calculated = false, double sym_eps = AUROSTD_MAX_DOUBLE, bool no_scan = false, int setting = 1, bool supress_Wyckoff = false); // DX20210211
-  string PrintSGData(xstructure& xstr, aurostd::xoption& vpflow, filetype ftype = txt_ft, bool standalone = true, bool already_calculated = false, double sym_eps = AUROSTD_MAX_DOUBLE, bool no_scan = false, int setting = 1, bool suppress_Wyckoff = false); // DX20210211
-  string PrintSGData(xstructure& xstr,
-                     aurostd::xoption& vpflow,
-                     aurostd::JSON::object& json,
-                     filetype ftype = txt_ft,
-                     bool standalone = true,
-                     bool already_calculated = false,
-                     double sym_eps = AUROSTD_MAX_DOUBLE,
-                     bool no_scan = false,
-                     int setting = 1,
-                     bool suppress_Wyckoff = false); // DX20210211
+  void PrintDisplacements(xstructure str, const double cutoff, std::ostream& oss = std::cout);
+  void PrintDistances(xstructure str, const double cutoff, std::ostream& oss = std::cout);
+  void PrintEwald(const xstructure& in_str, double& epoint, double& ereal, double& erecip, double& eewald, double& eta, const double& SUMTOL, std::ostream& oss = std::cout);
+  void PrintGulp(const xstructure&, std::ostream& oss = std::cout);
+  std::string PrintSGData(xstructure& xstr, filetype ftype = txt_ft, bool standalone = true, bool already_calculated = false, double sym_eps = AUROSTD_MAX_DOUBLE, bool no_scan = false, int setting = 1, bool supress_Wyckoff = false); // DX20210211
+  std::string PrintSGData(xstructure& xstr,
+                          aurostd::xoption& vpflow,
+                          filetype ftype = txt_ft,
+                          bool standalone = true,
+                          bool already_calculated = false,
+                          double sym_eps = AUROSTD_MAX_DOUBLE,
+                          bool no_scan = false,
+                          int setting = 1,
+                          bool suppress_Wyckoff = false); // DX20210211
+  std::string PrintSGData(xstructure& xstr,
+                          aurostd::xoption& vpflow,
+                          aurostd::JSON::object& json,
+                          filetype ftype = txt_ft,
+                          bool standalone = true,
+                          bool already_calculated = false,
+                          double sym_eps = AUROSTD_MAX_DOUBLE,
+                          bool no_scan = false,
+                          int setting = 1,
+                          bool suppress_Wyckoff = false); // DX20210211
 
-  string PrintWyckoffData(xstructure& xstr, filetype ftype = txt_ft, bool already_calculated = false, double sym_eps = AUROSTD_MAX_DOUBLE, bool no_scan = false, int setting = 1); // DX20210610
+  std::string PrintWyckoffData(xstructure& xstr, filetype ftype = txt_ft, bool already_calculated = false, double sym_eps = AUROSTD_MAX_DOUBLE, bool no_scan = false, int setting = 1); // DX20210610
 } // namespace pflow
 void PrintKmesh(const aurostd::xmatrix<double>& kmesh, std::ostream& oss = std::cout); // HERE
 void PrintImages(xstructure strA, xstructure strB, const int& ni, const std::string& path_flag);
@@ -632,54 +733,42 @@ void ParseChemFormula(std::string& ChemFormula, std::vector<std::string>& ChemNa
 void ParseChemFormulaIndividual(uint nchar, std::string& ChemFormula, std::string& AtomSymbol, float& AtomConc);
 
 namespace pflow { // CO20190601
-  using std::cout;
-  using std::deque;
-  using std::ofstream;
-  using std::string;
-  using std::stringstream;
-  using std::vector;
-  void GeneralizedStackingFaultEnergyCalculation(const aurostd::xoption& vpflow, std::istream& input, ostream& oss = cout); // CO20190321
-  void GeneralizedStackingFaultEnergyCalculation(const aurostd::xoption& vpflow, const xstructure& xstr_in, ostream& oss = cout); // CO20190321
-  void GeneralizedStackingFaultEnergyCalculation(const aurostd::xoption& vpflow, std::istream& input, const _aflags& aflags, const _kflags& kflags, const _vflags& vflags, ostream& oss = cout); // CO20190321
-  void GeneralizedStackingFaultEnergyCalculation(const aurostd::xoption& vpflow, const xstructure& xstr_in, const _aflags& aflags, const _kflags& kflags, const _vflags& vflags, ostream& oss = cout); // CO20190321
-  void GeneralizedStackingFaultEnergyCalculation(const aurostd::xoption& vpflow, std::istream& input, ofstream& FileMESSAGE, ostream& oss = cout); // CO20190321
-  void GeneralizedStackingFaultEnergyCalculation(const aurostd::xoption& vpflow, const xstructure& xstr_in, ofstream& FileMESSAGE, ostream& oss = cout); // CO20190321
-  void GeneralizedStackingFaultEnergyCalculation(const aurostd::xoption& vpflow, std::istream& input, const _aflags& aflags, const _kflags& kflags, const _vflags& vflags, ofstream& FileMESSAGE, ostream& oss = cout); // CO20190321
-  void GeneralizedStackingFaultEnergyCalculation(const aurostd::xoption& vpflow, const xstructure& xstr_in, const _aflags& aflags, const _kflags& kflags, const _vflags& vflags, ofstream& FileMESSAGE, ostream& oss = cout); // CO20190321
-  void CleavageEnergyCalculation(const aurostd::xoption& vpflow, std::istream& input, ostream& oss = cout); // CO20190321
-  void CleavageEnergyCalculation(const aurostd::xoption& vpflow, const xstructure& xstr_in, ostream& oss = cout); // CO20190321
-  void CleavageEnergyCalculation(const aurostd::xoption& vpflow, std::istream& input, const _aflags& aflags, const _kflags& kflags, const _vflags& vflags, ostream& oss = cout); // CO20190321
-  void CleavageEnergyCalculation(const aurostd::xoption& vpflow, const xstructure& xstr_in, const _aflags& aflags, const _kflags& kflags, const _vflags& vflags, ostream& oss = cout); // CO20190321
-  void CleavageEnergyCalculation(const aurostd::xoption& vpflow, std::istream& input, ofstream& FileMESSAGE, ostream& oss = cout); // CO20190321
-  void CleavageEnergyCalculation(const aurostd::xoption& vpflow, const xstructure& xstr_in, ofstream& FileMESSAGE, ostream& oss = cout); // CO20190321
-  void CleavageEnergyCalculation(const aurostd::xoption& vpflow, std::istream& input, const _aflags& aflags, const _kflags& kflags, const _vflags& vflags, ofstream& FileMESSAGE, ostream& oss = cout); // CO20190321
-  void CleavageEnergyCalculation(const aurostd::xoption& vpflow, const xstructure& xstr_in, const _aflags& aflags, const _kflags& kflags, const _vflags& vflags, ofstream& FileMESSAGE, ostream& oss = cout); // CO20190321
+  void GeneralizedStackingFaultEnergyCalculation(const aurostd::xoption& vpflow, std::istream& input, std::ostream& oss = std::cout); // CO20190321
+  void GeneralizedStackingFaultEnergyCalculation(const aurostd::xoption& vpflow, const xstructure& xstr_in, std::ostream& oss = std::cout); // CO20190321
+  void GeneralizedStackingFaultEnergyCalculation(const aurostd::xoption& vpflow, std::istream& input, const _aflags& aflags, const _kflags& kflags, const _vflags& vflags, std::ostream& oss = std::cout); // CO20190321
+  void GeneralizedStackingFaultEnergyCalculation(const aurostd::xoption& vpflow, const xstructure& xstr_in, const _aflags& aflags, const _kflags& kflags, const _vflags& vflags, std::ostream& oss = std::cout); // CO20190321
+  void GeneralizedStackingFaultEnergyCalculation(const aurostd::xoption& vpflow, std::istream& input, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20190321
+  void GeneralizedStackingFaultEnergyCalculation(const aurostd::xoption& vpflow, const xstructure& xstr_in, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20190321
+  void GeneralizedStackingFaultEnergyCalculation(const aurostd::xoption& vpflow, std::istream& input, const _aflags& aflags, const _kflags& kflags, const _vflags& vflags, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20190321
+  void GeneralizedStackingFaultEnergyCalculation(const aurostd::xoption& vpflow, const xstructure& xstr_in, const _aflags& aflags, const _kflags& kflags, const _vflags& vflags, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20190321
+  void CleavageEnergyCalculation(const aurostd::xoption& vpflow, std::istream& input, std::ostream& oss = std::cout); // CO20190321
+  void CleavageEnergyCalculation(const aurostd::xoption& vpflow, const xstructure& xstr_in, std::ostream& oss = std::cout); // CO20190321
+  void CleavageEnergyCalculation(const aurostd::xoption& vpflow, std::istream& input, const _aflags& aflags, const _kflags& kflags, const _vflags& vflags, std::ostream& oss = std::cout); // CO20190321
+  void CleavageEnergyCalculation(const aurostd::xoption& vpflow, const xstructure& xstr_in, const _aflags& aflags, const _kflags& kflags, const _vflags& vflags, std::ostream& oss = std::cout); // CO20190321
+  void CleavageEnergyCalculation(const aurostd::xoption& vpflow, std::istream& input, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20190321
+  void CleavageEnergyCalculation(const aurostd::xoption& vpflow, const xstructure& xstr_in, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20190321
+  void CleavageEnergyCalculation(const aurostd::xoption& vpflow, std::istream& input, const _aflags& aflags, const _kflags& kflags, const _vflags& vflags, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20190321
+  void CleavageEnergyCalculation(const aurostd::xoption& vpflow, const xstructure& xstr_in, const _aflags& aflags, const _kflags& kflags, const _vflags& vflags, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout); // CO20190321
 
   bool findClosedPackingPlane(std::istream& input); // CO20191110
   bool findClosedPackingPlane(const xstructure& xstr); // CO20191110
 } // namespace pflow
 
 namespace pflow {
-  using std::cout;
-  using std::deque;
-  using std::ofstream;
-  using std::string;
-  using std::stringstream;
-  using std::vector;
-  void GetXray2ThetaIntensity(const xstructure& str, vector<double>& v_twotheta, vector<double>& v_intensity, double lambda = XRAY_RADIATION_COPPER_Kalpha); // CO20190520
-  vector<uint> GetXrayPeaks(const xstructure& str, vector<double>& v_twotheta, vector<double>& v_intensity, vector<double>& v_intensity_smooth, double lambda = XRAY_RADIATION_COPPER_Kalpha); // CO20190520 //CO20190620 - v_peaks_amplitude not needed
-  vector<uint> GetXrayPeaks(const vector<double>& v_twotheta, const vector<double>& v_intensity, vector<double>& v_intensity_smooth); // CO20190520  //CO20190620 - v_peaks_amplitude not needed
-  void GetXray(const xstructure& str, vector<double>& dist, vector<double>& sf, vector<double>& scatt_fact, vector<double>& mass, vector<double>& twoB_vec, double lambda = XRAY_RADIATION_COPPER_Kalpha); // CO20190520
+  void GetXray2ThetaIntensity(const xstructure& str, std::vector<double>& v_twotheta, std::vector<double>& v_intensity, double lambda = XRAY_RADIATION_COPPER_Kalpha); // CO20190520
+  std::vector<uint> GetXrayPeaks(const xstructure& str, std::vector<double>& v_twotheta, std::vector<double>& v_intensity, std::vector<double>& v_intensity_smooth, double lambda = XRAY_RADIATION_COPPER_Kalpha); // CO20190520 //CO20190620 - v_peaks_amplitude not needed
+  std::vector<uint> GetXrayPeaks(const std::vector<double>& v_twotheta, const std::vector<double>& v_intensity, std::vector<double>& v_intensity_smooth); // CO20190520  //CO20190620 - v_peaks_amplitude not needed
+  void GetXray(const xstructure& str, std::vector<double>& dist, std::vector<double>& sf, std::vector<double>& scatt_fact, std::vector<double>& mass, std::vector<double>& twoB_vec, double lambda = XRAY_RADIATION_COPPER_Kalpha); // CO20190520
   void GetXrayData(const xstructure& str,
-                   vector<double>& dist,
-                   vector<double>& sf,
-                   vector<double>& scatt_fact,
-                   vector<double>& mass,
-                   vector<double>& twoB_vec,
-                   vector<vector<double>>& ids,
+                   std::vector<double>& dist,
+                   std::vector<double>& sf,
+                   std::vector<double>& scatt_fact,
+                   std::vector<double>& mass,
+                   std::vector<double>& twoB_vec,
+                   std::vector<std::vector<double>>& ids,
                    aurostd::matrix<double>& data,
                    double lambda = XRAY_RADIATION_COPPER_Kalpha); // CO20190409  //CO20190620 - intmax can be grabbed later  //CO20200404 pflow::matrix()->aurostd::matrix()
-  vector<vector<int>> getvvitypesRDF(const xstructure& xstr); // CO20220627
+  std::vector<std::vector<int>> getvvitypesRDF(const xstructure& xstr); // CO20220627
   void GetRDF(const xstructure& xstr, aurostd::xmatrix<double>& rdf_all, const double rmax = 5.0, const int nbins = 25, bool raw_counts = false, const double sigma = 0.0, const int window_gaussian = 0); // CO20220627 - rewritten
   void GetRDFShells(const xstructure& str, const double& rmax, const int& nbins, const int& smooth_width, const aurostd::matrix<double>& rdf, aurostd::matrix<double>& rdfsh, aurostd::matrix<double>& rdfsh_loc); // CO20200404 pflow::matrix()->aurostd::matrix()
   double RdfSh_RMS(const int iaA, const int iaB, const int nsh_max, const int nt, const aurostd::matrix<double>& rdfsh_all_A, const aurostd::matrix<double>& rdfsh_all_B); // CO20200404 pflow::matrix()->aurostd::matrix()
@@ -688,7 +777,7 @@ namespace pflow {
                     const aurostd::matrix<double>& rdfsh_all_A,
                     const aurostd::matrix<double>& rdfsh_all_B,
                     const int nsh,
-                    vector<int>& best_match,
+                    std::vector<int>& best_match,
                     aurostd::matrix<double>& rms_mat); // CO20200404 pflow::matrix()->aurostd::matrix()
   aurostd::matrix<double> GetSmoothRDF(const aurostd::matrix<double>& rdf, const double& sigma); // CO20200404 pflow::matrix()->aurostd::matrix()
   void CmpStrDist(xstructure str1, xstructure str2, const double& cutoff, aurostd::matrix<double>& dist1, aurostd::matrix<double>& dist2, aurostd::matrix<double>& dist_diff, aurostd::matrix<double>& dist_diff_n); // CO20200404 pflow::matrix()->aurostd::matrix()
@@ -702,19 +791,14 @@ int Sign(const double& x);
 // ---------------------------------------------------------------------------
 // PDOSDATA PDOSDATA PDOSDATA PDOSDATA PDOSDATA PDOSDATA PDOSDATA PDOSDATA PDO
 namespace pflow {
-  using std::cout;
-  using std::ofstream;
-  using std::ostream;
-  using std::string;
-  using std::vector;
   class pdosdata {
   public:
     // Constructors
     pdosdata(); // default
-    void PrintParams(ostream& oss, const vector<string>& Ltotnames);
-    void PrintPDOS(ostream& oss, const int& sp);
+    void PrintParams(std::ostream& oss, const std::vector<std::string>& Ltotnames);
+    void PrintPDOS(std::ostream& oss, const int& sp);
     // variables
-    string PDOSinfile;
+    std::string PDOSinfile;
     aurostd::matrix<int> pdos_at; // CO20200404 pflow::matrix()->aurostd::matrix()
     aurostd::matrix<int> pdos_k; // CO20200404 pflow::matrix()->aurostd::matrix()
     aurostd::matrix<int> pdos_b; // CO20200404 pflow::matrix()->aurostd::matrix()
@@ -735,12 +819,6 @@ namespace pflow {
 // ---------------------------------------------------------------------------
 // RAY TRACING RAY TRACING RAY TRACING RAY TRACING RAY TRACING RAY TRACING RAY
 namespace pflow {
-  using std::cout;
-  using std::ifstream;
-  using std::ofstream;
-  using std::ostream;
-  using std::string;
-  using std::vector;
   class rtparams {
   public:
     void free();
@@ -755,80 +833,80 @@ namespace pflow {
     // variables
     double resx;
     double resy;
-    vector<double> viewdir;
+    std::vector<double> viewdir;
     int viewdir_s;
-    vector<double> updir;
+    std::vector<double> updir;
     int updir_s;
     double zoom;
     double aspectratio;
     double antialiasing;
     double raydepth;
-    vector<double> center;
-    vector<double> center_guide;
+    std::vector<double> center;
+    std::vector<double> center_guide;
     int center_s;
-    vector<double> background;
+    std::vector<double> background;
     aurostd::matrix<double> lightcenter; // CO20200404 pflow::matrix()->aurostd::matrix()
-    vector<double> lightrad;
+    std::vector<double> lightrad;
     aurostd::matrix<double> lightcolor; // CO20200404 pflow::matrix()->aurostd::matrix()
     // Sphere texture variables (ambient, diffuse, specular, opacity)
     aurostd::matrix<double> sphtex_tex; // CO20200404 pflow::matrix()->aurostd::matrix()
-    vector<double> sphtex_tex_def;
+    std::vector<double> sphtex_tex_def;
     aurostd::matrix<double> sphtex_color; // CO20200404 pflow::matrix()->aurostd::matrix()
-    vector<double> sphtex_color_def;
+    std::vector<double> sphtex_color_def;
     aurostd::matrix<double> sphtex_phong; // CO20200404 pflow::matrix()->aurostd::matrix()
-    vector<double> sphtex_phong_def;
-    vector<string> sphtex_names;
-    vector<double> sph_rad;
+    std::vector<double> sphtex_phong_def;
+    std::vector<std::string> sphtex_names;
+    std::vector<double> sph_rad;
     // Plane variables
     int plane;
     int plane_s;
-    vector<double> plane_center;
-    vector<double> plane_normal;
-    vector<double> plane_color;
-    vector<double> planetex_tex;
-    vector<double> plane_center_def;
-    vector<double> plane_normal_def;
-    vector<double> plane_color_def;
-    vector<double> planetex_tex_def;
+    std::vector<double> plane_center;
+    std::vector<double> plane_normal;
+    std::vector<double> plane_color;
+    std::vector<double> planetex_tex;
+    std::vector<double> plane_center_def;
+    std::vector<double> plane_normal_def;
+    std::vector<double> plane_color_def;
+    std::vector<double> planetex_tex_def;
     int plane_center_s;
     int plane_normal_s;
     int plane_color_s;
     int planetex_tex_s;
     double sph_rad_def;
-    string shading;
-    string outfile;
+    std::string shading;
+    std::string outfile;
     aurostd::matrix<double> sc; // CO20200404 pflow::matrix()->aurostd::matrix()
     int sc_s;
     int calc_type;
-    vector<string> input_files;
+    std::vector<std::string> input_files;
     int first_set;
-    string insert_file;
-    vector<double> rotation;
-    vector<double> struct_origin;
+    std::string insert_file;
+    std::vector<double> rotation;
+    std::vector<double> struct_origin;
     int struct_origin_s;
   };
 
   void SetRTParams(xstructure& str, pflow::rtparams& rtp);
-  vector<xstructure> GetStrVecFromOUTCAR_XDATCAR(ifstream& outcar_inf, ifstream& xdatcar_inf);
-  void GetDatFromOutcar(vector<aurostd::matrix<double>>& lat_vec, deque<int>& num_each_type, ifstream& outcar_inf); // CO20200404 pflow::matrix()->aurostd::matrix()
-  void GetDatFromXdatcar(vector<aurostd::matrix<double>>& fpos_vec, ifstream& xdatcar_inf); // CO20200404 pflow::matrix()->aurostd::matrix()
-  vector<xstructure> GetStrVecFromOUTCAR_XDATCAR(ifstream& outcar_inf, ifstream& xdatcar_inf);
-  void PrintStrVec(const vector<xstructure>& str_vec, ostream& outf);
-  void ReadInRTParams(ifstream& rtinfile, pflow::rtparams& rtp);
-  void ReadInStrVec(vector<xstructure>& str_vec, ifstream& strlist_inf);
-  void JoinStrVec(vector<xstructure> str_vec_1, vector<xstructure> str_vec_2, vector<xstructure>& str_vec_tot);
+  std::vector<xstructure> GetStrVecFromOUTCAR_XDATCAR(std::ifstream& outcar_inf, std::ifstream& xdatcar_inf);
+  void GetDatFromOutcar(std::vector<aurostd::matrix<double>>& lat_vec, std::deque<int>& num_each_type, std::ifstream& outcar_inf); // CO20200404 pflow::matrix()->aurostd::matrix()
+  void GetDatFromXdatcar(std::vector<aurostd::matrix<double>>& fpos_vec, std::ifstream& xdatcar_inf); // CO20200404 pflow::matrix()->aurostd::matrix()
+  std::vector<xstructure> GetStrVecFromOUTCAR_XDATCAR(std::ifstream& outcar_inf, std::ifstream& xdatcar_inf);
+  void PrintStrVec(const std::vector<xstructure>& str_vec, std::ostream& outf);
+  void ReadInRTParams(std::ifstream& rtinfile, pflow::rtparams& rtp);
+  void ReadInStrVec(std::vector<xstructure>& str_vec, std::ifstream& strlist_inf);
+  void JoinStrVec(std::vector<xstructure> str_vec_1, std::vector<xstructure> str_vec_2, std::vector<xstructure>& str_vec_tot);
   void SetStrFromRTParams(xstructure& str, pflow::rtparams& rtp);
-  void SuperCellStrVec(vector<xstructure>& str_vec, const aurostd::matrix<double>& sc); // CO20200404 pflow::matrix()->aurostd::matrix()
+  void SuperCellStrVec(std::vector<xstructure>& str_vec, const aurostd::matrix<double>& sc); // CO20200404 pflow::matrix()->aurostd::matrix()
   void UpDateRTParams(pflow::rtparams& rtp, const int& istr, int nstr);
   void SetRTParams(xstructure& str, pflow::rtparams& rtp);
   void GetRTDatFile(xstructure str, const pflow::rtparams& rtp, std::ostringstream& rtdat_file);
-  string PrintRTDatFile(std::ostringstream& rtdat_file, const pflow::rtparams& rt_params);
-  string CreateRTtgaFile(const string& datfile, const pflow::rtparams& rt_params);
-  string CreateRTjpgFile(const string& tgafile, const pflow::rtparams& rt_params);
+  std::string PrintRTDatFile(std::ostringstream& rtdat_file, const pflow::rtparams& rt_params);
+  std::string CreateRTtgaFile(const std::string& datfile, const pflow::rtparams& rt_params);
+  std::string CreateRTjpgFile(const std::string& tgafile, const pflow::rtparams& rt_params);
   void GetRTencFile(const pflow::rtparams& rtp, const int nim, std::ostringstream& os);
-  string PrintRTencFile(const pflow::rtparams& rt_params, std::ostringstream& rtenc_file);
-  string CreateRTmpgFile(const pflow::rtparams& rt_params, const string& encfile);
-  void RayTraceManager(vector<string>);
+  std::string PrintRTencFile(const pflow::rtparams& rt_params, std::ostringstream& rtenc_file);
+  std::string CreateRTmpgFile(const pflow::rtparams& rt_params, const std::string& encfile);
+  void RayTraceManager(std::vector<std::string>);
 
 } // namespace pflow
 
@@ -836,16 +914,11 @@ namespace pflow {
 // PROJDATA PROJDATA PROJDATA PROJDATA PROJDATA PROJDATA PROJDATA PROJDATA PRO
 
 namespace pflow {
-  using std::cout;
-  using std::ofstream;
-  using std::ostream;
-  using std::string;
-  using std::vector;
   class projdata {
   public:
     // Constructors
     projdata(); // default
-    void Print(ostream& outf);
+    void Print(std::ostream& outf);
     // variables
     int nl_max; // 4 for s,p,d,f orbitals
     int nlm_max; // 16 for s,p,d,f orbitals
@@ -857,26 +930,26 @@ namespace pflow {
     int nbands;
     int nions;
     int ntypes;
-    vector<int> num_each_type;
+    std::vector<int> num_each_type;
     aurostd::matrix<double> wfermi_u; // CO20200404 pflow::matrix()->aurostd::matrix()
     aurostd::matrix<double> wfermi_d; // CO20200404 pflow::matrix()->aurostd::matrix()
-    vector<double> wkpt;
-    vector<aurostd::matrix<aurostd::matrix<std::complex<double>>>> pdat_u; // CO20200404 pflow::matrix()->aurostd::matrix()
-    vector<aurostd::matrix<aurostd::matrix<std::complex<double>>>> pdat_d; // CO20200404 pflow::matrix()->aurostd::matrix()
+    std::vector<double> wkpt;
+    std::vector<aurostd::matrix<aurostd::matrix<std::complex<double>>>> pdat_u; // CO20200404 pflow::matrix()->aurostd::matrix()
+    std::vector<aurostd::matrix<aurostd::matrix<std::complex<double>>>> pdat_d; // CO20200404 pflow::matrix()->aurostd::matrix()
     aurostd::matrix<aurostd::matrix<double>> occ_vs_ion_kpt_bnd_lm_u; // CO20200404 pflow::matrix()->aurostd::matrix()
     aurostd::matrix<aurostd::matrix<double>> occ_vs_ion_kpt_bnd_lm_d; // CO20200404 pflow::matrix()->aurostd::matrix()
     aurostd::matrix<aurostd::matrix<double>> occ_vs_ion_kpt_bnd_l_u; // CO20200404 pflow::matrix()->aurostd::matrix()
     aurostd::matrix<aurostd::matrix<double>> occ_vs_ion_kpt_bnd_l_d; // CO20200404 pflow::matrix()->aurostd::matrix()
     aurostd::matrix<aurostd::matrix<double>> occ_vs_ion_kpt_bnd_lmtot_u; // CO20200404 pflow::matrix()->aurostd::matrix()
     aurostd::matrix<aurostd::matrix<double>> occ_vs_ion_kpt_bnd_lmtot_d; // CO20200404 pflow::matrix()->aurostd::matrix()
-    vector<aurostd::matrix<double>> occ_vs_ion_kpt_lm_u; // CO20200404 pflow::matrix()->aurostd::matrix()
-    vector<aurostd::matrix<double>> occ_vs_ion_kpt_lm_d; // CO20200404 pflow::matrix()->aurostd::matrix()
-    vector<aurostd::matrix<double>> occ_vs_ion_kpt_l_u; // CO20200404 pflow::matrix()->aurostd::matrix()
-    vector<aurostd::matrix<double>> occ_vs_ion_kpt_l_d; // CO20200404 pflow::matrix()->aurostd::matrix()
-    vector<aurostd::matrix<double>> occ_vs_ion_bnd_lm_u; // CO20200404 pflow::matrix()->aurostd::matrix()
-    vector<aurostd::matrix<double>> occ_vs_ion_bnd_lm_d; // CO20200404 pflow::matrix()->aurostd::matrix()
-    vector<aurostd::matrix<double>> occ_vs_ion_bnd_l_u; // CO20200404 pflow::matrix()->aurostd::matrix()
-    vector<aurostd::matrix<double>> occ_vs_ion_bnd_l_d; // CO20200404 pflow::matrix()->aurostd::matrix()
+    std::vector<aurostd::matrix<double>> occ_vs_ion_kpt_lm_u; // CO20200404 pflow::matrix()->aurostd::matrix()
+    std::vector<aurostd::matrix<double>> occ_vs_ion_kpt_lm_d; // CO20200404 pflow::matrix()->aurostd::matrix()
+    std::vector<aurostd::matrix<double>> occ_vs_ion_kpt_l_u; // CO20200404 pflow::matrix()->aurostd::matrix()
+    std::vector<aurostd::matrix<double>> occ_vs_ion_kpt_l_d; // CO20200404 pflow::matrix()->aurostd::matrix()
+    std::vector<aurostd::matrix<double>> occ_vs_ion_bnd_lm_u; // CO20200404 pflow::matrix()->aurostd::matrix()
+    std::vector<aurostd::matrix<double>> occ_vs_ion_bnd_lm_d; // CO20200404 pflow::matrix()->aurostd::matrix()
+    std::vector<aurostd::matrix<double>> occ_vs_ion_bnd_l_u; // CO20200404 pflow::matrix()->aurostd::matrix()
+    std::vector<aurostd::matrix<double>> occ_vs_ion_bnd_l_d; // CO20200404 pflow::matrix()->aurostd::matrix()
     aurostd::matrix<double> occ_vs_ion_lm_u; // CO20200404 pflow::matrix()->aurostd::matrix()
     aurostd::matrix<double> occ_vs_ion_lm_d; // CO20200404 pflow::matrix()->aurostd::matrix()
     aurostd::matrix<double> occ_vs_ion_l_u; // CO20200404 pflow::matrix()->aurostd::matrix()
@@ -886,10 +959,10 @@ namespace pflow {
     int sp;
     int rspin;
     aurostd::matrix<double> kpts; // CO20200404 pflow::matrix()->aurostd::matrix()
-    vector<string> LMnames;
-    vector<string> Lnames;
-    vector<string> LLMnames;
-    string PROOUTinfile;
+    std::vector<std::string> LMnames;
+    std::vector<std::string> Lnames;
+    std::vector<std::string> LLMnames;
+    std::string PROOUTinfile;
     aurostd::matrix<double> lat; // CO20200404 pflow::matrix()->aurostd::matrix()
   };
 } // namespace pflow
@@ -958,7 +1031,14 @@ namespace pflow {
     void Print(std::ostream& outf) const;
   };
 
-  bool ReadCHGCAR(xstructure& str, std::stringstream& chgcar_header, std::vector<int>& ngrid, std::vector<int>& format_dim, std::vector<double>& chg_tot, std::vector<double>& chg_diff, std::stringstream& chgcar_ss, std::ostream& oss = std::cout);
+  bool ReadCHGCAR(xstructure& str,
+                  std::stringstream& chgcar_header,
+                  std::vector<int>& ngrid,
+                  std::vector<int>& format_dim,
+                  std::vector<double>& chg_tot,
+                  std::vector<double>& chg_diff,
+                  std::stringstream& chgcar_ss,
+                  std::ostream& oss = std::cout);
   bool ReadChg(xstructure& str, std::vector<int>& ngrid, std::vector<double>& chg_tot, std::vector<double>& chg_diff, std::istream& chgfile);
   void GetChgInt(std::vector<aurostd::matrix<double>>& rad_chg_int,
                  aurostd::matrix<double>& vor_chg_int, // CO20200404 pflow::matrix()->aurostd::matrix()
@@ -1029,15 +1109,15 @@ namespace pflow {
   void BZMAX(std::istream& input);
 }
 
-// ME20190628 - prettyPrintCompound from CHULL
+// ME20190628
 namespace pflow {
   // Precision for pretty printing
   const int COEF_PRECISION = 4;
 
   std::string prettyPrintCompound(const std::string&, vector_reduction_type vred = gcd_vrt, bool = true, filetype ftype = latex_ft); // char=_latex_  //CO20190629
-  std::string prettyPrintCompound(const std::vector<std::string>&, const std::vector<uint>&, vector_reduction_type vred = gcd_vrt, bool = true, filetype ftype = latex_ft); // char=_latex_  //DX20200727 - uint variant
+  std::string prettyPrintCompound(const std::vector<std::string>&, const std::vector<uint>&, vector_reduction_type vred = gcd_vrt, bool = true, filetype ftype = latex_ft); // char=_latex_  //DX20200727 - uint std::variant
   std::string prettyPrintCompound(const std::vector<std::string>&, const std::vector<double>&, vector_reduction_type vred = gcd_vrt, bool = true, filetype ftype = latex_ft); // char=_latex_  //CO20190629
-  std::string prettyPrintCompound(const std::vector<std::string>&, const aurostd::xvector<uint>&, vector_reduction_type vred = gcd_vrt, bool = true, filetype ftype = latex_ft); // char=_latex_  //CO20200727 - uint variant
+  std::string prettyPrintCompound(const std::vector<std::string>&, const aurostd::xvector<uint>&, vector_reduction_type vred = gcd_vrt, bool = true, filetype ftype = latex_ft); // char=_latex_  //CO20200727 - uint std::variant
   std::string prettyPrintCompound(const std::vector<std::string>&, const aurostd::xvector<double>&, vector_reduction_type vred = gcd_vrt, bool = true, filetype ftype = latex_ft); // char=_latex_  //CO20190629
 
 } // namespace pflow
@@ -1140,34 +1220,20 @@ namespace pflow {
   uint getTORQUEIDFromString(const std::string& torqueid_str);
   class AQueue : public xStream {
   public:
-    // NECESSARY PUBLIC CLASS METHODS - START
-    // constructors - START
-    AQueue(std::ostream& oss = std::cout);
-    AQueue(std::ofstream& FileMESSAGE, std::ostream& oss = std::cout);
-    AQueue(const aurostd::xoption& vpflow, std::ostream& oss = std::cout);
-    AQueue(const aurostd::xoption& vpflow, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout);
-    AQueue(const AQueue& b);
-    // constructors - STOP
-    ~AQueue();
-    const AQueue& operator=(const AQueue& other);
-    void clear();
-    // NECESSARY PUBLIC CLASS METHODS - STOP
+    AQueue(std::ostream& oss = std::cout) : xStream(oss) {}
+    AQueue(std::ofstream& FileMESSAGE, std::ostream& oss = std::cout) : xStream(FileMESSAGE, oss) {}
+    AQueue(const aurostd::xoption& vpflow, std::ostream& oss = std::cout) : xStream(oss), m_flags(vpflow) {}
+    AQueue(const aurostd::xoption& vpflow, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout) : xStream(FileMESSAGE, oss), m_flags(vpflow) {}
+
+    void clear() { *this = AQueue(); }
 
     // general attributes
-    bool m_initialized;
+    bool m_initialized = false;
     aurostd::xoption m_flags;
-    queue_system m_qsys;
+    queue_system m_qsys = QUEUE_SLURM;
     std::vector<APartition> m_partitions;
     std::vector<ANode> m_nodes;
     std::vector<AJob> m_jobs;
-
-    // initialization methods
-    bool initialize(std::ostream& oss);
-    bool initialize(std::ofstream& FilMESSAGE, std::ostream& oss);
-    bool initialize(const aurostd::xoption& vpflow, std::ostream& oss);
-    bool initialize(const aurostd::xoption& vpflow, std::ofstream& FilMESSAGE, std::ostream& oss);
-    bool initialize();
-    bool initialize(const aurostd::xoption& vpflow);
 
     // setters
     void setFlags(const aurostd::xoption& vpflow);
@@ -1189,11 +1255,6 @@ namespace pflow {
     // methods
     void getQueue(); // wrapper around processQueue() with try's for failed external calls
   private:
-    // NECESSARY private CLASS METHODS - START
-    void free();
-    void copy(const AQueue& b);
-    // NECESSARY END CLASS METHODS - END
-
     void freeQueue();
     void processQueue(); // main processer for external queue commands (pbsnodes, qstat, squeue, etc.)
 

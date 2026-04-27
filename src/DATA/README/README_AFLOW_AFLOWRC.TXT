@@ -925,176 +925,43 @@ DEFAULT_GNUPLOT_PNG_FONT_BOLD_ITALICS
   default: "Arial_BoldItalic"
 
 ####################################################################################################
-DEFAULTS CHULL
+DEFAULTS NHULL
 
-DEFAULT_CHULL_ALLOWED_DFT_TYPES
+DEFAULT_NHULL_ALLOWED_DFT_TYPES
   description: Defines the allowed entries based on the DFT calculation type.
   type: string
   choices: "US", "GGA", "PAW_LDA", "PAW_GGA", "PAW_PBE", "PAW_PBE_KIN", "GW", "HSE06"
   default: "PAW_PBE,PAW_PBE_KIN"
 
-DEFAULT_CHULL_ALLOW_ALL_FORMATION_ENERGIES
+DEFAULT_NHULL_ALLOW_ALL_FORMATION_ENERGIES
   description: Allows all entries independent of DFT calculation type.
   type: bool
   default: 0
 
-DEFAULT_CHULL_COUNT_THRESHOLD_BINARIES
+DEFAULT_NHULL_COUNT_THRESHOLD_BINARIES
   description: Defines the minimum number of entries for a reliable binary hull.
   type: integer
   default: 200
 
-DEFAULT_CHULL_PERFORM_OUTLIER_ANALYSIS
+DEFAULT_NHULL_PERFORM_OUTLIER_ANALYSIS
   description: Enables determination of outliers.
   type: bool
   default: 1
 
-DEFAULT_CHULL_OUTLIER_ANALYSIS_COUNT_THRESHOLD_BINARIES
+DEFAULT_NHULL_OUTLIER_ANALYSIS_COUNT_THRESHOLD_BINARIES
   description: Defines the minimum number of entries for a reliable outlier analysis. Only phases stable with respect to their end-members are considered for the outlier analysis (below the zero H_f tie-line).
   type: integer
   default: 75
 
-DEFAULT_CHULL_OUTLIER_MULTIPLIER
+DEFAULT_NHULL_OUTLIER_MULTIPLIER
   description: Defines the bounds beyond the interquartile range for which points are considered outliers.
   type: double
   default: 3.25
 
-DEFAULT_CHULL_IGNORE_KNOWN_ILL_CONVERGED
+DEFAULT_NHULL_IGNORE_KNOWN_ILL_CONVERGED
   description: AFLOW maintains a list of (older) prototypes known to have converged poorly. These entries are likely outliers. If this flag is on (1), then the entries are removed automatically. Turning this flag off (0) is not recommended.
   type: bool
   default: 1
-
-DEFAULT_CHULL_LATEX_BANNER
-  description: Defines banner type.
-  type: integer
-  choices: 0 (no banner), 1 (normal banner), 2 (small banner)
-  default: 1
-
-DEFAULT_CHULL_LATEX_COMPOUNDS_COLUMN
-  description: Adds an additional column to the PDF table output with the entry compound label.
-  type: bool
-  default: 0
-
-DEFAULT_CHULL_LATEX_STOICH_HEADER
-  description: Toggles between a reduced composition header (default) or a stoichiometry header for the entries table.
-  type: bool
-  default: 0
-
-DEFAULT_CHULL_LATEX_PLOT_UNARIES
-  description: Incorporates the end-members in the convex hull illustration.
-  type: bool
-  default: 0
-
-DEFAULT_CHULL_LATEX_PLOT_OFF_HULL
-  description: Incorporates unstable phases in the convex hull illustration, but excludes phases unstable with respect to their end-members (above the zero H_f tie-line).
-  type: integer
-  choices: -1 (default: true for 2-dimensional systems, false for 3-dimensional systems), 0 (false), 1 (true).
-  default: -1
-
-DEFAULT_CHULL_LATEX_PLOT_UNSTABLE
-  description: Incorporates all unstable phases in the convex hull illustration.
-  type: bool
-  default: 0
-
-DEFAULT_CHULL_LATEX_FILTER_SCHEME
-  description: Defines exclusion scheme for the convex hull illustration. In contrast to --neglect, this scheme is limited only to the illustration, points are still included in the analysis/report. The following strings are accepted: Z-axis (also Energy-axis) or Distance. Z-axis refers to a scheme that eliminates structures from the illustration based on their formation enthalpy. On the other hand, Distance refers to a scheme that eliminates structures from the illustration based on their distances from the hull. The criteria (value) for elimination is defined by DEFAULT_CHULL_LATEX_FILTER_VALUE.
-  type: string
-  choices: "z-axis", "distance"
-  default: ""
-
-DEFAULT_CHULL_LATEX_FILTER_VALUE
-  description: Defines the value beyond which points are excluded per the scheme defined with DEFAULT_CHULL_LATEX_FILTER_SCHEME.
-  type: bool
-  default: 0
-
-DEFAULT_CHULL_LATEX_COLOR_BAR
-  description: Defines whether to show the color bar graphic. Colors can still be incorporated without the color bar graphic.
-  type: bool
-  default: 1
-
-DEFAULT_CHULL_LATEX_HEAT_MAP
-  description: Defines whether to color the facets with heat maps illustrating their depth (3-dimensional illustration only).
-  type: bool
-  default: 1
-
-DEFAULT_CHULL_LATEX_COLOR_GRADIENT
-  description: Defines whether to incorporate a color scheme at all in the illustration. Turning this flag off will also turn off DEFAULT_CHULL_LATEX_COLOR_BAR and DEFAULT_CHULL_LATEX_HEAT_MAP.
-  type: bool
-  default: 1
-
-DEFAULT_CHULL_LATEX_COLOR_MAP
-  description: Defines the color map, options are presented in the PGFPLOTS Package Manual. Default is "rgb(0pt)=(0.035,0.270,0.809); rgb(63pt)=(1,0.644,0)".
-  type: string
-  default: ""
-
-DEFAULT_CHULL_LATEX_TERNARY_LABEL_COLOR
-  description: Defines the color used for ternary compounds. Default is white.
-  type: string
-  default: ""
-
-DEFAULT_CHULL_LATEX_REVERSE_AXIS
-  description: Flips the axes of binary convex hulls.
-  type: bool
-  default: 0
-
-DEFAULT_CHULL_LATEX_FACET_LINE_DROP_SHADOW
-  description: Adds a drop shadow underneath facet lines.
-  type: bool
-  default: 0
-
-DEFAULT_CHULL_LATEX_LINKS
-  description: Defines the links scheme. True/false, i.e., 0/1, will toggle all links on/off. 2 enables external hyperlinks only (no links to other sections of the PDF). 3 enables internal links only (no links to external pages).
-  type: bool
-  choices: 0 (false), 1 (true), 2 (external-only), or 3 (internal-only)
-  default: 1
-
-DEFAULT_CHULL_LATEX_LABEL_NAME
-  description: Defines the labeling scheme for phases shown on the convex hull. By default, the compound labels are shown, while the prototype label can also be specified. "icsd" shows the ICSD entry number designation (lowest for multiple equivalent ground-state structures reflecting icsd_canonical_auid) if appropriate. Also acceptable: both and none.
-  type: string
-  choices: "compound", "prototype", "both", "icsd", "none"
-  default: ""
-
-DEFAULT_CHULL_LATEX_META_LABELS
-  description: Enables verbose labels, including compound, prototype, H_f, T_S, and Delta H_f. Warning, significant overlap of labels should be expected.
-  type: bool
-  default: 0
-
-DEFAULT_CHULL_LATEX_LABELS_OFF_HULL
-  description: Enables labels for unstable points.
-  type: bool
-  default: 0
-
-DEFAULT_CHULL_LATEX_PLOT_REDUCE_COMPOSITION
-  description: Dictates whether compound labels on the plot are reduced. Only three values are accepted: -1 (default: true unless a binary is requested and an explicit "compounds" option is set for DEFAULT_CHULL_LATEX_LABEL_NAME), 0 (false), and 1 (true).
-  type: integer
-  choices: -1 (default), 0 (false), 1 (true)
-  default: -1
-
-DEFAULT_CHULL_LATEX_HELVETICA_FONT
-  description: Toggles the font scheme from Computer Modern (default) to Helvetica.
-  type: bool
-  default: 0
-
-DEFAULT_CHULL_LATEX_FONT_SIZE
-  description: Defines the font size of the labels on the convex hull illustration. Warning, other settings may override this default.
-  type: string
-  choices: "tiny", "scriptsize", "footnotesize", "small", "normalsize", "large" (default), "Large", "LARGE", "huge", "Huge".
-  default: ""
-
-DEFAULT_CHULL_LATEX_ROTATE_LABELS
-  description: Toggles whether labels are appropriately rotated.
-  type: bool
-  default: 1
-
-DEFAULT_CHULL_LATEX_BOLD_LABELS
-  description: Toggles whether labels are bolded. Only three values are accepted: -1 (default: false unless phase is a ternary), 0 (false), 1 (true).
-  type: integer
-  default: -1
-  choices -1 (default), 0 (false), or 1 (true)
-
-DEFAULT_CHULL_PNG_RESOLUTION
-  description: Default resolution for conversion pdf to png (convert via ImageMagick).
-  type: integer
-  default: 300
 
 ####################################################################################################
 DEFAULTS CCE

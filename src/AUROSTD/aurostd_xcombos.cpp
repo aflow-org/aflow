@@ -4,14 +4,14 @@
 // *                                                                         *
 // ***************************************************************************
 
-#ifndef _AUROSTD_XCOMBOS_CPP_
-#define _AUROSTD_XCOMBOS_CPP_
-
 #include "aurostd_xcombos.h"
 
 #include <algorithm>
 #include <cstddef>
+#include <fstream>
 #include <iostream>
+#include <sstream>
+#include <string>
 #include <vector>
 
 #include "aurostd.h"
@@ -22,9 +22,16 @@
 
 #define _DEBUG_XCOMBOS_ false
 
-using aurostd::xerror;
 using std::cerr;
 using std::endl;
+using std::ifstream;
+using std::iostream;
+using std::istringstream;
+using std::ofstream;
+using std::ostringstream;
+using std::string;
+using std::stringstream;
+using std::vector;
 
 namespace aurostd {
   //--------------------------------------------------------------------------------
@@ -650,7 +657,6 @@ namespace aurostd {
   }
 } // namespace aurostd
 
-#endif  // _AUROSTD_XCOMBOS_CPP_
 // ***************************************************************************
 // *                                                                         *
 // *           Aflow STEFANO CURTAROLO - Duke University 2003-2024           *

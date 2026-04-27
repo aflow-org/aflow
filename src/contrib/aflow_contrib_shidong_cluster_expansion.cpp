@@ -7,9 +7,6 @@
 // functions written by
 // 2010-2011: shidong.wang@duke.edu
 
-#ifndef _AFLOW_CONTRIB_SHIDONG_CLUSTER_EXPANSION_CPP_
-#define _AFLOW_CONTRIB_SHIDONG_CLUSTER_EXPANSION_CPP_
-
 #include "aflow_contrib_shidong_cluster_expansion.h"
 
 #include <algorithm>
@@ -393,7 +390,7 @@ unsigned long int CombinationNr(int num, int total_num) {
 
 // some special clusters used in CVM
 cecluster Octahedron() {
-  const _atom atom_tmp;
+  _atom atom_tmp;
   cecluster cluster1;
 
   atom_tmp.cpos(1) = 0.0;
@@ -430,7 +427,7 @@ cecluster Octahedron() {
 }
 
 cecluster DoubleTetrahedron() {
-  const _atom atom_tmp;
+  _atom atom_tmp;
   cecluster cluster1;
 
   atom_tmp.cpos(1) = 0.0;
@@ -467,7 +464,7 @@ cecluster DoubleTetrahedron() {
 }
 
 cecluster Tetrahedron() {
-  const _atom atom_tmp;
+  _atom atom_tmp;
   cecluster cluster1;
 
   atom_tmp.cpos(1) = 0.0;
@@ -494,7 +491,7 @@ cecluster Tetrahedron() {
 }
 
 cecluster Triplet() {
-  const _atom atom_tmp;
+  _atom atom_tmp;
   cecluster cluster1;
 
   atom_tmp.cpos(1) = 0.0;
@@ -516,7 +513,7 @@ cecluster Triplet() {
 }
 
 cecluster Pair() {
-  const _atom atom_tmp;
+  _atom atom_tmp;
   cecluster cluster1;
 
   atom_tmp.cpos(1) = 0.0;
@@ -1131,7 +1128,7 @@ int ceallclusters::EquivalentCluster(const vector<_sym_op> pgroup) {
   while (!rep_cluster.empty()) {
     cluster1 = rep_cluster.at(0);
     ucol = cluster1.structure.atoms.size();
-    const xmatrix<double> coord_atoms(lrow, lcol, urow, ucol);
+    xmatrix<double> coord_atoms(lrow, lcol, urow, ucol);
 
     _atom atom_tmp;
 
@@ -1372,7 +1369,7 @@ bool ceallclusters::ReadIn(string& filename) {
     fin >> cluster1.equivalent_num;
     fin >> cluster1.site_num >> cluster1.NNNum >> cluster1.dist >> cluster1.index;
 
-    const _atom atom1;
+    _atom atom1;
     int atom_index;
 
     for (int i1 = 0; i1 < cluster1.site_num; i1++) {
@@ -1436,7 +1433,7 @@ bool ceallclusters::ReadIn(string& filename) {
   atom_list.clear();
   fin >> atom_list_num;
   for (int i = 0; i < atom_list_num; i++) {
-    const _atom atom1;
+    _atom atom1;
     fin >> atom1.cpos[1] >> atom1.cpos[2] >> atom1.cpos[3];
     atom_list.push_back(atom1);
   }
@@ -1793,7 +1790,7 @@ void ceECIcluster::ReadIn(istream& os) {
     os >> atom_num;
 
     cecluster cluster_tmp;
-    const _atom atom_tmp;
+    _atom atom_tmp;
     for (int i1 = 0; i1 < atom_num; i1++) {
       os >> atom_tmp.cpos[1] >> atom_tmp.cpos[2] >> atom_tmp.cpos[3];
       cluster_tmp.structure.atoms.push_back(atom_tmp);
@@ -3077,7 +3074,7 @@ ceSL::ceSL(string& str_name, xstructure& xstr) : cestructure(xstr) {
 
   str_base.FixLattices();
   xmatrix<double> N_mat(1, 1, 3, 3);
-  const xmatrix<int> N_in(1, 1, 3, 3);
+  xmatrix<int> N_in(1, 1, 3, 3);
   const int cell_nr_in = xstr.atoms.size();
 
   N_mat = structure.lattice * inverse(str_base.lattice);
@@ -3150,7 +3147,7 @@ void ceSL::SetUp(xmatrix<int> N_in, int cell_nr_in, vector<int>& atom_config) {
 
 void ceSL::SetUp(string& SLname) {
   if (NameToStructure(SLname)) {
-    const xmatrix<int> N_mat(1, 1, 3, 3);
+    xmatrix<int> N_mat(1, 1, 3, 3);
     for (size_t i = 0; i < N.size(); i++) {
       for (size_t j = 0; j < N.size(); j++) {
         N_mat[i + 1][j + 1] = N[i].at(j);
@@ -3233,7 +3230,7 @@ void ceSL::GetStructure(xmatrix<int> Nmat_in, int cell_nr_in) {
         bool flag = true;
 
         // in fractional coordinates
-        const xmatrix<double> x(1, 1, 3, 3);
+        xmatrix<double> x(1, 1, 3, 3);
         for (int l1 = 1; l1 < 4; l1++) {
           x[1][l1] = double(i1) * Ninv[1][l1];
           x[2][l1] = double(i2) * Ninv[2][l1];
@@ -3810,7 +3807,6 @@ bool comparison_atomtype(_atom atom1, _atom atom2) {
 // ***************************************************************************
 //
 
-#endif
 // ***************************************************************************
 // *                                                                         *
 // *               AFlow SHIDONG WANG - Duke University 2010-2011            *

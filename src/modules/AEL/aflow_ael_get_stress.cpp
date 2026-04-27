@@ -6,8 +6,6 @@
 // ***************************************************************************
 // Written by Cormac Toher
 // cormac.toher@duke.edu
-#ifndef _AFLOW_AEL_GET_STRESS_CPP
-#define _AFLOW_AEL_GET_STRESS_CPP
 
 #include <cstddef>
 #include <deque>
@@ -1076,7 +1074,6 @@ namespace AEL_functions {
 //  End of AFLOW AEL set-up and extract stress-strain data
 // **************************************************************************
 
-#endif // _AFLOW_AEL_GET_STRESS_CPP
 // ***************************************************************************
 // *                                                                         *
 // *           Aflow STEFANO CURTAROLO - Duke University 2003-2024           *

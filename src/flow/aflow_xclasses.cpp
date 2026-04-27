@@ -5,9 +5,6 @@
 // ***************************************************************************
 // Stefano Curtarolo
 
-#ifndef _AFLOW_CLASSES_CPP
-#define _AFLOW_CLASSES_CPP
-
 #include "flow/aflow_xclasses.h"
 
 #include <cstddef>
@@ -1679,81 +1676,72 @@ const _xqsub& _xqsub::operator=(const _xqsub& b) {  // operator=
 // **************************************************************************
 // **************************************************************************
 
-// **************************************************************************
-// **************************************************************************
-// **************************************************************************
-// **************************************************************************
-// **************************************************************************
-
-// **************************************************************************
-// **************************************************************************
-// **************************************************************************
-// **************************************************************************
-// **************************************************************************
-// XSTREAM - Corey Oses - 20180420
-// look into aflow.h for the definitions
-
+/// @class xStream
+/// @brief Class to hold stream pointers/references so that inheriting classes may maintain a reference to stream objects they wish to use.
+/// @authors
+/// @mod{CO,20180420,created}
+/// @mod{ST,20250717,rewrote copy/assignment constructors}
+///
 // constructors
-xStream::xStream(ostream& oss) : p_FileMESSAGE(nullptr), f_new_ofstream(false) {
-  initialize(oss);
-} //{free();}
-xStream::xStream(ofstream& ofs, ostream& oss) : p_FileMESSAGE(nullptr), f_new_ofstream(false) {
-  initialize(ofs, oss);
-} //{free();}
+xStream::xStream(ostream& oss) : p_oss(&oss), p_FileMESSAGE(new ofstream()), owns_FileMESSAGE(true) {}
+xStream::xStream(ofstream& ofs, ostream& oss) : p_oss(&oss), p_FileMESSAGE(&ofs), owns_FileMESSAGE(false) {}
+xStream::xStream(const xStream& other) : p_oss(other.p_oss), p_FileMESSAGE(other.owns_FileMESSAGE ? new ofstream() : other.p_FileMESSAGE), owns_FileMESSAGE(other.owns_FileMESSAGE) {}
+xStream& xStream::operator=(const xStream& other) {
+  if (this != &other) {
+    copy(other);
+  }
+  return *this;
+}
 xStream::~xStream() {
-  free();
-} // CO20190318
-void xStream::free() {
-  if (f_new_ofstream) {
+  if (owns_FileMESSAGE) {
     delete p_FileMESSAGE;
-  }  // first delete, then set to null
-  p_FileMESSAGE = nullptr;
-  f_new_ofstream = false;
-  p_oss = nullptr;
+  }
 }
 void xStream::copy(const xStream& b) {
-  // must handle this very carefully
-  // first, since we are interested in copying the stream from b, we must delete the new pointer of self (if it's new)
-  // if b is new, don't copy b's pointer, as it doesn't belong to self (and should not be deleted by self)
-  // simply create a new one, and declare it as such
-  // p_FileMESSAGE=b.p_FileMESSAGE;
-  free();
-  if (b.f_new_ofstream) {
-    p_FileMESSAGE = (new ofstream());
+  // two choices for copy if b owns FileMESSAGE
+  // 1. give a copy that owns its own (new stream)
+  // 2. give a copy that does not own its own (reference to old stream)
+  // The first (1) option is the historical semantics of this class
+  if (b.owns_FileMESSAGE) {
+    // if b owns it, then we will own our own
+    if (owns_FileMESSAGE) {
+      delete p_FileMESSAGE;
+    }
+    p_FileMESSAGE = new ofstream();
+    owns_FileMESSAGE = true;
   } else {
-    setOFStream(*b.p_FileMESSAGE);
-  }  // p_FileMESSAGE=b.p_FileMESSAGE;
-  f_new_ofstream = b.f_new_ofstream;  // very important! seg faults otherwise
-  setOSS(*b.p_oss); // p_oss=b.p_oss;
+    // otherwise we share what b has
+    setOFStream(*(b.p_FileMESSAGE));
+  }
+  setOSS(*(b.p_oss));
 }
 ostream* xStream::getOSS() const {
   return p_oss;
-} // CO20191110
+}
 ofstream* xStream::getOFStream() const {
   return p_FileMESSAGE;
-} // CO20191110
+}
 void xStream::setOFStream(ofstream& FileMESSAGE) {
+  // we will leave here not owning FileMESSAGE
+  if (p_FileMESSAGE == &FileMESSAGE) {
+    return;
+  }
+  if (owns_FileMESSAGE) {
+    delete p_FileMESSAGE;
+    owns_FileMESSAGE = false;
+  }
   p_FileMESSAGE = &FileMESSAGE;
 }
 void xStream::setOSS(ostream& oss) {
   p_oss = &oss;
 }
-// ME20200427 START - Initializer functions
 void xStream::initialize(ostream& oss) {
-  free();
-  p_FileMESSAGE = new ofstream();
-  f_new_ofstream = true;
-  initialize(*p_FileMESSAGE, oss);
-  f_new_ofstream = true;  // override
-}
-void xStream::initialize(ofstream& ofs, ostream& oss) {
-  setOFStream(ofs);
-  f_new_ofstream = false;
   setOSS(oss);
 }
-// ME20200427 STOP - Initializer functions
-
-#endif  // _AFLOW_CLASSES_CPP
+void xStream::initialize(ofstream& ofs, ostream& oss) {
+  setOSS(oss);
+  setOFStream(ofs);
+}
 
 // **************************************************************************
 // *                                                                        *

@@ -6,8 +6,6 @@
 // ***************************************************************************
 // Written by Cormac Toher
 // cormac.toher@duke.edu
-#ifndef _AFLOW_AGL_PLOT_WRITE_CPP
-#define _AFLOW_AGL_PLOT_WRITE_CPP
 
 #include <cmath>
 #include <cstddef>
@@ -257,7 +255,6 @@ namespace AGL_functions {
 //  End of AFLOW AGL plot and write
 // **************************************************************************
 
-#endif // _AFLOW_AGL_PLOT_WRITE_CPP
 // ***************************************************************************
 // *                                                                         *
 // *           Aflow STEFANO CURTAROLO - Duke University 2003-2024           *

@@ -7,12 +7,8 @@
 // UPDATED by David Hicks
 // d.hicks@duke.edu
 
-#ifndef _AFLOW_SYMMETRY_SPACEGROUP_FUNCTIONS_CPP_
-#define _AFLOW_SYMMETRY_SPACEGROUP_FUNCTIONS_CPP_
-
 #include <algorithm>
 #include <cctype>
-#include <climits>  //Contains ULLONG_MAX value for precision check
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -39,6 +35,9 @@
 #include "structure/aflow_xatom.h"
 
 using namespace std;
+
+using aurostd::xmatrix;
+using aurostd::xvector;
 
 // DX20190215 - added new class - START
 //  SymmetryInformationITC
@@ -525,7 +524,7 @@ namespace SYM {
 // ******************************************************************************
 namespace SYM {
   xvector<double> dir(double a, double b, double c) {
-    const xvector<double> out;
+    xvector<double> out;
     out(1) = a;
     out(2) = b;
     out(3) = c;
@@ -1169,7 +1168,7 @@ namespace SYM {
     uint lead = 1;
     const uint rowCount = M.urows;
     const uint columnCount = M.ucols;
-    const xmatrix<double> tmp(rowCount, columnCount);
+    xmatrix<double> tmp(rowCount, columnCount);
     for (uint r = 0; r < rowCount; r++) {
       if (columnCount <= lead) {
         break;
@@ -1230,7 +1229,7 @@ namespace SYM {
     // M should be in row reduced form, simply check that there are no rows with zero entries and nonzero end value
     const uint numCols = M.ucols;
     const uint numRows = M.urows;
-    const xvector<double> tmp;
+    xvector<double> tmp;
     bool allzero = false;
     for (uint i = 1; i <= numRows; i++) {
       allzero = true;
@@ -1318,19 +1317,6 @@ namespace SYM {
 // ******************************************************************************
 namespace SYM {
   bool solve_overdetermined_system(vector<xvector<double>>& LHS, vector<double>& RHS, xvector<double>& SOL, xmatrix<double>& lattice, double& min_dist, double& tol) { // DX20190215 - added tol
-    // cerr << "SOLVING SYSTEM" << endl;
-    // xb();
-    // print(LHS);
-    // cerr << "-------------------------" << endl;
-    // print(RHS);
-    // xb();
-    // xmatrix<double> coeff_xmat = xvec2xmat(LHS,RHS);
-    // xmatrix<double> LHS_xmat = xvec2xmat(LHS);
-    // ReducedRowEchelonForm(coeff_xmat,tol);
-    // xb();
-    // aurostd::cematrix cemat(LHS_xmat);
-    // cerr << cemat.InverseMatrix() << endl;;
-
     const xmatrix<double> f2c = trasp(lattice);
     const xmatrix<double> c2f = inverse(trasp(lattice));
     const bool skew = SYM::isLatticeSkewed(lattice, min_dist, tol); // DX20190215
@@ -1352,7 +1338,7 @@ namespace SYM {
       LHS_cart.push_back(lhs_cart_mat(3));
 
       // Determine Cartesian representation of shift
-      const xvector<double> rhs_tmp;
+      xvector<double> rhs_tmp;
       rhs_tmp(1) = RHS[i];
       rhs_tmp(2) = RHS[i + 1];
       rhs_tmp(3) = RHS[i + 2];
@@ -1422,7 +1408,7 @@ namespace SYM {
       return false;
     }
 
-    const xvector<double> dS;
+    xvector<double> dS;
     dS(1) = RHS[f1];
     dS(2) = RHS[f2];
     dS(3) = RHS[f3];
@@ -1431,7 +1417,7 @@ namespace SYM {
     for (uint i = 0; i < 3; i++) {
       for (uint j = 0; j < 3; j++) {
         for (uint k = 0; k < 3; k++) {
-          const xvector<double> dS_mod;
+          xvector<double> dS_mod;
           dS_mod(1) = dS(1) + double(i);
           dS_mod(2) = dS(2) + double(j);
           dS_mod(3) = dS(3) + double(k);
@@ -1439,7 +1425,7 @@ namespace SYM {
           const xvector<double> origin_shift = aurostd::inverse(firstLI) * dS_mod;
           bool found = true;
           for (size_t ii = 0; ii < LHS_cart.size(); ii += 3) {
-            const xvector<double> coord;
+            xvector<double> coord;
             coord(1) = aurostd::scalar_product(LHS[ii], origin_shift) - RHS[ii]; // DX20200724 - SYM::DotPro to aurostd::scalar_product
             coord(2) = aurostd::scalar_product(LHS[ii + 1], origin_shift) - RHS[ii + 1]; // DX20200724 - SYM::DotPro to aurostd::scalar_product
             coord(3) = aurostd::scalar_product(LHS[ii + 2], origin_shift) - RHS[ii + 2]; // DX20200724 - SYM::DotPro to aurostd::scalar_product
@@ -1825,7 +1811,7 @@ namespace SYM {
 //
 namespace SYM {
   xvector<double> Wyckoff_position_string2xvector(string& string_position) {
-    const xvector<double> vector_position;
+    xvector<double> vector_position;
     string tmp_string = string_position;
     // clean up string
     aurostd::StringSubstInPlace(tmp_string, "(", "");
@@ -3235,15 +3221,15 @@ namespace SYM {
             }
             // ===== Linear algebra problem: Solve for Wyckoff position (if positions are not constant) ===== //
             vector<xvector<double>> LHS;
-            const xvector<double> tmp1;
+            xvector<double> tmp1;
             tmp1(1) = W(1, 1);
             tmp1(2) = W(1, 2);
             tmp1(3) = W(1, 3);
-            const xvector<double> tmp2;
+            xvector<double> tmp2;
             tmp2(1) = W(2, 1);
             tmp2(2) = W(2, 2);
             tmp2(3) = W(2, 3);
-            const xvector<double> tmp3;
+            xvector<double> tmp3;
             tmp3(1) = W(3, 1);
             tmp3(2) = W(3, 2);
             tmp3(3) = W(3, 3);
@@ -4539,7 +4525,7 @@ namespace SYM {
 // Obtain new lattice vectors corresponding to mirrors
 namespace SYM {
   vector<xvector<double>> getLatticeVectorsFromOriginalMirrorOperations(vector<Glide>& old_mirrors, vector<Glide>& new_mirrors, vector<xvector<double>>& lattice_vectors, bool& all_matched) {
-    const xvector<double> null_tol;
+    xvector<double> null_tol;
     null_tol(1) = _ZERO_TOL_;
     null_tol(2) = _ZERO_TOL_;
     null_tol(3) = _ZERO_TOL_;
@@ -4547,9 +4533,9 @@ namespace SYM {
     for (size_t i = 0; i < new_mirrors.size(); i++) {
       bool found = false;
       for (size_t j = 0; j < old_mirrors.size(); j++) {
-        const xvector<double> dir_diff = new_mirrors[i].return_direction() - old_mirrors[j].return_direction();
-        const xvector<double> dir_add = new_mirrors[i].return_direction() + old_mirrors[j].return_direction();
-        const xvector<double> point_diff = new_mirrors[i].return_point() - old_mirrors[j].return_point();
+        xvector<double> dir_diff = new_mirrors[i].return_direction() - old_mirrors[j].return_direction();
+        xvector<double> dir_add = new_mirrors[i].return_direction() + old_mirrors[j].return_direction();
+        xvector<double> point_diff = new_mirrors[i].return_point() - old_mirrors[j].return_point();
         const bool diff = (aurostd::abs(dir_diff(1)) < _ZERO_TOL_ && aurostd::abs(dir_diff(2)) < _ZERO_TOL_ && aurostd::abs(dir_diff(3)) < _ZERO_TOL_);
         const bool add = (aurostd::abs(dir_add(1)) < _ZERO_TOL_ && aurostd::abs(dir_add(2)) < _ZERO_TOL_ && aurostd::abs(dir_add(3)) < _ZERO_TOL_);
         const bool point = (aurostd::abs(point_diff(1)) < _ZERO_TOL_ && aurostd::abs(point_diff(2)) < _ZERO_TOL_ && aurostd::abs(point_diff(3)) < _ZERO_TOL_);
@@ -4582,9 +4568,9 @@ namespace SYM {
     for (size_t i = 0; i < new_rotations.size(); i++) {
       bool found = false;
       for (size_t j = 0; j < old_rotations_twofold.size(); j++) {
-        const xvector<double> dir_diff = new_rotations[i].return_direction() - old_rotations_twofold[j].return_direction();
-        const xvector<double> dir_add = new_rotations[i].return_direction() + old_rotations_twofold[j].return_direction();
-        const xvector<double> point_diff = new_rotations[i].return_point() - old_rotations_twofold[j].return_point();
+        xvector<double> dir_diff = new_rotations[i].return_direction() - old_rotations_twofold[j].return_direction();
+        xvector<double> dir_add = new_rotations[i].return_direction() + old_rotations_twofold[j].return_direction();
+        xvector<double> point_diff = new_rotations[i].return_point() - old_rotations_twofold[j].return_point();
         const bool diff = (aurostd::abs(dir_diff(1)) < _ZERO_TOL_ && aurostd::abs(dir_diff(2)) < _ZERO_TOL_ && aurostd::abs(dir_diff(3)) < _ZERO_TOL_);
         const bool add = (aurostd::abs(dir_add(1)) < _ZERO_TOL_ && aurostd::abs(dir_add(2)) < _ZERO_TOL_ && aurostd::abs(dir_add(3)) < _ZERO_TOL_);
         const bool point = (aurostd::abs(point_diff(1)) < _ZERO_TOL_ && aurostd::abs(point_diff(2)) < _ZERO_TOL_ && aurostd::abs(point_diff(3)) < _ZERO_TOL_);
@@ -4600,9 +4586,9 @@ namespace SYM {
       }
       if (found == false) {
         for (size_t j = 0; j < old_rotations_rot.size(); j++) {
-          const xvector<double> dir_diff = new_rotations[i].return_direction() - old_rotations_rot[j].return_direction();
-          const xvector<double> dir_add = new_rotations[i].return_direction() + old_rotations_rot[j].return_direction();
-          const xvector<double> point_diff = new_rotations[i].return_point() - old_rotations_rot[j].return_point();
+          xvector<double> dir_diff = new_rotations[i].return_direction() - old_rotations_rot[j].return_direction();
+          xvector<double> dir_add = new_rotations[i].return_direction() + old_rotations_rot[j].return_direction();
+          xvector<double> point_diff = new_rotations[i].return_point() - old_rotations_rot[j].return_point();
           const bool diff = (aurostd::abs(dir_diff(1)) < _ZERO_TOL_ && aurostd::abs(dir_diff(2)) < _ZERO_TOL_ && aurostd::abs(dir_diff(3)) < _ZERO_TOL_);
           const bool add = (aurostd::abs(dir_add(1)) < _ZERO_TOL_ && aurostd::abs(dir_add(2)) < _ZERO_TOL_ && aurostd::abs(dir_add(3)) < _ZERO_TOL_);
           const bool point = (aurostd::abs(point_diff(1)) < _ZERO_TOL_ && aurostd::abs(point_diff(2)) < _ZERO_TOL_ && aurostd::abs(point_diff(3)) < _ZERO_TOL_);
@@ -5340,7 +5326,7 @@ namespace SYM {
         return false;
       }
     }
-    const xvector<double> tmp_fdiff;
+    xvector<double> tmp_fdiff;
     for (uint i = 1; i < 4; i++) {
       tmp_fdiff(i) = fdiff(i) + (double) ijk(i);
     }
@@ -5358,7 +5344,7 @@ namespace SYM {
     const xmatrix<double> c2f = inverse(trasp(L));
     const xvector<double> tmp = c2f * point;
 
-    const xvector<double> origin;
+    xvector<double> origin;
     origin(1) = 0.0;
     origin(2) = 0.0;
     origin(3) = 0.0;
@@ -5375,7 +5361,7 @@ namespace SYM {
       fdiff = SYM::minimizeDistanceFractionalMethod(fdiff, ijk); // DX20190613
       min_dist = aurostd::modulus(f2c * fdiff); // DX20190613
     }
-    const xvector<double> tmp_fdiff;
+    xvector<double> tmp_fdiff;
     for (uint i = 1; i < 4; i++) {
       if (aurostd::abs(ijk(i)) > 3 && (orig_cdiff - radius) > _ZERO_TOL_) {
         return false;
@@ -5420,7 +5406,7 @@ namespace SYM {
     N1 = (1 / aurostd::modulus(N1)) * N1;
     N2 = (1 / aurostd::modulus(N2)) * N2;
     if (aurostd::modulus((N1 - N2) * L) < tol || aurostd::modulus((-N1 - N2) * L) < tol) {
-      const xvector<double> T;
+      xvector<double> T;
       xvector<double> tmp;
       // double d1,d2,d3;
       int check;
@@ -5480,7 +5466,7 @@ namespace SYM {
 // **********************************************************************************************************************
 namespace SYM {
   xvector<double> random_point() {
-    const xvector<double> out;
+    xvector<double> out;
     srand(time(nullptr));
     out(1) = double(rand() % 50 + 100) / 1000;
     out(2) = double(rand() % 50 + 151) / 1000;
@@ -5494,7 +5480,7 @@ namespace SYM {
 // **********************************************************************************************************************
 namespace SYM {
   void add_3d_point(vector<xvector<double>>& points, double x, double y, double z) {
-    const xvector<double> tmp;
+    xvector<double> tmp;
     tmp(1) = x;
     tmp(2) = y;
     tmp(3) = z;
@@ -5522,7 +5508,7 @@ namespace SYM {
     }
     size = points_referenced_to_first.size();
 
-    const xmatrix<double> metric_tensor(size, size);
+    xmatrix<double> metric_tensor(size, size);
 
     for (int i = 0; i < size; i++) {
       for (int j = 0; j < size; j++) {
@@ -5544,7 +5530,7 @@ namespace SYM {
 // **********************************************************************************************************************
 // returns char for potential rotation types: 'a' = 3fold 'b' = 4fold 'c' = 6fold
 namespace SYM {
-  char discern_rot_sym(const xmatrix<double>& m, double& tol) { // m is metric_tensor //DX20190215
+  char discern_rot_sym(xmatrix<double> m, double& tol) { // m is metric_tensor //DX20190215
     const double two_fold = Pi_r / 2.0;
     const double four_fold = Pi_r / 4.0;
     const double six_fold_120 = (2.0 * Pi_r) / (3.0);
@@ -5584,5 +5570,3 @@ namespace SYM {
     }
   }
 } // namespace SYM
-
-#endif

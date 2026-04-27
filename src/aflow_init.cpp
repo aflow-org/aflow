@@ -4,10 +4,9 @@
 // *                                                                         *
 // ***************************************************************************
 
-#ifndef _AFLOW_INIT_CPP_
-#define _AFLOW_INIT_CPP_
-
 #include "aflow_init.h"
+
+#include "config.h"
 
 #include <cmath>
 #include <cstddef>
@@ -50,6 +49,7 @@ using std::cout;
 using std::deque;
 using std::endl;
 using std::ifstream;
+using std::iostream;
 using std::istream;
 using std::istringstream;
 using std::ofstream;
@@ -57,6 +57,7 @@ using std::ostream;
 using std::ostringstream;
 using std::string;
 using std::stringstream;
+using std::unordered_map;
 using std::vector;
 // ***************************************************************************
 
@@ -1284,22 +1285,41 @@ namespace init {
     XHOST.vflag_control.flag("README_GFA", aurostd::args2flag(argv, cmds, "--readme=gfa|--readme_gfa")); // CO20190401
     XHOST.vflag_control.flag("README_SYMMETRY", aurostd::args2flag(argv, cmds, "--readme=symmetry|--readme_symmetry"));
     XHOST.vflag_control.flag("README_CCE", aurostd::args2flag(argv, cmds, "--readme=cce|--readme_cce")); // CO20190620
-    XHOST.vflag_control.flag("README_CHULL", aurostd::args2flag(argv, cmds, "--readme=chull|--readme_chull")); // CO20190620
+    XHOST.vflag_control.flag("README_NHULL", aurostd::args2flag(argv, cmds, "--readme=nhull|--readme_nhull")); // CO20190620
     XHOST.vflag_control.flag("README_PARTIAL_OCCUPATION", aurostd::args2flag(argv, cmds, "--readme=partial_occupation|--readme=pocc|--readme_pocc"));
     XHOST.vflag_control.flag("README_SCRIPTING", aurostd::args2flag(argv, cmds, "--readme=scripting|--readme_scripting|--readme=script|--readme_script"));
     XHOST.vflag_control.flag("README_EXCEPTIONS", aurostd::args2flag(argv, cmds, "--readme=errors|--readme_errors|--readme=exceptions|--readme_exceptions"));  // ME20180531
     XHOST.vflag_control.flag("README_HTRESOURCES", aurostd::args2flag(argv, cmds, "--readme=htresources|--readme_htresources|--readme=resources|--readme_resources"));
     XHOST.vflag_control.flag("README_XAFLOW", aurostd::args2flag(argv, cmds, "--readme=xaflow|--readme_xaflow"));
     XHOST.vflag_control.flag("README_AFLOWRC", aurostd::args2flag(argv, cmds, "--readme=aflowrc|--readme_aflowrc"));
-    if (!(XHOST.vflag_control.flag("AFLOW_HELP") || XHOST.vflag_control.flag("README_AFLOW_LICENSE_GPL3") || XHOST.vflag_control.flag("README_AFLOW") ||
-          XHOST.vflag_control.flag("README_AFLOW_VERSIONS_HISTORY") || XHOST.vflag_control.flag("README_AFLOW_PFLOW") || XHOST.vflag_control.flag("README_FROZSL") || XHOST.vflag_control.flag("README_APL") ||
-          XHOST.vflag_control.flag("README_QHA") || XHOST.vflag_control.flag("README_AAPL") || XHOST.vflag_control.flag("README_AGL") || XHOST.vflag_control.flag("README_AEL") ||
-          XHOST.vflag_control.flag("README_ANRL") || XHOST.vflag_control.flag("README_COMPARE") || XHOST.vflag_control.flag("README_GFA") || // CO20190401
-          XHOST.vflag_control.flag("README_SYMMETRY") || XHOST.vflag_control.flag("README_CCE") || // CO20190620
-          XHOST.vflag_control.flag("README_CHULL") || // CO20190620
-          XHOST.vflag_control.flag("README_PARTIAL_OCCUPATION") || XHOST.vflag_control.flag("README_SCRIPTING") || XHOST.vflag_control.flag("README_EXCEPTIONS") ||  // ME20180531
-          XHOST.vflag_control.flag("README_HTRESOURCES") || XHOST.vflag_control.flag("README_XAFLOW") || XHOST.vflag_control.flag("README_AFLOWRC") ||
-          false)) {  // CO20180306 - need to catch --readme such that it doesn't interfere with --readme=
+    if (!(XHOST.vflag_control.flag("AFLOW_HELP")
+          || XHOST.vflag_control.flag("README_AFLOW_LICENSE_GPL3")
+          || XHOST.vflag_control.flag("README_AFLOW")
+          || XHOST.vflag_control.flag("README_AFLOW_VERSIONS_HISTORY")
+          || XHOST.vflag_control.flag("README_AFLOW_PFLOW")
+          || XHOST.vflag_control.flag("README_FROZSL")
+          || XHOST.vflag_control.flag("README_APL")
+          || XHOST.vflag_control.flag("README_QHA")
+          || XHOST.vflag_control.flag("README_AAPL")
+          || XHOST.vflag_control.flag("README_AGL")
+          || XHOST.vflag_control.flag("README_AEL")
+          || XHOST.vflag_control.flag("README_ANRL")
+          || XHOST.vflag_control.flag("README_COMPARE")
+          || XHOST.vflag_control.flag("README_GFA")
+          || // CO20190401
+          XHOST.vflag_control.flag("README_SYMMETRY")
+          || XHOST.vflag_control.flag("README_CCE")
+          || // CO20190620
+          XHOST.vflag_control.flag("README_NHULL")
+          || // CO20190620
+          XHOST.vflag_control.flag("README_PARTIAL_OCCUPATION")
+          || XHOST.vflag_control.flag("README_SCRIPTING")
+          || XHOST.vflag_control.flag("README_EXCEPTIONS")
+          ||  // ME20180531
+          XHOST.vflag_control.flag("README_HTRESOURCES")
+          || XHOST.vflag_control.flag("README_XAFLOW")
+          || XHOST.vflag_control.flag("README_AFLOWRC")
+          || false)) {  // CO20180306 - need to catch --readme such that it doesn't interfere with --readme=
       XHOST.vflag_control.flag("AFLOW_HELP", aurostd::args2flag(argv, cmds, "--readme"));  // CO20180306
     }
     if (INIT_VERBOSE) {
@@ -1342,7 +1362,7 @@ namespace init {
       oss << "XHOST.vflag_control.flag(\"README_CCE\")=" << XHOST.vflag_control.flag("README_CCE") << endl;  // CO20190620
     }
     if (INIT_VERBOSE) {
-      oss << "XHOST.vflag_control.flag(\"README_CHULL\")=" << XHOST.vflag_control.flag("README_CHULL") << endl;  // CO20190620
+      oss << "XHOST.vflag_control.flag(\"README_NHULL\")=" << XHOST.vflag_control.flag("README_NHULL") << endl;  // CO20190620
     }
     if (INIT_VERBOSE) {
       oss << "XHOST.vflag_control.flag(\"README_PARTIAL_OCCUPATION\")=" << XHOST.vflag_control.flag("README_PARTIAL_OCCUPATION") << endl;
@@ -1873,6 +1893,11 @@ namespace init {
       ;
     } // CO20190906 - keep LDEBUG busy
     string out;
+
+    //HE20250727 if vAFLOW_PROJECTS_DIRECTORIES is empty the lines below crash
+    if (vAFLOW_PROJECTS_DIRECTORIES.empty()) {
+      throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, "No project directories found", _FILE_NOT_FOUND_);
+    }
     // ME20200707 - The LIBRARY_NOTHING check is important or this function
     // breaks when the LIB directory does not exist
     if ((XHOST_LIBRARY_AUID != LIBRARY_NOTHING) && (aurostd::toupper(lib) == "AUID")) {
@@ -2897,8 +2922,8 @@ string Message(const string& filename, const string& list2print) {
     strout << " - [mem=" << aurostd::utype2string<double>(AFLOW_checkMEMORY("vasp", XHOST.maxmem), 4) << " (" << XHOST.maxmem << ")]"; // CO20170628 - slow otherwise!!!
   }
   if (!XHOST.vTemperatureCore.empty()) {
-    if (max(XHOST.vTemperatureCore) > AFLOW_CORE_TEMPERATURE_BEEP) {
-      strout << " - [ERROR_TEMPERATURE=" << max(XHOST.vTemperatureCore) << ">" << AFLOW_CORE_TEMPERATURE_BEEP << "@ host=" << XHOST.hostname << "]";
+    if (aurostd::max(XHOST.vTemperatureCore) > AFLOW_CORE_TEMPERATURE_BEEP) {
+      strout << " - [ERROR_TEMPERATURE=" << aurostd::max(XHOST.vTemperatureCore) << ">" << AFLOW_CORE_TEMPERATURE_BEEP << "@ host=" << XHOST.hostname << "]";
     }
   }
   // strout << endl;
@@ -4573,8 +4598,6 @@ namespace init {
 } // namespace init
 
 // **************************************************************************
-
-#endif
 
 // **************************************************************************
 // *                                                                        *

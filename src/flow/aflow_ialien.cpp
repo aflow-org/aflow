@@ -6,15 +6,13 @@
 // this file contains the routines to prepare ALIEN input files
 // Stefano Curtarolo - 2008 Duke
 
-#ifndef _AFLOW_IALIEN_CPP
-#define _AFLOW_IALIEN_CPP
-
 #include <fstream>
 #include <ios>
 #include <iostream>
 #include <istream>
 #include <ostream>
 #include <sstream>
+#include <string>
 
 #include "AUROSTD/aurostd.h"
 #include "AUROSTD/aurostd_xfile.h"
@@ -26,7 +24,6 @@
 #include "flow/aflow_xclasses.h"
 
 using std::cerr;
-using std::cout;
 using std::endl;
 using std::ifstream;
 using std::istream;
@@ -34,12 +31,13 @@ using std::istringstream;
 using std::ofstream;
 using std::ostream;
 using std::ostringstream;
+using std::string;
 using std::stringstream;
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------
 // INPUT
 namespace ALIEN {
-  bool Produce_INPUT(_xalien &xalien, string AflowIn, ifstream &FileAFLOWIN, ofstream &FileMESSAGE, _aflags &aflags, _kflags &kflags, _alienflags &alienflags) {
+  bool Produce_INPUT(_xalien& xalien, string AflowIn, ifstream& FileAFLOWIN, ofstream& FileMESSAGE, _aflags& aflags, _kflags& kflags, _alienflags& alienflags) {
     bool Krun = true;
     if (Krun) {
       Krun = (Krun && ALIEN::Produce_INPUT_FILE(xalien, AflowIn, FileAFLOWIN, FileMESSAGE, aflags, kflags, alienflags));     // produce INPUT
@@ -49,7 +47,7 @@ namespace ALIEN {
 } // namespace ALIEN
 
 namespace ALIEN {
-  bool Modify_INPUT(_xalien &xalien, ofstream &FileMESSAGE, _aflags &aflags, _alienflags &alienflags) {
+  bool Modify_INPUT(_xalien& xalien, ofstream& FileMESSAGE, _aflags& aflags, _alienflags& alienflags) {
     bool Krun = true;
     if (Krun) {
       Krun = (Krun && ALIEN::Modify_INPUT_FILE(xalien, FileMESSAGE, aflags, alienflags));
@@ -59,7 +57,7 @@ namespace ALIEN {
 } // namespace ALIEN
 
 namespace ALIEN {
-  bool Write_INPUT(_xalien &xalien) {        // AFLOW_FUNCTION_IMPLEMENTATION
+  bool Write_INPUT(_xalien& xalien) {        // AFLOW_FUNCTION_IMPLEMENTATION
     bool Krun = true;
     ifstream DirectoryStream;
     DirectoryStream.open(xalien.Directory.c_str(), std::ios::in);
@@ -86,7 +84,7 @@ namespace ALIEN {
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------
 // INPUT
 namespace ALIEN {
-  bool Produce_INPUT_FILE(_xalien &xalien, string AflowIn, ifstream &FileAFLOWIN, ofstream &FileMESSAGE, _aflags &aflags, _kflags &kflags, _alienflags &alienflags) {        // AFLOW_FUNCTION_IMPLEMENTATION
+  bool Produce_INPUT_FILE(_xalien& xalien, string AflowIn, ifstream& FileAFLOWIN, ofstream& FileMESSAGE, _aflags& aflags, _kflags& kflags, _alienflags& alienflags) {        // AFLOW_FUNCTION_IMPLEMENTATION
     if (!AflowIn.empty()) {
       ;
     } // phony, just to keep AflowIn busy
@@ -277,7 +275,7 @@ namespace ALIEN {
 } // namespace ALIEN
 
 namespace ALIEN {
-  bool Modify_INPUT_FILE(_xalien &xalien, ofstream &FileMESSAGE, _aflags &aflags, _alienflags &alienflags) {        // AFLOW_FUNCTION_IMPLEMENTATION
+  bool Modify_INPUT_FILE(_xalien& xalien, ofstream& FileMESSAGE, _aflags& aflags, _alienflags& alienflags) {        // AFLOW_FUNCTION_IMPLEMENTATION
     ostringstream aus;
     const bool Krun = true;
     if (xalien.INPUT_generated == false) {
@@ -314,8 +312,6 @@ namespace ALIEN {
 } // namespace ALIEN
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------
-
-#endif  // _AFLOW_IALIEN_CPP
 
 // ***************************************************************************
 // *                                                                         *

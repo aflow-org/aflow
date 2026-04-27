@@ -1,0 +1,39 @@
+
+set(
+		libqhullr_HEADERS
+		libqhull_r.h
+		geom_r.h
+		io_r.h
+		mem_r.h
+		merge_r.h
+		poly_r.h
+		qhull_ra.h
+		qset_r.h
+		random_r.h
+		stat_r.h
+		user_r.h
+)
+set(
+		libqhullr_SOURCES
+		global_r.c
+		stat_r.c
+		geom2_r.c
+		poly2_r.c
+		merge_r.c
+		libqhull_r.c
+		geom_r.c
+		poly_r.c
+		qset_r.c
+		mem_r.c
+		random_r.c
+		usermem_r.c
+		userprintf_r.c
+		io_r.c
+		user_r.c
+		accessors_r.c
+		rboxlib_r.c
+		userprintf_rbox_r.c
+		${libqhullr_HEADERS}
+)
+
+add_library(libqhull_r ${libqhullr_SOURCES})

@@ -1099,7 +1099,17 @@ namespace aflowlib {
 
     for (size_t c = 0; c < ncols; c++) {
       try {
-        value = jo[cols[c]].toString();
+        switch (const aurostd::JSON::object& value_raw = jo[cols[c]]; value_raw.type) {
+          case (aurostd::JSON::object_types::NONE):
+            value = "";
+            break;
+          case (aurostd::JSON::object_types::STRING):
+            value = '"'+value_raw.toString(false)+'"';
+            break;
+          default:
+            value = value_raw.toString(true);
+            break;
+        }
       } catch (...) {
         value = "";
       }

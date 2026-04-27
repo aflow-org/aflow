@@ -6,8 +6,6 @@
 // ***************************************************************************
 // Written by Cormac Toher
 // cormac.toher@duke.edu
-#ifndef _AFLOW_AEL_ELASTIC_FIT_CPP
-#define _AFLOW_AEL_ELASTIC_FIT_CPP
 
 #include <cmath>
 #include <cstddef>
@@ -72,15 +70,14 @@ namespace AEL_functions {
     aurostd::PrintMessageStream(FileMESSAGE, aus, XHOST.QUIET);
     const xmatrix<double> strain_components(3, 3);
     xmatrix<double> stress_tensor(3, 3);
-    const xmatrix<double> str_identity(3, 3);
-    const xmatrix<double> elastic_const(6, 6);
-    const xmatrix<double> elastic_const_half(6, 6);
+    xmatrix<double> elastic_const(6, 6);
+    xmatrix<double> elastic_const_half(6, 6);
     xmatrix<double> elastic_const_inv(6, 6);
     xmatrix<double> elastic_const_half_inv(6, 6);
     xvector<double> elastic_eigenvals(6);
     xvector<double> elastic_eigenval_real(6);
     xvector<double> elastic_eigenval_imag(6);
-    const xmatrix<double> zero_stress(3, 3);
+    xmatrix<double> zero_stress(3, 3);
     vector<vector<double>> stress_components;
     vector<vector<double>> stress_components_half;
     const vector<double> shear_deformations_doubled;
@@ -324,7 +321,6 @@ namespace AEL_functions {
         }
       }
     }
-    aurostd::identity(str_identity);
     // Fit normal stress-strain
     if (LVERBOSE) {
       aurostd::StringstreamClean(aus);
@@ -2332,7 +2328,6 @@ namespace AEL_functions {
 //  End of AFLOW AEL functions to fit stress-strain and calculate elastic properties
 // ***************************************************************************************
 
-#endif // _AFLOW_AEL_ELASTIC_FIT_CPP
 // ***************************************************************************
 // *                                                                         *
 // *           Aflow STEFANO CURTAROLO - Duke University 2003-2024           *

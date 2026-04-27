@@ -22,9 +22,11 @@
 
 #include <cmath>
 #include <cstddef>
+#include <fstream>
 #include <iomanip>
 #include <ios>
 #include <ostream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -42,7 +44,10 @@
 #include "flow/aflow_support_types.h"
 #include "flow/aflow_xclasses.h"
 
+using std::ofstream;
+using std::ostream;
 using std::string;
+using std::stringstream;
 using std::vector;
 
 //////////////////////////////////////////////////////////////////////////////
@@ -53,68 +58,17 @@ using std::vector;
 
 namespace apl {
 
-  // Default Constructor
-  ThermalPropertiesCalculator::ThermalPropertiesCalculator(ostream& oss) : xStream(oss) {
-    free();
-  }
-
-  ThermalPropertiesCalculator::ThermalPropertiesCalculator(ofstream& mf, ostream& oss) : xStream(mf, oss) {
-    free();
-  }
-
   ThermalPropertiesCalculator::ThermalPropertiesCalculator(const DOSCalculator& dosc, ofstream& mf, const string& directory, ostream& oss) {
-    free();
     _directory = aurostd::CleanFileName(directory);
     initialize(dosc.createDOSCAR(), mf, oss);
   }
 
   ThermalPropertiesCalculator::ThermalPropertiesCalculator(const xDOSCAR& xdos, ofstream& mf, const string& directory, ostream& oss) {
-    free();
     _directory = aurostd::CleanFileName(directory);
     initialize(xdos, mf, oss);
   }
 
-  // Copy constructors
-  ThermalPropertiesCalculator::ThermalPropertiesCalculator(const ThermalPropertiesCalculator& that) : xStream(*that.getOFStream(), *that.getOSS()) {
-    if (this != &that) {
-      free();
-    }
-    copy(that);
-  }
-
-  ThermalPropertiesCalculator& ThermalPropertiesCalculator::operator=(const ThermalPropertiesCalculator& that) {
-    if (this != &that) {
-      free();
-    }
-    copy(that);
-    return *this;
-  }
-
-  // Destructor
-  ThermalPropertiesCalculator::~ThermalPropertiesCalculator() {
-    xStream::free();
-    free();
-  }
-
-  void ThermalPropertiesCalculator::copy(const ThermalPropertiesCalculator& that) {
-    if (this == &that) {
-      return;
-    }
-    xStream::copy(that);
-    _freqs_0K = that._freqs_0K;
-    _dos_0K = that._dos_0K;
-    _directory = that._directory;
-    natoms = that.natoms;
-    system = that.system;
-    temperatures = that.temperatures;
-    Cv = that.Cv;
-    Fvib = that.Fvib;
-    Svib = that.Svib;
-    U = that.U;
-    U0 = that.U0;
-  }
-
-  void ThermalPropertiesCalculator::free() {
+  void ThermalPropertiesCalculator::clear() {
     _freqs_0K.clear();
     _dos_0K.clear();
     _directory = "";
@@ -127,11 +81,6 @@ namespace apl {
     U.clear();
     U0 = 0.0;
   }
-
-  void ThermalPropertiesCalculator::clear() {
-    free();
-  }
-
 }  // namespace apl
 
 //////////////////////////////////////////////////////////////////////////////
@@ -165,15 +114,6 @@ namespace apl {
     _dos_0K = dos;
     system = _system;
     U0 = getZeroPointEnergy();
-  }
-
-  // xStream initializers
-  void ThermalPropertiesCalculator::initialize(ostream& oss) {
-    xStream::initialize(oss);
-  }
-
-  void ThermalPropertiesCalculator::initialize(ofstream& mf, ostream& oss) {
-    xStream::initialize(mf, oss);
   }
 
   // calculateThermalProperties////////////////////////////////////////////////
@@ -413,7 +353,7 @@ namespace apl {
 
     stringstream outfile;
     if (ft == json_ft) {
-      const aurostd::JSON::object json = getPropertiesJSON();
+      aurostd::JSON::object json = getPropertiesJSON();
       if (!system.empty()) {
         json["system"] = system;
       }
@@ -562,7 +502,8 @@ namespace apl {
       props << "#" << std::setw(7) << "T(K)" << std::setw(15) << "U0 (meV/cell)" << "   " << std::setw(15) << "U (meV/cell)" << "   " << std::setw(15) << "F (meV/cell)" << "   " << std::setw(15)
             << "S (kB/cell)" << "   " << std::setw(15) << "Cv (kB/cell)";
       if (natoms > 0) {
-        props << std::setw(15) << "U0 (meV/atom)" << "   " << std::setw(15) << "U (meV/atom)" << "   " << std::setw(15) << "F (meV/atom)" << "   " << std::setw(15) << "S (kB/atom)" << "   " << std::setw(15) << "Cv (kB/atom)";
+        props << std::setw(15) << "U0 (meV/atom)" << "   " << std::setw(15) << "U (meV/atom)" << "   " << std::setw(15) << "F (meV/atom)" << "   " << std::setw(15) << "S (kB/atom)" << "   " << std::setw(15)
+              << "Cv (kB/atom)";
       }
       props << std::endl;
 

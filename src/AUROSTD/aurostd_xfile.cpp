@@ -6,12 +6,14 @@
 // This file hold function dealing with files
 // hagen.eckert@duke.edu
 
-#ifndef _AUROSTD_XFILE_CPP_
-#define _AUROSTD_XFILE_CPP_
-
 #include "aurostd_xfile.h"
 
+#include "config.h"
+
 #include <algorithm>
+#include <array>
+#include <cerrno>
+#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <cstdlib>
@@ -23,23 +25,31 @@
 #include <iostream>
 #include <regex>
 #include <sstream>
+#include <string>
+#include <vector>
 
 #include <archive.h>
 #include <archive_entry.h>
-
-#include <sys/stat.h>
 
 #include "aurostd.h"
 #include "aurostd_defs.h"
 #include "aurostd_time.h"
 #include "aurostd_xerror.h"
 #include "aurostd_xrandom.h"
-#include "aurostd_xscalar.h"
 
 #include "aflow_xhost.h" // todo required for XPID use and XHOST.DEBUG use
 
 using std::cerr;
+using std::deque;
 using std::endl;
+using std::ifstream;
+using std::iostream;
+using std::istringstream;
+using std::ofstream;
+using std::ostringstream;
+using std::string;
+using std::stringstream;
+using std::vector;
 
 namespace aurostd {
   /// @brief create a directory
@@ -132,6 +142,15 @@ namespace aurostd {
     return false;
   }
 
+  /// @brief returns the current directory
+  /// @authors
+  /// @mod{CO,20191112,created function}
+  /// @mod{SD,20240312,rewritten using filesystem}
+  /// @note legacy function to work with strings rather than filesystem objects directly
+  string getPWD() {
+    return std::filesystem::absolute(std::filesystem::current_path()).string();
+  }
+
   /// @brief returns the dirname of file
   /// @param file of interest
   /// @authors
@@ -158,6 +177,27 @@ namespace aurostd {
   /// @note legacy function to work with strings rather than filesystem objects directly
   string GetFileExtension(const string& FileName) {
     return std::filesystem::path(FileName).extension().string();
+  }
+
+  /// @brief returns a relative path object based on the first occurrence of a given folder name
+  /// @param starting_path path where the relative search starts
+  /// @param folder_name folder name to search for
+  /// @note starting_path `/A/C/B/C/D/E.txt` + folder_name `C` results ib `D/E.txt`
+  /// @return relative path, or empty fs::path if nothing is found
+  /// @authors
+  /// @mod{HE,20250717,created}
+  fs::path GetRelativePath(const fs::path& starting_path, const string& folder_name) {
+    fs::path current_path = fs::absolute(starting_path);
+    while (current_path.has_parent_path()) {
+      current_path = current_path.parent_path();
+      if (current_path.filename().string() == folder_name) {
+        return fs::relative(starting_path, current_path);
+      }
+      if (current_path == current_path.parent_path()) { // found root directory, stop search
+        break;
+      }
+    }
+    return {};
   }
 
   /// @brief cleans file names from obvious things
@@ -429,8 +469,8 @@ namespace aurostd {
     if (!FileExist(FileName)) {
       return true;  // does not exist hence empty
     }
-    ifstream FileStream(FileName);
-    return (FileStream.peek() == ifstream::traits_type::eof());
+    std::ifstream FileStream(FileName);
+    return (FileStream.peek() == std::ifstream::traits_type::eof());
   }
 
   /// @brief check if file is not empty
@@ -440,45 +480,58 @@ namespace aurostd {
 
   /// @brief gets modification time
   /// @param FileNameRaw to check
-  /// @return modified timestamp
+  /// @return modified timestamp (in seconds since epoch)
   /// @authors
   /// @mod{ME,20180712,created}
+  /// @mod{HE,20260114,change to std::filesystem calls}
   long int GetTimestampModified(const string& FileNameRaw) {
-    const string FileName(aurostd::CleanFileName(FileNameRaw));
-    if (!FileExist(FileName)) {
-      return 0;
-    }
-    time_t tm = 0;
-    struct stat file_stat{};
-    if (stat(FileName.c_str(), &file_stat) == 0) {
-      tm = file_stat.st_mtime;
-    }
-    return static_cast<long int>(tm);
+    const fs::path p = fs::path(aurostd::CleanFileName(FileNameRaw));
+    const std::filesystem::file_time_type ftime = std::filesystem::last_write_time(p);
+    return std::chrono::duration_cast<std::chrono::seconds>(ftime.time_since_epoch()).count();
   }
 
-  /// @brief gets duration since file modification
+  /// @brief gets duration since last file modification
   /// @param FileNameRaw to check
   /// @return duration in seconds
   /// @authors
   /// @mod{CO,20210315,created}
   /// @mod{ME,20210315,created}
-  // gets modification time and returns SECONDS since now (as long int)
+  /// @mod{HE,20260114,change to std::filesystem calls}
   long int SecondsSinceFileModified(const string& FileNameRaw) {
-    const string FileName(aurostd::CleanFileName(FileNameRaw));
-    if (!FileExist(FileName)) {
+    const fs::path p = fs::path(aurostd::CleanFileName(FileNameRaw));
+    const auto file_ts = std::filesystem::last_write_time(p);
+    const auto now_ts = std::filesystem::file_time_type::clock::now();
+    const long int elapsed_seconds = std::chrono::duration_cast<std::chrono::seconds>(now_ts - file_ts).count();
+    if (elapsed_seconds > 0) {
+      return elapsed_seconds;
+    }
+    return 0;
+  }
+
+  /// @brief gets duration since the folder or its content was last modified
+  /// @param FileNameRaw to check
+  /// @return duration in seconds
+  /// @authors
+  /// @mod{HE,20260114,created}
+  long int SecondsSinceDirectoryContentModified(const string& FileNameRaw) {
+    const fs::path p = fs::path(aurostd::CleanFileName(FileNameRaw));
+    if (fs::is_directory(p)) {
+      // use the last modification of the folder itself as a start point
+      std::filesystem::file_time_type last_ts = std::filesystem::last_write_time(p);
+      for (const auto& folder_entry : fs::directory_iterator(p)) {
+        const std::filesystem::file_time_type ftime = std::filesystem::last_write_time(folder_entry);
+        if (ftime > last_ts) {
+          last_ts = ftime;
+        }
+      }
+      const auto now_ts = std::filesystem::file_time_type::clock::now();
+      const long int elapsed_seconds = std::chrono::duration_cast<std::chrono::seconds>(now_ts - last_ts).count();
+      if (elapsed_seconds > 0) {
+        return elapsed_seconds;
+      }
       return 0;
     }
-    const long int tmod_file = GetTimestampModified(FileName);
-    // instead, write a new file and take the difference in the time stamps
-    // solution inspired by ME - create a temporary file IN THE CURRENT DIRECTORY (within NFS) and check time deltas
-    const string dir = aurostd::dirname(FileName);
-    const string tmpfile = aurostd::TmpFileCreate("timestamp", dir, true); // put in current directory, make it hidden
-    if (!aurostd::string2file("timestamp", tmpfile)) {
-      return 0;
-    }  // write the file out, need a better fix here, perhaps write to /tmp?
-    const long int tmod_tmp = aurostd::GetTimestampModified(tmpfile);
-    aurostd::RemoveFile(tmpfile);
-    return max(static_cast<long int>(0), tmod_tmp - tmod_file); // max ensures that if something goes wrong, we return 0
+    return SecondsSinceFileModified(FileNameRaw);
   }
 
   /// @brief returns in bytes the size of a file
@@ -497,7 +550,7 @@ namespace aurostd {
   /// @todo should be replaces by aurostd::FileEmpty() in code and then removed
   /// @authors
   /// @mod{DM,,created}
-  void InFileExistCheck(const string& routine, const string& FileNameRaw, const ifstream& file_to_check) {
+  void InFileExistCheck(const string& routine, const string& FileNameRaw, const std::ifstream& file_to_check) {
     const string FileName(aurostd::CleanFileName(FileNameRaw));
     if (!file_to_check) {
       const string message = "In routine " + routine + ". Cannot open file " + FileName + ".";
@@ -521,8 +574,25 @@ namespace aurostd {
     if (tmpdir.empty()) {
       tmpdir = XHOST.tmpfs;
     } // CO20210315
-    string str = tmpdir + "/" + (hidden ? "." : "") + "_aflow_" + identifier + "." + XHOST.user + ".pid" + XHOST.ostrPID.str() + ".tid" + XHOST.ostrTID.str() + ".a" + AFLOW_VERSION +
-                 ".rnd" + aurostd::utype2string(uint(std::floor((double) 100000 * aurostd::ran0()))) + ".u" + aurostd::utype2string(uint((double) aurostd::get_useconds())) + (directory ? "_" : ".") + "tmp"; // CO20200502 - threadID
+    string str = tmpdir
+               + "/"
+               + (hidden ? "." : "")
+               + "_aflow_"
+               + identifier
+               + "."
+               + XHOST.user
+               + ".pid"
+               + XHOST.ostrPID.str()
+               + ".tid"
+               + XHOST.ostrTID.str()
+               + ".a"
+               + AFLOW_VERSION
+               + ".rnd"
+               + aurostd::utype2string(uint(std::floor((double) 100000 * aurostd::ran0())))
+               + ".u"
+               + aurostd::utype2string(uint((double) aurostd::get_useconds()))
+               + (directory ? "_" : ".")
+               + "tmp"; // CO20200502 - threadID
     str = aurostd::CleanFileName(str);
     return str;
   }
@@ -551,6 +621,7 @@ namespace aurostd {
   /// @mod{SC,20190401,created function}
   /// @mod{SD,20240312,rewritten using filesystem}
   /// @mod{HE,20240815,catch identical files}
+  /// @mod{ST,20251208,catch errors ENODATA EIO ENOSYS EINVAL and try safer function}
   /// @note legacy function to work with strings rather than filesystem objects directly
   bool CopyFile(const string& file_from, const string& file_to) {
     const std::filesystem::path from_path = CleanFileName(file_from);
@@ -564,7 +635,129 @@ namespace aurostd {
         return false;
       }
     }
-    return std::filesystem::copy_file(from_path, to_path, std::filesystem::copy_options::overwrite_existing);
+    // now try to do the copy
+    try {
+      return std::filesystem::copy_file(from_path, to_path, std::filesystem::copy_options::overwrite_existing);
+    } catch (const std::filesystem::filesystem_error& e) {
+      // uh oh, check the error codes and try to use a different pathway if the error might be sendfile related
+      switch (e.code().value()) {
+        case ENODATA: // occurs from bug on some Lustre based file systems even where there is data
+        case EIO: // in case the fs driver/implementation does not support the system call but reports so incorrectly, or there is an issue on a networked filesystem
+        case ENOSYS: // suggested by sendfile(2) man pages, this would mean the system call does not exist
+        case EINVAL: // suggested by sendfile(2) man pages, this would mean the kernel does not want to use the system call on our files
+          return CopyFile_safer(from_path, to_path);
+        default: return false;
+      }
+    }
+  }
+
+  /// @brief alternative copy file function that tries to use a user-space pathway
+  /// This function uses iostream system to try to copy via a user-space read/write
+  /// rather than the sendfile kernel-space pathway that std::filesystem::copy_file will use.
+  /// While sendfile is theoretically faster, it might choke if there are cache or network
+  /// issues with the supporting filesystem. Read and write are more stable system calls.
+  /// While we don't use read/write syscalls here explicitly, the streams should pass the
+  /// data through user-space and compile down to read/write syscalls.
+  /// @param file_from source
+  /// @param file_to target
+  /// @authors
+  /// @mod{ST,20251208,created function}
+  /// @note Do not use this, use CopyFile instead
+  bool CopyFile_safer(const std::string& file_from, const std::string& file_to) {
+    std::ifstream in_file{file_from, std::ios::in | std::ios::binary};
+    if (!in_file.is_open()) {
+      return false;
+    }
+    std::ofstream out_file{file_to, std::ios::out | std::ios::binary};
+    if (!out_file.is_open()) {
+      in_file.close();
+      return false;
+    }
+
+    out_file << in_file.rdbuf();
+    if (!out_file.good()) {
+      in_file.close();
+      out_file.close();
+      return false;
+    }
+
+    try {
+      std::filesystem::permissions(file_to, std::filesystem::status(file_from).permissions());
+    } catch (...) {
+      // do nothing
+    }
+
+    in_file.close();
+    out_file.close();
+    return true;
+  }
+
+  /// @brief copy a file
+  /// @param directory_from source
+  /// @param directory_to target
+  /// @authors
+  /// @mod{HE,20260129,created function}
+  /// @note legacy function to work with strings rather than filesystem objects directly
+  /// @note enables workarounds for problematic filesystems
+  bool CopyDirectory(const std::string& directory_from, const std::string& directory_to) {
+    const std::filesystem::path from_path = CleanFileName(directory_from);
+    const std::filesystem::path to_path = CleanFileName(directory_to);
+
+    if (!std::filesystem::is_directory(from_path)) {
+      return false;
+    }
+
+    if (std::filesystem::is_regular_file(to_path)) {
+      return false;
+    }
+
+    if (std::filesystem::is_directory(to_path)) {
+      if (std::filesystem::equivalent(from_path, to_path)) {
+        return false;
+      }
+    }
+    try {
+      fs::create_directories(to_path.parent_path());
+      fs::copy(from_path, to_path, fs::copy_options::recursive);
+      return true;
+    } catch (const std::filesystem::filesystem_error& e) {
+      // uh oh, check the error codes and try to use a different pathway if the error might be sendfile related
+      switch (e.code().value()) {
+        case ENODATA: // occurs from bug on some Lustre based file systems even where there is data
+        case EIO: // in case the fs driver/implementation does not support the system call but reports so incorrectly, or there is an issue on a networked filesystem
+        case ENOSYS: // suggested by sendfile(2) man pages, this would mean the system call does not exist
+        case EINVAL: // suggested by sendfile(2) man pages, this would mean the kernel does not want to use the system call on our files
+          return CopyDirectory_safer(from_path, to_path);
+        default: return false;
+      }
+    }
+  }
+
+  /// @brief alternative copy directory function that uses CopyFile_safer
+  /// This function similar to CopyFile_safer is a fallback option for problematic filesystems.
+  /// It will copy only regular files and directories recursively.
+  /// @param directory_from source
+  /// @param directory_to target
+  /// @authors
+  /// @mod{HE,20260129,created function}
+  /// @note Do not use this, use CopyDirectory instead
+  bool CopyDirectory_safer(const std::string& directory_from, const std::string& directory_to) {
+    const std::filesystem::path from_path = CleanFileName(directory_from);
+    const std::filesystem::path to_path = CleanFileName(directory_to);
+    fs::create_directories(to_path.parent_path()); // ensure parent exist
+    fs::create_directory(to_path, from_path); // make new folder with the same attributes as old one
+    for (const std::filesystem::directory_entry& x : std::filesystem::directory_iterator(from_path)) {
+      if (x.is_regular_file()) {
+        if (!CopyFile(x.path(), directory_to / x.path().filename())) {
+          return false;
+        }
+      } else if (x.is_directory()) {
+        if (!CopyDirectory_safer(x.path(), directory_to / x.path().filename())) {
+          return false;
+        }
+      }
+    }
+    return true;
   }
 
   /// @brief link a file
@@ -627,6 +820,41 @@ namespace aurostd {
     }
 
     return true;
+  }
+
+  // ***************************************************************************
+  // Function SplitFileName
+  // ***************************************************************************
+  /// @brief WARNING: this function is deprecated; users should use the std::filesystem::path functions instead
+  /// @param filePath
+  /// @return std::array<std::string,3> {parent, name, suffix}
+  std::array<std::string, 3> splitFilePath(const string& filePath) {
+    size_t type_sep = filePath.rfind(".");
+    size_t folder_sep = filePath.rfind("/");
+    std::string suffix;
+    std::string name;
+    std::string parent;
+    if (folder_sep != std::string::npos) {
+      parent = filePath.substr(0, folder_sep + 1);
+      if (type_sep != std::string::npos) {
+        if (type_sep > folder_sep) {
+          suffix = filePath.substr(type_sep);
+          name = filePath.substr(folder_sep + 1, type_sep - folder_sep - 1);
+        } else {
+          name = filePath.substr(folder_sep + 1);
+        }
+      } else {
+        name = filePath.substr(folder_sep + 1);
+      }
+    } else {
+      if (type_sep != std::string::npos) {
+        suffix = filePath.substr(type_sep);
+        name = filePath.substr(0, type_sep);
+      } else {
+        name = filePath;
+      }
+    }
+    return {parent, name, suffix};
   }
 
   /// @brief move file to another file
@@ -815,8 +1043,17 @@ namespace aurostd {
   /// @authors
   /// @mod{CO,20210624,created function}
   /// @mod{SD,20240326,rewritten using libarchive}
+  /// @mod{HE,20250728,add auto suffix detection}
   void compressfile2stringstream(const string& file_raw, stringstream& content) {
-    const string file(aurostd::CleanFileName(file_raw));
+    string file(aurostd::CleanFileName(file_raw));
+    // find the actual file
+    for (const std::string& suffix : compression_suffix) {
+      if (const string file_compressed = file + suffix; std::filesystem::exists(file_compressed)) {
+        file = file_compressed;
+        break;
+      }
+    }
+
     static constexpr size_t buff_len = 16384;
     thread_local char buff[buff_len + 1];
     archive* a = archive_read_new();
@@ -882,7 +1119,7 @@ namespace aurostd {
         }
         return string2compressfile(FileINPUT + StringOUTPUT, FileNameOUTPUT, ct);
       }
-      ofstream FileOUTPUT;
+      std::ofstream FileOUTPUT;
       FileOUTPUT.open(FileNameOUTPUT.c_str(), std::ios::out);
       writable = FileOUTPUT.is_open(); // CO20190808 - captures whether we can open/write file
       if (mode == "POST" || mode == "APPEND") {
@@ -902,7 +1139,7 @@ namespace aurostd {
       if (ct) {
         return string2compressfile(StringOUTPUT, FileNameOUTPUT, ct);
       }
-      ofstream FileOUTPUT;
+      std::ofstream FileOUTPUT;
       FileOUTPUT.open(FileNameOUTPUT.c_str(), std::ios::out);
       writable = FileOUTPUT.is_open(); // CO20190808 - captures whether we can open/write file
       FileOUTPUT << StringOUTPUT;
@@ -1011,7 +1248,7 @@ namespace aurostd {
       }
       return stringstream2compressfile(full_string, file, ct);
     }
-    ofstream FileOUT;
+    std::ofstream FileOUT;
     FileOUT.open(file.c_str(), std::ios::out);
     const bool writable = FileOUT.is_open(); // CO20190808 - captures whether we can open/write file
     for (const auto& iline : vline) {
@@ -1554,5 +1791,3 @@ namespace aurostd {
   }
 
 } // namespace aurostd
-
-#endif //_AUROSTD_XFILE_CPP_

@@ -12,6 +12,9 @@
 #include <iomanip>
 #include <ios>
 #include <ostream>
+#include <sstream>
+#include <string>
+#include <vector>
 
 #include <math.h>
 
@@ -20,6 +23,7 @@
 #include "AUROSTD/aurostd_xcomplex.h"
 #include "AUROSTD/aurostd_xerror.h"
 #include "AUROSTD/aurostd_xfile.h"
+#include "AUROSTD/aurostd_xoption.h"
 #include "AUROSTD/aurostd_xscalar.h"
 #include "AUROSTD/aurostd_xvector.h"
 
@@ -33,66 +37,24 @@
 using std::deque;
 using std::setprecision;
 using std::setw;
+using std::string;
+using std::stringstream;
+using std::vector;
+
+using aurostd::xcomplex;
+using aurostd::xmatrix;
+using aurostd::xoption;
+using aurostd::xvector;
 
 static const double MIN_FREQ_THRESHOLD = -0.1;
 
 namespace apl {
 
-  // ///////////////////////////////////////////////////////////////////////////
-  DOSCalculator::DOSCalculator() {
-    free();
-  }
-
-  DOSCalculator::DOSCalculator(PhononCalculator& pc, const xoption& aplopts) {
-    free();
-    _pc = &pc;
-    _pc_set = true;
+  DOSCalculator::DOSCalculator(PhononCalculator& pc, const xoption& aplopts) : _pc(&pc), _pc_set(true) {
     initialize(aplopts);
   }
 
-  DOSCalculator::DOSCalculator(const DOSCalculator& that) {
-    if (this != &that) {
-      free();
-    }
-    copy(that);
-  }
-
-  DOSCalculator& DOSCalculator::operator=(const DOSCalculator& that) {
-    if (this != &that) {
-      free();
-    }
-    copy(that);
-    return *this;
-  }
-
-  void DOSCalculator::copy(const DOSCalculator& that) {
-    if (this == &that) {
-      return;
-    }
-    _pc = that._pc;
-    _pc_set = that._pc_set;
-    _bzmethod = that._bzmethod;
-    _qpoints = that._qpoints;
-    _freqs = that._freqs;
-    _minFreq = that._minFreq;
-    _maxFreq = that._maxFreq;
-    _stepDOS = that._stepDOS;
-    _halfStepDOS = that._halfStepDOS;
-    _bins = that._bins;
-    _dos = that._dos;
-    _idos = that._idos;
-    _eigen = that._eigen;
-    _projectedDOS = that._projectedDOS;
-    _projections = that._projections;
-    _temperature = that._temperature;
-    _system = that._system;
-  }
-
-  DOSCalculator::~DOSCalculator() {
-    free();
-  }
-
-  void DOSCalculator::free() {
+  void DOSCalculator::clear() {
     _qpoints.clear();
     _freqs.clear();
     _bins.clear();
@@ -113,7 +75,7 @@ namespace apl {
   }
 
   void DOSCalculator::clear(PhononCalculator& pc) {
-    free();
+    clear();
     _pc = &pc;
     _pc_set = true;
   }
@@ -431,7 +393,7 @@ namespace apl {
     vector<vector<vector<vector<double>>>> parts;
     if (nproj > 0) {
       // Precompute eigenvector projections
-      xcomplex<double> eig;
+      aurostd::xcomplex<double> eig;
       parts.assign(_qm.getnQPs(), vector<vector<vector<double>>>(_pc->getNumberOfBranches(), vector<vector<double>>(nproj, vector<double>(natoms, 0))));
       for (int q = 0; q < _qm.getnQPs(); q++) {
         for (uint br = 0; br < _pc->getNumberOfBranches(); br++) {
@@ -631,7 +593,7 @@ namespace apl {
     xdos.number_atoms = _pc->getInputCellStructure().atoms.size();
     xdos.partial = (!_projectedDOS.empty());
     xdos.Vol = GetVolume(_pc->getInputCellStructure()) / xdos.number_atoms;
-    const xvector<double> lattice;
+    xvector<double> lattice;
     lattice[1] = _pc->getInputCellStructure().a * 1E-10;
     lattice[2] = _pc->getInputCellStructure().b * 1E-10;
     lattice[3] = _pc->getInputCellStructure().c * 1E-10;

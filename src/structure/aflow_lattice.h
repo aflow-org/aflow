@@ -107,7 +107,6 @@ namespace LATTICE {
 aurostd::xvector<double> Vrotate(aurostd::xvector<double> v, aurostd::xvector<double> axisrot, double theta);
 void CheckLatticeHistogram();
 namespace LATTICE {
-  using std::string;
   // kpoints and brillouin zones
   std::string KPOINTS_Directions(xstructure str_in, double grid, bool& foundBZ);
   std::string KPOINTS_Directions(std::string lattice_type, aurostd::xmatrix<double> sp, double _grid, int iomode, bool& foundBZ);

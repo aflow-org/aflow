@@ -5,14 +5,14 @@
 // ***************************************************************************
 // Stefano Curtarolo
 
-#ifndef _AUROSTD_ARGV_CPP_
-#define _AUROSTD_ARGV_CPP_
-
 #include "aurostd_argv.h"
 
 #include <cstddef>
 #include <cstdlib>
+#include <deque>
+#include <fstream>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -24,8 +24,15 @@
 #include "aurostd_xvector.h"
 
 using std::cerr;
+using std::deque;
 using std::endl;
+using std::ifstream;
+using std::iostream;
+using std::istringstream;
+using std::ofstream;
+using std::ostringstream;
 using std::string;
+using std::stringstream;
 using std::vector;
 
 #define VERBOSE_ARGV false // DX20200907
@@ -250,7 +257,7 @@ namespace aurostd {  // namespace aurostd
         cerr << "[" << tokens[j] << "]" << endl;
       }
     }
-    const xvector<utype> out(1, dim);
+    xvector<utype> out(1, dim);
     for (size_t i = 0; i < argv.size(); i++) {
       if (i + out.rows < argv.size()) {
         for (size_t j = 0; j < tokens.size(); j++) {
@@ -751,8 +758,6 @@ namespace aurostd {  // namespace aurostd
 
 // *******************************************************************************************
 // *******************************************************************************************
-
-#endif  // _AURO_IMPLEMENTATIONS_
 
 // ***************************************************************************
 // *                                                                         *

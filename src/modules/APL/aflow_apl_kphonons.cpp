@@ -38,15 +38,18 @@
 #include "flow/aflow_xclasses.h"
 
 using std::cerr;
-using std::cout;
 using std::endl;
 using std::ifstream;
 using std::istream;
 using std::ofstream;
 using std::ostream;
+using std::ostringstream;
 using std::string;
 using std::stringstream;
 using std::vector;
+
+using aurostd::xoption;
+using aurostd::xvector;
 
 #define _ASTROPT_APL_OLD_ string("[AFLOW_PHONONS]") // CO20170601, ensure backwards compatibility (we ALWAYS support LEGACY)
 #define _ASTROPT_APL_ string("[AFLOW_APL]") // CO20170601
@@ -117,7 +120,7 @@ namespace KBIN {
       const string scheme_phonons = vflags.KBIN_VASP_KPOINTS_PHONONS_KSCHEME.content_string;
       const int kppra_phonons = vflags.KBIN_VASP_KPOINTS_PHONONS_KPPRA.content_int;
       xvector<int> kpts_sc(3);
-      const xvector<int> kpts_pc(3);
+      xvector<int> kpts_pc(3);
       if (vflags.KBIN_VASP_KPOINTS_PHONONS_GRID.content_string.empty()) {
         int NK = (int) ((double) kppra_phonons / scell.getSupercellStructure().atoms.size() + 0.5);
         if (NK < 1) {
@@ -183,7 +186,7 @@ namespace KBIN {
       }
       // k-point grid comparison only relevant when KPPRA is used
       if (!vflags.KBIN_VASP_KPOINTS_PHONONS_GRID.content_string.empty()) {
-        const xvector<int> kpts_sc_new(3);
+        xvector<int> kpts_sc_new(3);
         scell.build(scell_dims_new, false);
         int NK = (int) ((double) kppra_phonons / scell.getSupercellStructure().atoms.size() + 0.5);
         if (NK < 1) {
@@ -769,7 +772,7 @@ namespace KBIN {
     apl::Supercell& supercell = phcalc.getSupercell();
 
     // Determine the supercell dimensions
-    const xvector<int> scell_dims = supercell.determineSupercellDimensions(aplopts);
+    xvector<int> scell_dims = supercell.determineSupercellDimensions(aplopts);
 
     // Don't relax when we already have a PHPOSCAR file (state saved)
     if (!aurostd::CompressFileExist(phposcar_file) && aplopts.flag("RELAX")) {

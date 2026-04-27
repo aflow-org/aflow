@@ -4,16 +4,17 @@
 // *                                                                         *
 // ***************************************************************************
 
-#ifndef _AUROSTD_XFIT_CPP_
-#define _AUROSTD_XFIT_CPP_
-
 #include "aurostd_xfit.h"
 
 #include <cmath>
 #include <cstddef>
 #include <cstdlib>
+#include <fstream>
 #include <functional>
 #include <iostream>
+#include <sstream>
+#include <string>
+#include <vector>
 
 #include "aurostd.h"
 #include "aurostd_automatic_template.h"
@@ -26,6 +27,15 @@
 
 using std::cerr;
 using std::endl;
+using std::function;
+using std::ifstream;
+using std::iostream;
+using std::istringstream;
+using std::ofstream;
+using std::ostringstream;
+using std::string;
+using std::stringstream;
+using std::vector;
 
 #define DEBUG_XFIT false // toggles debug output for xfit
 
@@ -67,7 +77,7 @@ namespace aurostd {
   /// @authors
   /// @mod{SD,20220422,created function}
   template <class utype> xvector<utype> evalPolynomial_xv(const xvector<utype>& x, const xvector<utype>& p) {
-    const xvector<utype> res(x.rows);
+    xvector<utype> res(x.rows);
     for (int i = res.lrows; i <= res.urows; i++) {
       res(i) = evalPolynomial(x(i), p);
     }
@@ -87,7 +97,7 @@ namespace aurostd {
   /// @authors
   /// @mod{SD,20220505,created function}
   template <class utype> xmatrix<utype> evalPolynomial_xm(const xmatrix<utype>& x, const xvector<utype>& p) {
-    const xmatrix<utype> res(x.rows, x.cols);
+    xmatrix<utype> res(x.rows, x.cols);
     for (int i = res.lrows; i <= res.urows; i++) {
       for (int j = res.lcols; j <= res.ucols; j++) {
         res(i, j) = evalPolynomial(x(i, j), p);
@@ -172,7 +182,7 @@ namespace aurostd {
     if ((int) n >= p.urows) {
       return xvector<utype>(1);
     }
-    const xvector<utype> dp(p.urows - n);
+    xvector<utype> dp(p.urows - n);
     for (int i = p.urows; i > (int) n; i--) {
       dp(i - n) = p(i) * aurostd::factorial<utype>(i - 1) / aurostd::factorial<utype>(i - n - 1);
     }
@@ -201,7 +211,7 @@ namespace aurostd {
   ///  1 xm^1 xm^2 .. xm^(n-1)
   /// where m is the size of x array
   template <class utype> xmatrix<utype> Vandermonde_matrix(const xvector<utype>& x, const int n) {
-    const xmatrix<utype> VM(x.rows, n);
+    xmatrix<utype> VM(x.rows, n);
 
     for (int i = x.lrows; i <= x.urows; i++) {
       VM[i][1] = 1.0;
@@ -359,7 +369,7 @@ namespace aurostd {
     if (LDEBUG) {
       cerr << "VM old=" << VM << endl;
     }
-    const xvector<utype> w = _w / wtot; // normalize weights
+    xvector<utype> w = _w / wtot; // normalize weights
     for (int i = VM.lrows; i <= VM.urows; i++) {
       VM.setmat(w(i) * VM.getxmat(i, i, 1, VM.cols), i, 1);
     }
@@ -393,7 +403,7 @@ namespace aurostd {
       const string message = "Leading polynomial coefficient is zero";
       throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, message, _VALUE_ERROR_);
     }
-    const xmatrix<utype> CM(p.urows - 1, p.urows - 1, p.lrows, p.lrows);
+    xmatrix<utype> CM(p.urows - 1, p.urows - 1, p.lrows, p.lrows);
     for (int i = p.lrows; i < p.urows - 1; i++) {
       CM(i, i + 1) = 1.0;
     }
@@ -574,7 +584,7 @@ namespace aurostd {
       throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, message, _VALUE_ILLEGAL_);
     }
     xvector<double> x0 = _x0;
-    const xvector<double> f(n);
+    xvector<double> f(n);
     xmatrix<double> J(n, n);
     xmatrix<double> iJ;
     const xmatrix<double> I = aurostd::identity(J);
@@ -757,8 +767,8 @@ namespace aurostd {
     for (size_t i = 0; i < vf.size(); i++) {
       for (int j = dx.lrows; j <= dx.urows; j++) {
         df.emplace_back([i, j, dx, vf](xvector<double> x) {
-          const xvector<double> x1 = x;
-          const xvector<double> x2 = x;
+          xvector<double> x1 = x;
+          xvector<double> x2 = x;
           x1(j) -= dx(j);
           x2(j) += dx(j);
           return 0.5 * (vf[i](x2) - vf[i](x1)) / dx(j);
@@ -977,7 +987,6 @@ namespace aurostd {
   }
 } // namespace aurostd
 
-#endif
 // **************************************************************************
 // *                                                                        *
 // *             STEFANO CURTAROLO - Duke University 2003-2024              *

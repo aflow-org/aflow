@@ -1,6 +1,16 @@
 /*!
  \mainpage AFLOW
 
+ \section Overview
+
+ The Automatic-Flow (__AFLOW__) framework is a collection of software tools designed for
+ high-throughput materials discovery, leveraging both first-principles quantum mechanical calculations 
+ using density functional theory (DFT), and data informatics as a screening strategy.
+
+More information can be found here
+ - \b Source Code: <a href="https://github.com/aflow-org/aflow">github.com/aflow-org/aflow</a>
+ - \b Homepage: <a href="https://aflow.org">aflow.org</a>
+
  \section Contributors
  \subsection SC Stefano Curtarolo
     - __SC__
@@ -31,17 +41,14 @@
 
  \subsection SG Sean Griesemer
     - __SG__
-    - sean.griesemer@duke.edu
     - 2023 - 2025
 
  \subsection AZ Adam Zettel
     - __AZ__
-    - adam.zettel@duke.edu
     - 2022 - 2024
 
  \subsection AG Asa Guest
     - __AG__
-    - asa.guest@duke.edu
     - 2022 - 2023
 
  \subsection CT Cormac Toher

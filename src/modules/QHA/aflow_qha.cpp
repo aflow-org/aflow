@@ -43,6 +43,7 @@
 #include "AUROSTD/aurostd_xfile.h"
 #include "AUROSTD/aurostd_xfit.h"
 #include "AUROSTD/aurostd_xmatrix.h"
+#include "AUROSTD/aurostd_xoption.h"
 #include "AUROSTD/aurostd_xscalar.h"
 #include "AUROSTD/aurostd_xvector.h"
 
@@ -100,6 +101,10 @@ using std::setw;
 using std::string;
 using std::stringstream;
 using std::vector;
+
+using aurostd::xmatrix;
+using aurostd::xoption;
+using aurostd::xvector;
 
 //================================================================================
 //                    EOS related
@@ -208,29 +213,9 @@ double Bprime_SJ(double x, const xvector<double> &dEdp) {
 //=============================================================================
 //                         Definitions of the QHA class members
 namespace apl {
-  QHA::QHA(ostream &oss) : xStream(oss) {
-    free();
-  }
-  QHA::QHA(const QHA &qha) : xStream(*qha.getOFStream(), *qha.getOSS()) {
-    free();
-    copy(qha);
-  }
-  QHA::~QHA() {
-    xStream::free();
-    free();
-  }
-  const QHA &QHA::operator=(const QHA &qha) {
-    copy(qha);
-    return *this;
-  }
-
-  void QHA::clear() {
-    free();
-  }
-
   /// Initializes all values to "zero" and attempts to clear all containers.
   ///
-  void QHA::free() {
+  void QHA::clear() {
     apl_options.clear();
     qha_options.clear();
     system_title = "";
@@ -287,82 +272,10 @@ namespace apl {
     currentDirectory = ".";
   }
 
-  void QHA::copy(const QHA &qha) {
-    if (this == &qha) {
-      return;
-    }
-
-    apl_options = qha.apl_options;
-    qha_options = qha.qha_options;
-    system_title = qha.system_title;
-    isEOS = qha.isEOS;
-    isGP_FD = qha.isGP_FD;
-    ignore_imaginary = qha.ignore_imaginary;
-    isQHA = qha.isQHA;
-    isQHA3P = qha.isQHA3P;
-    isSCQHA = qha.isSCQHA;
-    isQHANP = qha.isQHANP;
-    isInitialized = qha.isInitialized;
-    includeElectronicContribution = qha.includeElectronicContribution;
-    doSommerfeldExpansion = qha.doSommerfeldExpansion;
-    Ntemperatures = qha.Ntemperatures;
-    N_GPvolumes = qha.N_GPvolumes;
-    N_EOSvolumes = qha.N_EOSvolumes;
-    N_QHANPvolumes = qha.N_QHANPvolumes;
-    Nbranches = qha.Nbranches;
-    NatomsOrigCell = qha.NatomsOrigCell;
-    Nelectrons = qha.Nelectrons;
-    TaylorExpansionOrder = qha.TaylorExpansionOrder;
-    gp_distortion = qha.gp_distortion;
-    origStructure = qha.origStructure;
-    Temperatures = qha.Temperatures;
-    ph_disp_temperatures = qha.ph_disp_temperatures;
-    GPvolumes = qha.GPvolumes;
-    EOSvolumes = qha.EOSvolumes;
-    QHANPvolumes = qha.QHANPvolumes;
-    coefGPVolumes = qha.coefGPVolumes;
-    coefEOSVolumes = qha.coefEOSVolumes;
-    coefQHANPVolumes = qha.coefQHANPVolumes;
-    DOS_Ef = qha.DOS_Ef;
-    Efermi_V = qha.Efermi_V;
-    E0_V = qha.E0_V;
-    static_eigvals = qha.static_eigvals;
-    static_ibzkpts = qha.static_ibzkpts;
-    qpWeights = qha.qpWeights;
-    qPoints = qha.qPoints;
-    gp_fit_matrix = qha.gp_fit_matrix;
-    omegaV_mesh = qha.omegaV_mesh;
-    omegaV_mesh_EOS = qha.omegaV_mesh_EOS;
-    gp_ph_dispersions = qha.gp_ph_dispersions;
-    eos_ph_dispersions = qha.eos_ph_dispersions;
-    eos_vib_thermal_properties = qha.eos_vib_thermal_properties;
-    subdirectories_apl_eos = qha.subdirectories_apl_eos;
-    subdirectories_apl_gp = qha.subdirectories_apl_gp;
-    subdirectories_apl_qhanp = qha.subdirectories_apl_qhanp;
-    subdirectories_static = qha.subdirectories_static;
-    arun_runnames_apl_eos = qha.arun_runnames_apl_eos;
-    arun_runnames_apl_gp = qha.arun_runnames_apl_gp;
-    arun_runnames_apl_qhanp = qha.arun_runnames_apl_qhanp;
-    arun_runnames_static = qha.arun_runnames_static;
-    xinput = qha.xinput;
-    currentDirectory = qha.currentDirectory;
-
-    xStream::copy(qha);
-  }
-
   ///////////////////////////////////////////////////////////////////////////////
 
   QHA::QHA(const xstructure &in_structure, _xinput &xinput, xoption &qha_options, xoption &apl_options, ofstream &FileMESSAGE, ostream &oss) {
     initialize(in_structure, xinput, qha_options, apl_options, FileMESSAGE, oss);
-  }
-
-  // xStream initializers
-  void QHA::initialize(ostream &oss) {
-    xStream::initialize(oss);
-  }
-
-  void QHA::initialize(ofstream &mf, ostream &oss) {
-    xStream::initialize(mf, oss);
   }
 
   /// Initializes the QHA class with all the necessary data.
@@ -377,7 +290,7 @@ namespace apl {
     const string msg = "Initializing QHA.";
     pflow::logger(QHA_ARUN_MODE, __AFLOW_FUNC__, msg, currentDirectory, *p_FileMESSAGE, *p_oss, _LOGGER_MESSAGE_);
 
-    free();
+    clear();
 
     this->xinput = xinput;
     this->apl_options = apl_options;
@@ -1485,7 +1398,7 @@ namespace apl {
     for (int i = s.lrows; i <= s.urows; i++) {
       s[i] = 1;
     }
-    const xvector<double> Vpoly(4);
+    xvector<double> Vpoly(4);
     for (int i = 1; i <= 4; i++) {
       Vpoly[i] = pow(V, i - 1);
     }
@@ -1716,14 +1629,14 @@ namespace apl {
     switch (method) {
       case (EOS_SJ): {
         const double x = std::pow(V, -1.0 / 3.0);
-        const xvector<double> dEdp = aurostd::evalPolynomialDeriv(x, parameters, 1);
+        xvector<double> dEdp = aurostd::evalPolynomialDeriv(x, parameters, 1);
         P = -std::pow(x, 4) / 3.0 * dEdp[2];
       } break;
       case (EOS_BIRCH_MURNAGHAN2):
       case (EOS_BIRCH_MURNAGHAN3):
       case (EOS_BIRCH_MURNAGHAN4): {
         const double x = std::pow(V, -2.0 / 3.0);
-        const xvector<double> dEdp = aurostd::evalPolynomialDeriv(x, parameters, 1);
+        xvector<double> dEdp = aurostd::evalPolynomialDeriv(x, parameters, 1);
         P = -2.0 / 3.0 * std::pow(x, 5.0 / 2.0) * dEdp[2];
       } break;
       case (EOS_MURNAGHAN): P = parameters[3] * (1 - std::pow(parameters[2] / V, parameters[4])) / parameters[4]; break;
@@ -1736,15 +1649,15 @@ namespace apl {
     double Veq = 0.0;
     switch (method) {
       case (EOS_SJ): {
-        const double xmin = std::pow(max(EOSvolumes), -1.0 / 3.0);
-        const double xmax = std::pow(min(EOSvolumes), -1.0 / 3.0);
+        const double xmin = std::pow(aurostd::max(EOSvolumes), -1.0 / 3.0);
+        const double xmax = std::pow(aurostd::min(EOSvolumes), -1.0 / 3.0);
         Veq = std::pow(aurostd::polynomialFindExtremum(parameters, xmin, xmax), -3);
       } break;
       case (EOS_BIRCH_MURNAGHAN2):
       case (EOS_BIRCH_MURNAGHAN3):
       case (EOS_BIRCH_MURNAGHAN4): {
-        const double xmin = std::pow(max(EOSvolumes), -2.0 / 3.0);
-        const double xmax = std::pow(min(EOSvolumes), -2.0 / 3.0);
+        const double xmin = std::pow(aurostd::max(EOSvolumes), -2.0 / 3.0);
+        const double xmax = std::pow(aurostd::min(EOSvolumes), -2.0 / 3.0);
         Veq = std::pow(aurostd::polynomialFindExtremum(parameters, xmin, xmax), -3.0 / 2.0);
       } break;
       case (EOS_MURNAGHAN):
@@ -1799,7 +1712,7 @@ namespace apl {
     xvector<double> guess(4);
     switch (method) {
       case (EOS_SJ): {
-        const xvector<double> x(V.rows);
+        xvector<double> x(V.rows);
         for (int i = V.lrows; i <= V.urows; i++) {
           x[i] = std::pow(V[i], -1.0 / 3.0);
         }
@@ -1810,13 +1723,13 @@ namespace apl {
         const double x_eq = aurostd::polynomialFindExtremum(fit_params, min(x), max(x));
         EOS_volume_at_equilibrium = std::pow(x_eq, -3);
           // index 1 - value, 2 - 1st derivative, 3 - 2nd derivative and so on
-        const xvector<double> dEdp = aurostd::evalPolynomialDeriv(x_eq, fit_params, 3);
+        xvector<double> dEdp = aurostd::evalPolynomialDeriv(x_eq, fit_params, 3);
         EOS_energy_at_equilibrium = dEdp[1];
         EOS_bulk_modulus_at_equilibrium = calcBulkModulus_SJ(x_eq, dEdp);
         EOS_Bprime_at_equilibrium = Bprime_SJ(x_eq, dEdp);
       } break;
       case (EOS_BIRCH_MURNAGHAN2): {
-        const xvector<double> x(V.rows);
+        xvector<double> x(V.rows);
         for (int i = V.lrows; i <= V.urows; i++) {
           x[i] = std::pow(V[i], -2.0 / 3.0);
         }
@@ -1827,13 +1740,13 @@ namespace apl {
         const double x_eq = aurostd::polynomialFindExtremum(fit_params, min(x), max(x));
         EOS_volume_at_equilibrium = std::pow(x_eq, -3.0 / 2.0);
           // index 1 - value, 2 - 1st derivative, 3 - 2nd derivative and so on
-        const xvector<double> dEdp = aurostd::evalPolynomialDeriv(x_eq, fit_params, 3);
+        xvector<double> dEdp = aurostd::evalPolynomialDeriv(x_eq, fit_params, 3);
         EOS_energy_at_equilibrium = dEdp[1];
         EOS_bulk_modulus_at_equilibrium = calcBulkModulus_BM(x_eq, dEdp);
         EOS_Bprime_at_equilibrium = Bprime_BM(x_eq, dEdp);
       } break;
       case (EOS_BIRCH_MURNAGHAN3): {
-        const xvector<double> x(V.rows);
+        xvector<double> x(V.rows);
         for (int i = V.lrows; i <= V.urows; i++) {
           x[i] = std::pow(V[i], -2.0 / 3.0);
         }
@@ -1844,13 +1757,13 @@ namespace apl {
         const double x_eq = aurostd::polynomialFindExtremum(fit_params, min(x), max(x));
         EOS_volume_at_equilibrium = std::pow(x_eq, -3.0 / 2.0);
           // index 1 - value, 2 - 1st derivative, 3 - 2nd derivative and so on
-        const xvector<double> dEdp = aurostd::evalPolynomialDeriv(x_eq, fit_params, 3);
+        xvector<double> dEdp = aurostd::evalPolynomialDeriv(x_eq, fit_params, 3);
         EOS_energy_at_equilibrium = dEdp[1];
         EOS_bulk_modulus_at_equilibrium = calcBulkModulus_BM(x_eq, dEdp);
         EOS_Bprime_at_equilibrium = Bprime_BM(x_eq, dEdp);
       } break;
       case (EOS_BIRCH_MURNAGHAN4): {
-        const xvector<double> x(V.rows);
+        xvector<double> x(V.rows);
         for (int i = V.lrows; i <= V.urows; i++) {
           x[i] = std::pow(V[i], -2.0 / 3.0);
         }
@@ -1861,7 +1774,7 @@ namespace apl {
         const double x_eq = aurostd::polynomialFindExtremum(fit_params, min(x), max(x));
         EOS_volume_at_equilibrium = std::pow(x_eq, -3.0 / 2.0);
           // index 1 - value, 2 - 1st derivative, 3 - 2nd derivative and so on
-        const xvector<double> dEdp = aurostd::evalPolynomialDeriv(x_eq, fit_params, 3);
+        xvector<double> dEdp = aurostd::evalPolynomialDeriv(x_eq, fit_params, 3);
         EOS_energy_at_equilibrium = dEdp[1];
         EOS_bulk_modulus_at_equilibrium = calcBulkModulus_BM(x_eq, dEdp);
         EOS_Bprime_at_equilibrium = Bprime_BM(x_eq, dEdp);
@@ -2184,7 +2097,7 @@ namespace apl {
   /// interval.
   double QHA::calcChemicalPotential(double T, int Vid) {
     // step taken to determine the bracketing interval
-    static const double dE = max(0.01, KBOLTZEV * T);
+    static const double dE = aurostd::max(0.01, KBOLTZEV * T);
 
     const bool LDEBUG = (false || DEBUG_QHA || XHOST.DEBUG);
     if (LDEBUG) {
@@ -2212,18 +2125,18 @@ namespace apl {
     // decrease in the opposite case until the bracketing interval is found (opposite
     // signs of IDOS-number_of_electrons at bracketing interval ends).
     left_end = right_end = guess;
-    if (sign(f) > 0) {
+    if (aurostd::sign(f) > 0) {
       f_at_right_end = f;
       do {
         left_end -= dE;
         f_at_left_end = calcIDOS(left_end, T, static_eigvals[Vid]) - Nelectrons;
-      } while (sign(f_at_left_end) == sign(f_at_right_end));
+      } while (aurostd::sign(f_at_left_end) == aurostd::sign(f_at_right_end));
     } else {
       f_at_left_end = f;
       do {
         right_end += dE;
         f_at_right_end = calcIDOS(right_end, T, static_eigvals[Vid]) - Nelectrons;
-      } while (sign(f_at_left_end) == sign(f_at_right_end));
+      } while (aurostd::sign(f_at_left_end) == aurostd::sign(f_at_right_end));
     }
 
     middle = (left_end + right_end) / 2;
@@ -2245,13 +2158,13 @@ namespace apl {
     // discretization.
     // Meanwhile, do a sanity check that the function has opposite signs at the interval
     // ends.
-    while ((sign(f_at_left_end) != sign(f_at_right_end)) && (std::abs(f_at_middle) > _ZERO_TOL_) && (std::abs(left_end - right_end) > _ZERO_TOL_)) {
-      if (sign(f_at_left_end) == sign(f_at_middle)) {
+    while ((aurostd::sign(f_at_left_end) != aurostd::sign(f_at_right_end)) && (std::abs(f_at_middle) > _ZERO_TOL_) && (std::abs(left_end - right_end) > _ZERO_TOL_)) {
+      if (aurostd::sign(f_at_left_end) == aurostd::sign(f_at_middle)) {
         std::swap(left_end, middle);
         std::swap(f_at_left_end, f_at_middle);
       }
 
-      if (sign(f_at_right_end) == sign(f_at_middle)) {
+      if (aurostd::sign(f_at_right_end) == aurostd::sign(f_at_middle)) {
         std::swap(right_end, middle);
         std::swap(f_at_right_end, f_at_middle);
       }
@@ -2320,7 +2233,7 @@ namespace apl {
 
   /// Calculates the electronic free energy using the Sommerfeld expansion.
   xvector<double> QHA::calcElectronicFreeEnergySommerfeld(double T) {
-    const xvector<double> F_Som = DOS_Ef;
+    xvector<double> F_Som = DOS_Ef;
     for (int i = F_Som.lrows; i <= F_Som.urows; i++) {
       F_Som[i] *= -pow(M_PI * KBOLTZEV * T, 2) / 6.0 / NatomsOrigCell;
     }
@@ -2330,7 +2243,7 @@ namespace apl {
   /// Calculates the electronic specific heat at a fixed volume using the
   /// Sommerfeld expansion. Units are eV/atom.
   xvector<double> QHA::calcElectronicSpecificHeatSommerfeld(double T) {
-    const xvector<double> Cv_Som = DOS_Ef;
+    xvector<double> Cv_Som = DOS_Ef;
     for (int i = Cv_Som.lrows; i <= Cv_Som.urows; i++) {
       Cv_Som[i] *= pow(M_PI * KBOLTZEV, 2) * T / 3.0 / NatomsOrigCell;
     }
@@ -2731,7 +2644,7 @@ namespace apl {
 
       for (uint q = 0; q < NIrQpoints; q++) {
         for (size_t branch = 0; branch < omegaV_mesh[q].size(); branch++) {
-          const xvector<double> xomega = aurostd::vector2xvector(omegaV_mesh[q][branch]);
+          xvector<double> xomega = aurostd::vector2xvector(omegaV_mesh[q][branch]);
           w = extrapolateFrequency(V, xomega, SCQHA_CALC);
           w *= THz2Hz * PLANCKSCONSTANTEV_h; // [THz] -> [eV]
 
@@ -3134,14 +3047,14 @@ namespace apl {
 
     xstructure struc = origStructure;
     struc.SetVolume(V);
-    const xvector<double> lattice(3);
+    xvector<double> lattice(3);
     lattice[1] = struc.a * 1E-10;
     lattice[2] = struc.b * 1E-10;
     lattice[3] = struc.c * 1E-10;
     GPpath.lattice = lattice;
     GPpath.carstring = "GRUEN_PATH";
 
-    const xvector<double> xomega(N_GPvolumes);
+    xvector<double> xomega(N_GPvolumes);
     // venergy.at(kpoint number).at(band number).at(spin number)
     for (size_t q = 0; q < GPpath.venergy.size(); q++) {
       for (int branch = 0; branch < Nbranches; branch++) {
@@ -3220,7 +3133,7 @@ namespace apl {
     xeigen.number_loops = 0;
     xeigen.spin = 1;
     xeigen.Vol = origStructure.GetVolume() / NatomsOrigCell;
-    const xvector<double> lattice(3);
+    xvector<double> lattice(3);
     lattice[1] = origStructure.a * 1e-10;
     lattice[2] = origStructure.b * 1e-10;
     lattice[3] = origStructure.c * 1e-10;
@@ -3287,7 +3200,7 @@ namespace apl {
     int T = 0;
     xvector<double> xomega;
 
-    const int ndigits = aurostd::getZeroPadding(max(ph_disp_temperatures));
+    const int ndigits = aurostd::getZeroPadding(aurostd::max(ph_disp_temperatures));
     const uint f_contrib = includeElectronicContribution ? F_ELEC | F_VIB : F_VIB;
 
     for (size_t i = 0; i < ph_disp_temperatures.size(); i++) {
@@ -3335,7 +3248,7 @@ namespace apl {
 
         xstructure struc = origStructure;
         struc.InflateVolume(V / struc.GetVolume());
-        const xvector<double> lattice(3);
+        xvector<double> lattice(3);
         lattice[1] = struc.a * 1E-10;
         lattice[2] = struc.b * 1E-10;
         lattice[3] = struc.c * 1E-10;

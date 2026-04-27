@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
+#include <deque>
 #include <filesystem>
 #include <fstream>
 #include <functional>
@@ -15,6 +16,7 @@
 #include <istream>
 #include <map>
 #include <memory>
+#include <numeric>
 #include <ostream>
 #include <sstream>
 #include <string>
@@ -28,6 +30,7 @@
 #include "AUROSTD/aurostd_xfile.h"
 #include "AUROSTD/aurostd_xhttp.h"
 #include "AUROSTD/aurostd_xmatrix.h"
+#include "AUROSTD/aurostd_xoption.h"
 #include "AUROSTD/aurostd_xparser.h"
 #include "AUROSTD/aurostd_xparser_json.h"
 #include "AUROSTD/aurostd_xscalar.h"
@@ -46,7 +49,7 @@
 #include "flow/aflow_xclasses.h"
 #include "interfaces/aflow_voro.h"
 #include "modules/COMPARE/aflow_compare_structure.h"
-#include "modules/HULL/aflow_chull.h" //HE20210408
+#include "modules/HULL/aflow_nhull.h" //NHA20251230
 #include "modules/PROTOTYPES/aflow_anrl.h"
 #include "modules/SYM/aflow_symmetry.h"
 #include "modules/SYM/aflow_symmetry_spacegroup.h" //DX20180723
@@ -67,17 +70,25 @@
 
 using std::cerr;
 using std::cout;
+using std::deque;
 using std::endl;
+using std::function;
 using std::ifstream;
 using std::ios_base;
+using std::iostream;
 using std::istream;
 using std::istringstream;
+using std::map;
 using std::ofstream;
 using std::ostream;
 using std::ostringstream;
 using std::string;
 using std::stringstream;
 using std::vector;
+
+using aurostd::xmatrix;
+using aurostd::xoption;
+using aurostd::xvector;
 
 // ***************************************************************************
 // getAtomIndicesByType() //DX20210322
@@ -113,7 +124,7 @@ vector<uint> getAtomIndicesByName(const xstructure& xstr, const string& name) {
   stringstream message;
 
   const size_t natoms = xstr.atoms.size();
-  const string name_clean = KBIN::VASP_PseudoPotential_CleanName(name);
+  const string name_clean = aurostd::VASP_PseudoPotential_CleanName(name);
 
   vector<uint> indices_atoms_subset;
   for (uint i = 0; i < natoms; i++) {
@@ -179,7 +190,7 @@ vector<string> getLeastFrequentAtomSpecies(const xstructure& xstr, bool clean) {
   for (size_t i = 0; i < xstr.num_each_type.size(); i++) {
     if (xstr.num_each_type[i] == type_count_min) {
       if (clean) {
-        lfa_species.push_back(KBIN::VASP_PseudoPotential_CleanName(xstr.species[i]));
+        lfa_species.push_back(aurostd::VASP_PseudoPotential_CleanName(xstr.species[i]));
       } else {
         lfa_species.push_back(xstr.species[i]);
       }
@@ -208,7 +219,7 @@ vector<string> xstructure::GetElements(bool clean_name, bool fake_names) const {
     if (clean_name) {
       vector<string> vspecies;
       for (size_t i = 0; i < species.size(); i++) {
-        vspecies.push_back(KBIN::VASP_PseudoPotential_CleanName(species[i]));
+        vspecies.push_back(aurostd::VASP_PseudoPotential_CleanName(species[i]));
       }
       return vspecies;
     } else {
@@ -268,7 +279,7 @@ vector<string> xstructure::GetElementsFromAtomNames(bool clean_name) const { // 
       iat++;
     }
     if (clean_name) {
-      species_found.push_back(KBIN::VASP_PseudoPotential_CleanName(species_tmp));
+      species_found.push_back(aurostd::VASP_PseudoPotential_CleanName(species_tmp));
     } else {
       species_found.push_back(species_tmp);
     }
@@ -654,7 +665,7 @@ void minimumCoordinationShell(const xstructure& xstr, uint center_index, double&
     // far as min_dist or lattice_radius (whichever is smaller)
     else if (ii == center_index && (xstr.atoms[ii].name == type || type.empty())) { // DX20191105 - added type==""
       const double lattice_radius = RadiusSphereLattice(xstr.lattice);
-      const double search_radius = min(lattice_radius, min_dist);
+      const double search_radius = aurostd::min(lattice_radius, min_dist);
 
       // ---------------------------------------------------------------------------
       // use variant that stores the lattice dimension information so it can be
@@ -3809,7 +3820,7 @@ xmatrix<double> MetricTensor(const xmatrix<double>& lattice, double scale) {
   if (lattice.rows != lattice.cols) {
     throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, "Dimension mismatch, should be square lattice matrix.", _VALUE_ILLEGAL_);
   }
-  const xmatrix<double> metric_tensor(lattice.rows, lattice.cols);
+  xmatrix<double> metric_tensor(lattice.rows, lattice.cols);
   for (int i = lattice.lrows; i <= lattice.urows; i++) { // CO20190520
     for (int j = lattice.lcols; j <= lattice.ucols; j++) { // CO20190520
       metric_tensor(i, j) = aurostd::scalar_product(lattice(i), lattice(j));
@@ -3829,13 +3840,13 @@ xmatrix<double> ReciprocalLattice(const xstructure& a) {
 }
 
 xmatrix<double> ReciprocalLattice(const xmatrix<double>& rlattice, double scale) { // AFLOW_FUNCTION_IMPLEMENTATION
-  const xvector<double> a1(3);
-  const xvector<double> a2(3);
-  const xvector<double> a3(3);
+  xvector<double> a1(3);
+  xvector<double> a2(3);
+  xvector<double> a3(3);
   xvector<double> b1(3);
   xvector<double> b2(3);
   xvector<double> b3(3);
-  const xmatrix<double> klattice(3, 3); // kvectors are RAWS
+  xmatrix<double> klattice(3, 3); // kvectors are RAWS
   double norm;
   a1[1] = rlattice[1][1];
   a1[2] = rlattice[1][2];
@@ -4069,7 +4080,7 @@ string KPPRA(xstructure& str, const int& _NK) {
   str.kpoints_k1 = k1;
   str.kpoints_k2 = k2;
   str.kpoints_k3 = k3;
-  str.kpoints_kmax = max(str.kpoints_k1, str.kpoints_k2, str.kpoints_k3);
+  str.kpoints_kmax = aurostd::max(str.kpoints_k1, str.kpoints_k2, str.kpoints_k3);
   str.kpoints_kppra = str.kpoints_k1 * str.kpoints_k2 * str.kpoints_k3 * str.atoms.size();
   return stringKPPRA;
 }
@@ -4168,7 +4179,7 @@ string KPPRA_DELTA(xstructure& str, const double& DK) {
   str.kpoints_k1 = k1;
   str.kpoints_k2 = k2;
   str.kpoints_k3 = k3;
-  str.kpoints_kmax = max(str.kpoints_k1, str.kpoints_k2, str.kpoints_k3);
+  str.kpoints_kmax = aurostd::max(str.kpoints_k1, str.kpoints_k2, str.kpoints_k3);
   str.kpoints_kppra = str.kpoints_k1 * str.kpoints_k2 * str.kpoints_k3 * str.atoms.size();
   return stringKPPRA;
 }
@@ -4178,9 +4189,9 @@ string KPPRA_DELTA(xstructure& str, const double& DK) {
 // **************************************************************************
 // returns estimated version of NBANDS starting from
 // electrons, ions, spin and ispin
-int GetNBANDS(int electrons, int nions, int spineach, bool ispin, int NPAR) {
+int GetNBANDS_AFLOW3(int electrons, int nions, int spineach, bool ispin, int NPAR) {
   double out = 0.0;
-  out = max(ceil((electrons + 4.0) / 1.75) + max(nions / 1.75, 6.0), ceil(0.80 * electrons)); // from VASP
+  out = aurostd::max(ceil((electrons + 4.0) / 1.75) + aurostd::max(nions / 1.75, 6.0), ceil(0.80 * electrons)); // from VASP
   if (ispin) {
     out += (nions * spineach + 1) / 2;
   }
@@ -4206,6 +4217,29 @@ int GetNBANDS(int electrons, int nions, int spineach, bool ispin, int NPAR) {
     }
   }
   // CO20210315 END - adjust for NPAR
+  return nbands;
+}
+
+int GetNBANDS_VASP_SERIAL_spineach(const int electrons, const int nions, const int spineach, const bool ispin) {
+  // we do not account for LNONCOLLINEAR or non-collinear spin
+  int nmag = ispin ? nions * spineach : 0;
+  nmag = (nmag + 1) / 2;
+
+  int nbands = std::max((electrons + 2) / 2 + std::max(nions / 2, 3), static_cast<int>(0.6 * electrons)) + nmag;
+  return nbands;
+}
+
+int GetNBANDS_VASP_SERIAL(const int electrons, const int nions, const vector<int>& spins, const bool ispin) {
+  // we do not account for LNONCOLLINEAR or non-collinear spin
+  if (spins.size() != nions) {
+    stringstream msg;
+    msg << "number of spins does not match number of ions (spins=" << spins.size() << ", nions=" << nions << ")";
+    pflow::logger(__AFLOW_FILE__, __AFLOW_FUNC__, msg, _LOGGER_WARNING_);
+  }
+  int nmag = ispin ? std::accumulate(spins.begin(), spins.end(), 0) : 0;
+  nmag = (nmag + 1) / 2;
+
+  int nbands = std::max((electrons + 2) / 2 + std::max(nions / 2, 3), static_cast<int>(0.6 * electrons)) + nmag;
   return nbands;
 }
 
@@ -4522,21 +4556,19 @@ void AtomEnvironment::constructAtomEnvironmentHull() {
   if (LDEBUG) {
     cerr << __AFLOW_FUNC__ << " create AE hull around " << num_neighbors << " atoms" << endl;
   }
+
   xoption hull_options;
-  hull_options.flag("CHULL::FULL_HULL", true);
-  hull_options.flag("CHULL::SKIP_N+1_ENTHALPY_GAIN_ANALYSIS", true);
-  hull_options.flag("CHULL::SKIP_STABILITY_CRITERION_ANALYSIS", true);
-  hull_options.flag("CHULL::INCLUDE_OUTLIERS", true);
-  hull_options.flag("CHULL::SEE_NEGLECT", false);
-  chull::ConvexHull AEhull;
-  AEhull = chull::ConvexHull(hull_options, points);
+  hull_options.flag("NHULL::INCLUDE_OUTLIERS", true);
+
+  nhull::ConvexHull AEhull(hull_options, points);
 
   if (LDEBUG) {
-    cerr << __AFLOW_FUNC__ << " resulting hull has " << AEhull.m_facets.size() << " raw facets" << endl;
+    cerr << __AFLOW_FUNC__ << " resulting hull has " << AEhull.getFacets().size() << " raw facets" << endl;
   }
 
   vector<vector<uint>> facet_collection;
   AEhull.getJoinedFacets(facet_collection);
+
   for (std::vector<vector<uint>>::const_iterator f = facet_collection.begin(); f != facet_collection.end(); ++f) {
     vector<uint> nf;
     for (std::vector<uint>::const_iterator v = f->begin(); v != f->end(); ++v) {
@@ -4625,7 +4657,7 @@ aurostd::JSON::object AtomEnvironment::toJSON(bool full) const {
     if (full) {
       ae_json["neighbor_elements"] = aurostd::JSON::object(aurostd::JSON::object_types::LIST);
       for (uint i = 0; i < elements_neighbor.size(); i++) {
-        const aurostd::JSON::object distance_element(aurostd::JSON::object_types::DICTIONARY);
+        aurostd::JSON::object distance_element(aurostd::JSON::object_types::DICTIONARY);
         distance_element["index"] = i;
         distance_element["name"] = elements_neighbor[i];
         distance_element["min_distance"] = distances_neighbor[i];
@@ -4642,7 +4674,7 @@ aurostd::JSON::object AtomEnvironment::toJSON(bool full) const {
     uint index = 0;
     for (size_t i = 0; i < coordinations_neighbor.size(); i++) {
       for (uint k = 0; k < coordinations_neighbor[i]; k++) {
-        const aurostd::JSON::object neighbor(aurostd::JSON::object_types::DICTIONARY);
+        aurostd::JSON::object neighbor(aurostd::JSON::object_types::DICTIONARY);
         if (full) {
           neighbor["index"] = index;
           neighbor["element"] = elements_neighbor[i];
@@ -4660,7 +4692,7 @@ aurostd::JSON::object AtomEnvironment::toJSON(bool full) const {
     if (has_hull && full) {
       ae_json["facets"] = aurostd::JSON::object(aurostd::JSON::object_types::LIST);
       for (uint i = 0; i < facets.size(); i++) {
-        const aurostd::JSON::object facet_entry(aurostd::JSON::object_types::DICTIONARY);
+        aurostd::JSON::object facet_entry(aurostd::JSON::object_types::DICTIONARY);
         facet_entry["area"] = facet_area[i];
         facet_entry["vertices"] = facets[i];
         ae_json["facets"].push_back(facet_entry);
@@ -4759,7 +4791,7 @@ vector<AtomEnvironment> getAtomEnvironments(const xstructure& xstr, uint mode) {
 void writeAtomEnvironments(vector<AtomEnvironment> AE, const std::map<string, string> meta_data) {
   const bool LDEBUG = (false || XHOST.DEBUG);
 
-  const aurostd::JSON::object ae_json(aurostd::JSON::object_types::DICTIONARY);
+  aurostd::JSON::object ae_json(aurostd::JSON::object_types::DICTIONARY);
   string file_name = "atomic_environment.json";
   string directory_name;
   string file_path;
@@ -4983,7 +5015,7 @@ bool sortWyckoffByType(const wyckoffsite_ITC& a, const wyckoffsite_ITC& b) {
 namespace pflow {
   xmatrix<double> QE_ibrav2lattice(const int& ibrav, const xvector<double>& parameters, const bool& isabc) {
     // Lattice based on ibrav and lattice parameters (see http://www.quantum-espresso.org/wp-content/uploads/Doc/INPUT_PW.html#ibrav)
-    const xmatrix<double> lattice;
+    xmatrix<double> lattice;
 
     double a;
     double b;
@@ -5010,15 +5042,15 @@ namespace pflow {
     alpha = acos(parameters(6));
     // parameters(6) = cos(alpha) NOTE: Different than AFLOW's order convention of a,b,c,alpha,beta,gamma
 
-    const xvector<double> xn(3);
+    xvector<double> xn(3);
     xn(1) = 1.0;
     xn(2) = 0.0;
     xn(3) = 0.0;
-    const xvector<double> yn(3);
+    xvector<double> yn(3);
     yn(1) = 0.0;
     yn(2) = 1.0;
     yn(3) = 0.0;
-    const xvector<double> zn(3);
+    xvector<double> zn(3);
     zn(1) = 0.0;
     zn(2) = 0.0;
     zn(3) = 1.0;
@@ -5157,7 +5189,7 @@ double GetVol(const xvector<double>& v1, const xvector<double>& v2, const xvecto
 // #define _Getabc_angles __NO_USE_Sortabc_angles
 
 xvector<double> Getabc_angles(const xmatrix<double>& lat, int mode) { // AFLOW_FUNCTION_IMPLEMENTATION
-  const xvector<double> data(6);
+  xvector<double> data(6);
   data(1) = aurostd::modulus(lat(1));
   data(2) = aurostd::modulus(lat(2));
   data(3) = aurostd::modulus(lat(3));
@@ -5172,9 +5204,9 @@ xvector<double> Getabc_angles(const xmatrix<double>& lat, int mode) { // AFLOW_F
   return data;
 }
 
-xvector<double> Getabc_angles(const xmatrix<double>& lat, const xvector<int>& permut, int mode) {
+xvector<double> Getabc_angles(const xmatrix<double>& lat, xvector<int>& permut, int mode) {
   // AFLOW_FUNCTION_IMPLEMENTATION
-  const xvector<double> data(6);
+  xvector<double> data(6);
   data(1) = aurostd::modulus(lat(1));
   data(2) = aurostd::modulus(lat(2));
   data(3) = aurostd::modulus(lat(3));
@@ -5227,10 +5259,10 @@ xvector<double> Getabc_angles(const xmatrix<double>& lat, const xvector<int>& pe
 }
 
 xvector<double> Getabc_angles(const xvector<double>& r1, // AFLOW_FUNCTION_IMPLEMENTATION
-                              const xvector<double>& r2, // AFLOW_FUNCTION_IMPLEMENTATION
-                              const xvector<double>& r3, // AFLOW_FUNCTION_IMPLEMENTATION
+                              xvector<double>& r2, // AFLOW_FUNCTION_IMPLEMENTATION
+                              xvector<double>& r3, // AFLOW_FUNCTION_IMPLEMENTATION
                               int mode) { // AFLOW_FUNCTION_IMPLEMENTATION
-  const xmatrix<double> lat(3, 3);
+  xmatrix<double> lat(3, 3);
   lat(1, 1) = r1(1);
   lat(1, 2) = r1(2);
   lat(1, 3) = r1(3);
@@ -5244,11 +5276,11 @@ xvector<double> Getabc_angles(const xvector<double>& r1, // AFLOW_FUNCTION_IMPLE
 }
 
 xvector<double> Getabc_angles(const xvector<double>& r1, // AFLOW_FUNCTION_IMPLEMENTATION
-                              const xvector<double>& r2, // AFLOW_FUNCTION_IMPLEMENTATION
-                              const xvector<double>& r3, // AFLOW_FUNCTION_IMPLEMENTATION
-                              const xvector<int>& permut, // AFLOW_FUNCTION_IMPLEMENTATION
+                              xvector<double>& r2, // AFLOW_FUNCTION_IMPLEMENTATION
+                              xvector<double>& r3, // AFLOW_FUNCTION_IMPLEMENTATION
+                              xvector<int>& permut, // AFLOW_FUNCTION_IMPLEMENTATION
                               int mode) { // AFLOW_FUNCTION_IMPLEMENTATION
-  const xmatrix<double> lat(3, 3);
+  xmatrix<double> lat(3, 3);
   lat(1, 1) = r1(1);
   lat(1, 2) = r1(2);
   lat(1, 3) = r1(3);
@@ -5296,7 +5328,7 @@ xvector<double> Sortabc_angles(const xmatrix<double>& lat, int mode) { // AFLOW_
     }
   }
 
-  const xvector<double> data(6);
+  xvector<double> data(6);
   data(1) = aurostd::modulus(lat(imin));
   data(2) = aurostd::modulus(lat(imid));
   data(3) = aurostd::modulus(lat(imax));
@@ -5326,7 +5358,7 @@ xvector<double> Sortabc_angles(const xmatrix<double>& lat, int mode) { // AFLOW_
 
 xmatrix<double> GetClat(const xvector<double>& abc_angles) { // AFLOW_FUNCTION_IMPLEMENTATION
   stringstream message;
-  const xmatrix<double> clattice(3, 3);
+  xmatrix<double> clattice(3, 3);
   const double a = abc_angles[1];
   const double b = abc_angles[2];
   const double c = abc_angles[3];
@@ -5352,7 +5384,7 @@ xmatrix<double> GetClat(const xvector<double>& abc_angles) { // AFLOW_FUNCTION_I
 
 xmatrix<double> GetClat(const double& a, const double& b, const double& c, const double& alpha, const double& beta, const double& gamma) {
   stringstream message;
-  const xmatrix<double> clattice(3, 3);
+  xmatrix<double> clattice(3, 3);
   const double bc = alpha * deg2rad; // angle from b to c (remove a)
   const double ca = beta * deg2rad; // angle from c to a (remove b)
   const double ab = gamma * deg2rad; // angle from a to b (remove c)
@@ -5385,7 +5417,7 @@ xstructure GetIntpolStr(xstructure strA, xstructure strB, const double& f, const
   strA = ReScale(strA, 1.0);
   strB = ReScale(strB, 1.0);
   // Get new lattice params.
-  const xmatrix<double> lati(3, 3);
+  xmatrix<double> lati(3, 3);
   xmatrix<double> latA(3, 3);
   latA = strA.lattice;
   xmatrix<double> latB(3, 3);
@@ -5412,7 +5444,7 @@ xstructure GetIntpolStr(xstructure strA, xstructure strB, const double& f, const
       xvector<double> ddp(3);
       ddp = C2F(lati, dp);
       for (int ic = 1; ic <= 3; ic++) {
-        ddp(ic) = ddp(ic) - nint(ddp(ic));
+        ddp(ic) = ddp(ic) - aurostd::nint(ddp(ic));
       }
       dp = F2C(lati, ddp);
     }
@@ -5475,8 +5507,8 @@ xvector<int> LatticeDimensionSphere(const xmatrix<double>& _lattice, double radi
   int k;
   xmatrix<double> invlattice(3, 3);
   xmatrix<double> normals(3, 3);
-  const xmatrix<double> frac_normals(3, 3);
-  const xvector<int> dim(3);
+  xmatrix<double> frac_normals(3, 3);
+  xvector<int> dim(3);
   double length;
   normals.clear();
   // get the normals to pairs of lattice vectors of length radius
@@ -6609,7 +6641,7 @@ bool xstructure::SpeciesGetAlphabetic() {
   // check done
   vector<string> sspecies;
   for (size_t isp = 0; isp < species.size(); isp++) {
-    sspecies.push_back(aurostd::RemoveNumbers(KBIN::VASP_PseudoPotential_CleanName(species[isp])));
+    sspecies.push_back(aurostd::RemoveNumbers(aurostd::VASP_PseudoPotential_CleanName(species[isp])));
   }
 
   for (size_t isp = 0; isp < sspecies.size() - 1; isp++) {
@@ -6644,7 +6676,7 @@ bool xstructure::SpeciesPutAlphabetic() {
   while (SpeciesGetAlphabetic() == false) {
     sspecies.clear();
     for (size_t isp = 0; isp < species.size(); isp++) {
-      sspecies.push_back(aurostd::RemoveNumbers(KBIN::VASP_PseudoPotential_CleanName(species[isp])));
+      sspecies.push_back(aurostd::RemoveNumbers(aurostd::VASP_PseudoPotential_CleanName(species[isp])));
     }
     for (size_t isp = 0; isp < sspecies.size() - 1; isp++) {
       if (sspecies[isp] > sspecies.at(isp + 1)) {
@@ -6864,34 +6896,34 @@ bool GetNiggliCell(const xmatrix<double>& in_lat, xmatrix<double>& niggli_lat, x
   const double TOL = _ZERO_TOL_; // DX20180212 - from 1e-15 to 1e-10
 
   // Initialize matrices for tranformations (3x3).
-  const xmatrix<double> m1(3, 3);
+  xmatrix<double> m1(3, 3);
   m1(1, 2) = 1.0;
   m1(2, 1) = 1.0;
   m1(3, 3) = -1.0;
-  const xmatrix<double> m2(3, 3);
+  xmatrix<double> m2(3, 3);
   m2(1, 1) = -1.0;
   m2(2, 3) = 1.0;
   m2(3, 2) = 1.0;
-  const xmatrix<double> m3(3, 3);
+  xmatrix<double> m3(3, 3);
   // Els 1,1 2,2 3,3 are changed later for m3
-  const xmatrix<double> m4(3, 3);
+  xmatrix<double> m4(3, 3);
   // Els 1,1 2,2 3,3 are changed later for m4
-  const xmatrix<double> m5(3, 3);
+  xmatrix<double> m5(3, 3);
   m5(1, 1) = 1.0;
   m5(2, 2) = 1.0;
   m5(3, 3) = 1.0;
   // El 3,2 is changed later for m5
-  const xmatrix<double> m6(3, 3);
+  xmatrix<double> m6(3, 3);
   m6(1, 1) = 1.0;
   m6(2, 2) = 1.0;
   m6(3, 3) = 1.0;
   // El 3,1 is changed later for m6
-  const xmatrix<double> m7(3, 3);
+  xmatrix<double> m7(3, 3);
   m7(1, 1) = 1.0;
   m7(2, 2) = 1.0;
   m7(3, 3) = 1.0;
   // El 2,1 is changed later for m7
-  const xmatrix<double> m8(3, 3);
+  xmatrix<double> m8(3, 3);
   m8(1, 1) = 1.0;
   m8(2, 2) = 1.0;
   m8(1, 3) = 1.0;
@@ -7072,7 +7104,7 @@ LoopHead:
   }
 
   // Renormalize back to regular cell (divide by RENORM)
-  const xvector<double> outdat(6);
+  xvector<double> outdat(6);
   //      outdat(1)=sqrt(a/RENORM);
   //      outdat(2)=sqrt(b/RENORM);
   //      outdat(3)=sqrt(c/RENORM);
@@ -7391,7 +7423,7 @@ deque<_atom> foldAtomsInCell(const xstructure& a, const xmatrix<double>& lattice
   if (!fold_in_only) {
     xstructure atomic_grid; // stays empty if not needed //DX+ME20210111 - added inside if-statement
     const double radius = RadiusSphereLattice(lattice_new);
-    const xvector<int> dims = LatticeDimensionSphere(a.lattice, radius); // int dim=max(dims)+1; //dim=3;  //CO20190520
+    xvector<int> dims = LatticeDimensionSphere(a.lattice, radius); // int dim=max(dims)+1; //dim=3;  //CO20190520
     if (LDEBUG) {
       cerr << __AFLOW_FUNC__ << " a.lattice=" << endl;
       cerr << a.lattice << endl;
@@ -7646,7 +7678,7 @@ double BringInCell(double component_in, double tolerance, double upper_bound, do
 // xvector (return new xvector)
 xvector<double> BringInCell(const xvector<double>& fpos_in, double tolerance, double upper_bound, double lower_bound) {
   // DX20190904
-  const xvector<double> fpos_out = fpos_in;
+  xvector<double> fpos_out = fpos_in;
   for (int i = fpos_out.lrows; i <= fpos_out.urows; i++) {
     BringInCellInPlace(fpos_out[i], tolerance, upper_bound, lower_bound);
   }
@@ -7683,7 +7715,7 @@ xstructure BringInCell(const xstructure& xstr_in, double tolerance, double upper
 // -------------------------------------------------------------------
 // _atom (change in place, update fpos only)
 void BringInCellInPlaceFPOS(_atom& atom, double tolerance, double upper_bound, double lower_bound) { // DX20190904
-  const xvector<double> orig_fpos = atom.fpos; // DX - needed for ijk later
+  xvector<double> orig_fpos = atom.fpos; // DX - needed for ijk later
   BringInCellInPlace(atom.fpos, tolerance, upper_bound, lower_bound);
 
   // update ijk
@@ -7740,10 +7772,10 @@ void xstructure::BringInCompact() {
   // For direct coordinates
   BringInCell();
   xvector<double> adref1pos(3);
-  const xvector<double> adtstpos(3);
+  xvector<double> adtstpos(3);
   xvector<double> adtrgpos(3);
-  const xvector<double> acref1pos(3);
-  const xvector<double> actstpos(3);
+  xvector<double> acref1pos(3);
+  xvector<double> actstpos(3);
   xvector<double> actrgpos(3);
   for (size_t i = 1; i < atoms.size(); i++) { // scan all the atoms to move except the first
     adtrgpos = atoms[i].fpos;
@@ -7950,7 +7982,7 @@ bool IsTranslationFVectorFAST(const xstructure& a, const xvector<double>& ftvec)
   xvector<double> diff(3);
   bool found_atom = false;
   bool found_tvec = true;
-  const xvector<int> types(0, a.atoms.size()); // mirror to enhance speed !
+  xvector<int> types(0, a.atoms.size()); // mirror to enhance speed !
   for (size_t iat = 0; iat < a.atoms.size(); iat++) { // mirror to enhance speed !
     types(iat) = a.atoms[iat].type; // mirror to enhance speed !
   }
@@ -7996,7 +8028,7 @@ bool IsTranslationFVectorORIGINAL(const xstructure& a, const xvector<double>& ft
   uint CntGoodTrans = 0;
   const xvector<double> ftpos(3);
   xvector<double> diff(3);
-  const xvector<int> types(0, a.atoms.size()); // mirror to enhance speed !
+  xvector<int> types(0, a.atoms.size()); // mirror to enhance speed !
   for (size_t iat = 0; iat < a.atoms.size(); iat++) { // mirror to enhance speed !
     types(iat) = a.atoms[iat].type; // mirror to enhance speed !
   }
@@ -8039,7 +8071,7 @@ bool IsTranslationFVectorFAST_2011(const xstructure& a, const xvector<double>& f
   xvector<double> diff(3);
   bool found_atom = false;
   bool found_tvec = true;
-  const xvector<int> types(0, a.atoms.size()); // mirror to enhance speed !
+  xvector<int> types(0, a.atoms.size()); // mirror to enhance speed !
   for (size_t iat = 0; iat < a.atoms.size(); iat++) { // mirror to enhance speed !
     types(iat) = a.atoms[iat].type; // mirror to enhance speed !
   }
@@ -8084,7 +8116,7 @@ bool IsTranslationFVectorORIGINAL_2011(const xstructure& a, const xvector<double
   uint CntGoodTrans = 0;
   xvector<double> ftpos(3);
   xvector<double> diff(3);
-  const xvector<int> types(0, a.atoms.size()); // mirror to enhance speed !
+  xvector<int> types(0, a.atoms.size()); // mirror to enhance speed !
   for (size_t iat = 0; iat < a.atoms.size(); iat++) { // mirror to enhance speed !
     types(iat) = a.atoms[iat].type; // mirror to enhance speed !
   }
@@ -8280,7 +8312,7 @@ void xstructure::GetPrimitive_20210322(double eps) { // DX20210406
     return;
   }
 
-  const xmatrix<double> lattice_tmp(3, 3);
+  xmatrix<double> lattice_tmp(3, 3);
   xmatrix<double> plattice(3, 3);
   xmatrix<double> olattice(3, 3);
   olattice = (*this).lattice; // the lattice is always a good lattice
@@ -9521,8 +9553,8 @@ double Volume(const xstructure& a) {
 
 _atom BringCloseToOrigin(_atom& atom, xmatrix<double>& f2c) {
   _atom atom_out = atom;
-  const xvector<double> v_in = atom.fpos;
-  const xvector<int> ijk = atom.ijk;
+  xvector<double> v_in = atom.fpos;
+  xvector<int> ijk = atom.ijk;
   for (uint i = 1; i < 4; i++) {
     while (v_in(i) > (1.0 - _ZERO_TOL_)) {
       v_in(i) = v_in(i) - 1;
@@ -10323,7 +10355,7 @@ xstructure GetSuperCell(const xstructure& a, const xvector<double>& supercell, v
 // DX20190319 - added force_supercell_matrix  //CO20190409 - added force_strict_pc2scMap
 // xstructure GetSuperCell(const xstructure& a, const xvector<double>& supercell)
 { // CO20200106 - patching for auto-indenting
-  const xmatrix<double> _supercell(3, 3);
+  xmatrix<double> _supercell(3, 3);
   if (supercell.rows == 9) {
     _supercell(1, 1) = supercell(1);
     _supercell(1, 2) = supercell(2);
@@ -10353,7 +10385,7 @@ xstructure GetSuperCell(const xstructure& a, const xvector<int>& supercell, vect
 // DX20190319 - added force_supercell_matrix  //CO20190409 - added force_strict_pc2scMap
 // xstructure GetSuperCell(const xstructure& a, const xvector<int>& supercell)
 { // CO20200106 - patching for auto-indenting
-  const xmatrix<double> _supercell(3, 3);
+  xmatrix<double> _supercell(3, 3);
   if (supercell.rows == 9) {
     _supercell(1, 1) = supercell(1);
     _supercell(1, 2) = supercell(2);
@@ -10996,7 +11028,7 @@ void xstructure::fixEmptyAtomNames(bool force_fix) {
           cerr << __AFLOW_FUNC__ << " species_pp.at(" << itype << ")=" << species_pp.at(itype) << endl;
         }
         species[itype] = species_pp.at(itype);
-        // KBIN::VASP_PseudoPotential_CleanName(species_pp.at(itype));  //CO20181226 KEEP PP INFO if available (auto aflow.in)
+        // aurostd::VASP_PseudoPotential_CleanName(species_pp.at(itype));  //CO20181226 KEEP PP INFO if available (auto aflow.in)
       }
     }
   } // cormac I`ll write a short pflow for this stuff
@@ -11458,7 +11490,7 @@ xstructure GetLTCell(const xmatrix<double>& lt, const xstructure& str) {
 
 xstructure GetLTFVCell(const xvector<double>& nvec, const double phi, const xstructure& str) {
   //  xmatrix<double> fpos=str.fpos;
-  const xmatrix<double> nlat(3, 3);
+  xmatrix<double> nlat(3, 3);
   xvector<double> nhat(3);
   xvector<double> v1(3);
   xvector<double> v2(3);
@@ -11561,11 +11593,11 @@ void xstructure::ShiftFPos(const xvector<double>& shift) {
 // MaxStructureLattice and MinStructureLattice
 // **************************************************************************
 double MaxStructureLattice(const xstructure& str) {
-  return max(aurostd::modulus(str.lattice(1)), aurostd::modulus(str.lattice(2)), aurostd::modulus(str.lattice(3)));
+  return aurostd::max(aurostd::modulus(str.lattice(1)), aurostd::modulus(str.lattice(2)), aurostd::modulus(str.lattice(3)));
 }
 
 double MinStructureLattice(const xstructure& str) {
-  return min(aurostd::modulus(str.lattice(1)), aurostd::modulus(str.lattice(2)), aurostd::modulus(str.lattice(3)));
+  return aurostd::min(aurostd::modulus(str.lattice(1)), aurostd::modulus(str.lattice(2)), aurostd::modulus(str.lattice(3)));
 }
 
 // **************************************************************************
@@ -11671,7 +11703,7 @@ xmatrix<double> GetDistMatrix(const xstructure& aa) {
       cerr << "GetDistMatrix: atom_types[" << it1 << "][0]=" << atom_types[it1][0] << endl;
     }
   }
-  const xmatrix<double> distsij(1, 1, atom_types.size(), atom_types.size());
+  xmatrix<double> distsij(1, 1, atom_types.size(), atom_types.size());
   for (size_t it1 = 0; it1 < atom_types.size(); it1++) {
     for (size_t it2 = 0; it2 < atom_types.size(); it2++) {
       distsij(it1 + 1, it2 + 1) = distsij(it2 + 1, it1 + 1) = AUROSTD_MAX_DOUBLE;
@@ -11725,7 +11757,7 @@ xmatrix<double> GetDistMatrix(const xstructure& aa) {
 // CO20171024
 vector<double> GetNBONDXX(const xstructure& a) {
   const bool LDEBUG = (false || XHOST.DEBUG);
-  const xmatrix<double> distsij = GetDistMatrix(a);
+  xmatrix<double> distsij = GetDistMatrix(a);
   vector<double> dists;
   for (uint it1 = 1; it1 < (uint) distsij.rows + 1; it1++) {
     for (uint it2 = it1; it2 < (uint) distsij.cols + 1; it2++) {
@@ -11775,9 +11807,9 @@ int xstructure::GenerateGridAtoms(int i1, int i2, int j1, int j2, int k1, int k2
   BringInCell(); // are INCELL.
   // xvector<double> a1(3),a2(3),a3(3);                     // a1,a2,a3 are the rows of the lattice matrix
   // a1=lattice(1);a2=lattice(2);a3=lattice(3); // a1,a2,a3 are the rows of the lattice matrix
-  const xvector<double>& a1 = lattice(1); // CO20190520 - no need to make copies
-  const xvector<double>& a2 = lattice(2); // CO20190520 - no need to make copies
-  const xvector<double>& a3 = lattice(3); // CO20190520 - no need to make copies
+  const xvector<double>& a1 = lattice(1);
+  const xvector<double>& a2 = lattice(2);
+  const xvector<double>& a3 = lattice(3);
   // DX20190709 - calculate and store once = speed - START
   vector<xvector<double>> l1;
   vector<xvector<double>> l2;
@@ -11929,9 +11961,9 @@ int xstructure::GenerateLIJK(double radius) {
   a2 = lattice(2);
   a3 = lattice(3); // a1,a2,a3 are the rows of the lattice matrix
   vector<int> _lijk(4);
-  const xvector<int> int_ijk(3);
+  xvector<int> int_ijk(3);
   xvector<double> cpos(3);
-  const xvector<double> fpos(3);
+  xvector<double> fpos(3);
   xvector<int> dims(3);
   dims = LatticeDimensionSphere(lattice, radius); // for(int i=0;i<=3;i++) dims[i]+=1;
   lijk_dims[1] = dims[1];
@@ -12006,7 +12038,7 @@ void l2ijk(const xstructure& str, const int& l, xvector<int>& ijk) {
 }
 
 xvector<int> l2ijk(const xstructure& str, const int& l) {
-  const xvector<int> ijk(3);
+  xvector<int> ijk(3);
   int i;
   int j;
   int k;
@@ -12208,8 +12240,8 @@ public:
         if (LDEBUG) {
           cerr << "operator()(const _atom& a, const _atom& b)  a.name==b.name" << endl;
         }
-        const xvector<int> ijka = a.ijk;
-        const xvector<int> ijkb = b.ijk;
+        xvector<int> ijka = a.ijk;
+        xvector<int> ijkb = b.ijk;
         const int va = 100 * ijka(1) + 10 * ijka(2) + 1 * ijka(3);
         const int vb = 100 * ijkb(1) + 10 * ijkb(2) + 1 * ijkb(3);
         return va < vb;
@@ -12598,7 +12630,7 @@ void xstructure::GetNeighData_20220101(const deque<_atom>& in_atom_vec, const do
 
   //  Convert input atom_vec to Niggli lattice
   deque<_atom> atom_vec = in_atom_vec;
-  const xmatrix<int> atom_shifts((int) atom_vec.size() - 1, 3, 0, 1);
+  xmatrix<int> atom_shifts((int) atom_vec.size() - 1, 3, 0, 1);
   for (size_t ia = 0; ia < atom_vec.size(); ia++) {
     const _atom a = atom_vec[ia];
     xvector<double> p_cell0(3);
@@ -12621,7 +12653,7 @@ void xstructure::GetNeighData_20220101(const deque<_atom>& in_atom_vec, const do
   int kmax;
   // Find imax
   // (algorithm 1) approximate
-  imax = (int) max(rmax / aurostd::modulus(lat(1)), rmax / aurostd::modulus(lat(2)), rmax / aurostd::modulus(lat(3))) + 2;
+  imax = (int) aurostd::max(rmax / aurostd::modulus(lat(1)), rmax / aurostd::modulus(lat(2)), rmax / aurostd::modulus(lat(3))) + 2;
   jmax = imax;
   kmax = imax;
   // (algorithm 2) exact, the requirement is that atoms must in incell.
@@ -12634,7 +12666,7 @@ void xstructure::GetNeighData_20220101(const deque<_atom>& in_atom_vec, const do
   imax = dims(1);
   jmax = dims(2);
   kmax = dims(3);
-  const xvector<int> ijk(3);
+  xvector<int> ijk(3);
   deque<_atom> all_atom_vec;
   // latt maybe a rotated version of POSCAR, so need to incell-ized the fpos and cpos
   // sstr.BringInCell(); // with roundoff
@@ -12643,7 +12675,7 @@ void xstructure::GetNeighData_20220101(const deque<_atom>& in_atom_vec, const do
   for (ijk(1) = -imax; ijk(1) <= imax; ijk(1)++) {
     for (ijk(2) = -jmax; ijk(2) <= jmax; ijk(2)++) {
       for (ijk(3) = -kmax; ijk(3) <= kmax; ijk(3)++) {
-        const xvector<double> ctpos(3);
+        xvector<double> ctpos(3);
         xvector<double> ftpos(3);
         for (size_t iat = 0; iat < sstr.atoms.size(); iat++) {
           _atom a;
@@ -12759,7 +12791,7 @@ vector<xvector<double>> GetBasisTransformationInternalTranslations(const xmatrix
   // use LatticeDimensionSphere(). Since lattice_shrink is in fractional
   // coordinates, we need to find the necessary dimensions in each direction
   // to fill the cell (i.e., the unit box). //DX20210111
-  const xvector<int> dims = LatticeDimensionSphere(lattice_shrink, 1.0);
+  xvector<int> dims = LatticeDimensionSphere(lattice_shrink, 1.0);
   if (LDEBUG) {
     cerr << __AFLOW_FUNC__ << " number of times to apply each internal translation: " << dims[1] << "," << dims[2] << "," << dims[3] << endl;
   }
@@ -13323,7 +13355,7 @@ aurostd::JSON::object xstructure2json(const xstructure& xstr) {
   if (!xstr.species.empty()) {
     vector<string> cleaned_species; // DX20190612 - cleaned species names
     for (size_t i = 0; i < xstr.species.size(); i++) {
-      cleaned_species.push_back(KBIN::VASP_PseudoPotential_CleanName(xstr.species[i]));
+      cleaned_species.push_back(aurostd::VASP_PseudoPotential_CleanName(xstr.species[i]));
     } // DX20190612 - cleaned species names
     json["species"] = cleaned_species;
   } else {
@@ -13375,7 +13407,7 @@ aurostd::JSON::object atom2json(const _atom& atom, int coord_flag, int poccupati
   aurostd::JSON::object json(aurostd::JSON::object_types::DICTIONARY);
 
   if (!atom.name.empty()) {
-    json["name"] = KBIN::VASP_PseudoPotential_CleanName(atom.name);
+    json["name"] = aurostd::VASP_PseudoPotential_CleanName(atom.name);
     // DX20190612 - added function to clean names
   } else {
     if (PRINT_NULL_JSON) {
@@ -13460,7 +13492,6 @@ namespace soliquidy {
   /// @return results as JSON object
   template <class utype> aurostd::JSON::object CalculateAUID(const utype& auid, const std::string& result_folder, bool create_x3d) {
     const aflowlib::_aflowlib_entry entry;
-    const xstructure str;
     aflowlib::EntryLoader el;
     el.loadAUID(auid);
     return CalculateEntryLoader(el.m_entries_flat, result_folder, create_x3d);
@@ -13493,7 +13524,7 @@ namespace soliquidy {
       const xstructure work_structure(structure_file_raw, IOAFLOW_AUTO);
 
       const std::filesystem::path single_out_folder = out_path / structure_file.stem();
-      const aurostd::JSON::object result = Calculate(work_structure, single_out_folder, create_x3d);
+      aurostd::JSON::object result = Calculate(work_structure, single_out_folder, create_x3d);
       result["original_path"] = absolute(structure_file).string();
       save_json[structure_file.stem()] = result;
     }
@@ -13637,31 +13668,33 @@ namespace soliquidy {
       }
 
       // define the storage for the fitting data
-      const xvector<double> volumes(atom_count - 1, 0); // start x vector from 0 to align it with the cell id p_id
+      xvector<double> volumes(atom_count - 1, 0); // start x vector from 0 to align it with the cell id p_id
       xvector<double> gradiant(atom_count - 1, 0);
       xvector<double> weights(atom_count - 1, 0);
+      size_t sub_step_max = 5; // start with a low number of sub steps that are reasonable for most cases, increase dynamically if targeted precision is not reached
       xvector<double> weights_test(atom_count - 1, 0);
       xvector<double> p(atom_count - 1, 0);
       xmatrix<double> laplacian(atom_count - 1, atom_count - 1, 0, 0);
       xmatrix<double> laplacian_inverse(atom_count - 1, atom_count - 1, 0, 0);
       xmatrix<double> I(atom_count - 1, atom_count - 1, 0, 0);
-      const xvector<double> soliquidy_cell_results(atom_count, 1);
+      xvector<double> soliquidy_cell_results(atom_count, 1);
       vector<double> soliquidy_cell_values;
       vector<xvector<double>> normals;
       vector<xvector<double>> cell_points;
       vector<vector<uint>> cell_facets;
       vector<xvector<double>> plot_points;
       vector<vector<uint>> plot_facets;
-      double x;
-      double y;
-      double z;
+
+      double x=0;
+      double y=0;
+      double z=0;
       I = aurostd::identity(I);
       weights += 1.0; // set initial weights to 1 (xvectors are 0 initialized)
-
       { // section::original | calculate the unaltered voronoi cells
         // voro::container_periodic_poly is kept in its own environment as container.clear() does not work reliable
         voro::container_periodic_poly container(work_structure.lattice[1][1], work_structure.lattice[2][1], work_structure.lattice[2][2], work_structure.lattice[3][1], work_structure.lattice[3][2],
                                                 work_structure.lattice[3][3], 6, 6, 6, 8);
+
         for (size_t i_vert = 0; i_vert < atom_count; i_vert++) {
           container.put(i_vert, vertices[i_vert][1], vertices[i_vert][2], vertices[i_vert][3], weights[i_vert]);
         }
@@ -13676,7 +13709,7 @@ namespace soliquidy {
         }
       } // section::original
 
-      // collect ststistic from the initial run
+      // collect statistics from the initial run
       cell_volume = aurostd::sum(volumes);
       target_volume = cell_volume / atom_count;
       if (debug) {
@@ -13735,12 +13768,12 @@ namespace soliquidy {
             cout << "  STEP " << iteration_count << " START" << endl;
           }
           // Start the substeps
-          for (uint sub_step = 1; sub_step <= 6; sub_step++) {
+          for (uint sub_step = 1; sub_step <= sub_step_max; sub_step++) {
             weights_test = weights + alpha * p;
             double offset_factor = 0.0;
             for (size_t i_vert = 0; i_vert < atom_count; i_vert++) {
               if (weights_test[i_vert] < 0.05) {
-                offset_factor = max((0.05 - weights_test[i_vert]), offset_factor);
+                offset_factor = aurostd::max((0.05 - weights_test[i_vert]), offset_factor);
               }
             } // this ensures that weights never go below zero (0.05)
 
@@ -13794,15 +13827,28 @@ namespace soliquidy {
             alpha = alpha / 2.0;
           }
 
-          weights = weights_test;
-          stdev = stdev_compare;
+          // if the stdev didn't improve in the last loop increase the maximal
+          // number of sub steps and run the next step from the same start conditions
+          if (stdev > stdev_compare) {
+            weights = weights_test;
+            stdev = stdev_compare;
+          } else {
+            sub_step_max += 1;
+          }
+
           if (debug) {
             cout << "  STEP " << iteration_count << " DONE - stdev: " << stdev << endl;
             cout << "    final volumes: " << volumes << endl;
             cout << "    final weights: " << weights << endl;
             cout << "    stdev: " << stdev << endl;
+            cout << "    sub_step_max: " << sub_step_max << endl;
             cout << "  --------------------------------------------------------------------" << endl;
           }
+          if (sub_step_max > 15) {
+              cout << "  Reached max sub steps without improvements - break" << endl;
+              break;
+          }
+
         } while (stdev > stdev_cutoff and iteration_count < 100);
       }
 
@@ -13863,6 +13909,8 @@ namespace soliquidy {
         aurostd::string2file(w.toTachyon(), (out_folder / (species + ".ty")));
         w.ani_type = aurostd::x3DWriter::animation_format::MP4;
         w.animate(5.0, out_folder / ("animation_" + species), 30, false);
+        aurostd::x3DWriter wcell = work_structure.render();
+        aurostd::string2file(wcell.toHTML(), out_folder / "full_cell.html");
       }
     }
     result["value"] = static_cast<double>(result["value"]) / work_structure.atoms.size();

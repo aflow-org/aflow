@@ -66,6 +66,7 @@ namespace aflowlib {
     std::string code;
     std::string composition;
     std::vector<double> vcomposition;
+    bool pocc_parent; //Indicates whether entry is a POCC parent which should be ignored by entry loader. This occurs when vcomposition.empty() and when entry.prototype contains POCC substring but not ARUN substring
     std::string compound;
     double density;
     double density_orig; // DX20190124 - add original crystal info
@@ -105,7 +106,7 @@ namespace aflowlib {
     std::vector<double> vgeometry_orig; // a,b,c and unit_cell_angles (b,c) (a,c) (a,b) //DX20190124 - add original crystal info
     std::string lattice_system_orig, lattice_variation_orig, lattice_system_relax, lattice_variation_relax;
     std::string ldau_TLUJ;
-    std::vector<std::vector<double>> vLDAU;  // ME20190124
+    std::vector<std::vector<double>> vLDAU; // ME20190124
     uint natoms;
     uint natoms_orig; // DX20190124 - add original crystal info
     std::string nbondxx;
@@ -116,11 +117,11 @@ namespace aflowlib {
     std::vector<aurostd::xvector<double>> vpositions_cartesian;
     std::string positions_fractional;
     std::vector<aurostd::xvector<double>> vpositions_fractional;
-    double pressure;           // the true applied pressure (PSTRESS)
+    double pressure; // the true applied pressure (PSTRESS)
     std::string stress_tensor;
     std::vector<double> vstress_tensor; // (1,1),(1,2),(1,3),(2,1),(2,2),(2,3),(3,1),(3,2),(3,3)
-    double pressure_residual;  // the leftover pressure due to convergence
-    double Pulay_stress;       // the leftover pressure due to incomplete basis set
+    double pressure_residual; // the leftover pressure due to convergence
+    double Pulay_stress; // the leftover pressure due to incomplete basis set
     std::string prototype;
     double PV_cell, PV_atom;
     double scintillation_attenuation_length;
@@ -151,8 +152,8 @@ namespace aflowlib {
     double valence_cell_std, valence_cell_iupac;
     double volume_cell, volume_atom;
     double volume_cell_orig, volume_atom_orig; // DX20190124 - add original crystal info
-      // DX20190124 - added original symmetry info - START
-      //  SYMMETRY
+    // DX20190124 - added original symmetry info - START
+    //  SYMMETRY
     std::string crystal_family_orig;
     std::string crystal_system_orig;
     std::string crystal_class_orig;
@@ -177,9 +178,9 @@ namespace aflowlib {
     std::string Wyckoff_letters_orig;
     std::string Wyckoff_multiplicities_orig;
     std::string Wyckoff_site_symmetries_orig;
-      // DX20190124 - added original symmetry info - END
-      // DX20180823 - added more symmetry info - START
-      //  SYMMETRY
+    // DX20190124 - added original symmetry info - END
+    // DX20180823 - added more symmetry info - START
+    //  SYMMETRY
     std::string crystal_family;
     std::string crystal_system;
     std::string crystal_class;
@@ -204,50 +205,50 @@ namespace aflowlib {
     std::string Wyckoff_letters;
     std::string Wyckoff_multiplicities;
     std::string Wyckoff_site_symmetries;
-      // DX20180823 - added more symmetry info - END
-      // DX20190208 - added anrl info - START
+    // DX20180823 - added more symmetry info - END
+    // DX20190208 - added anrl info - START
     std::string aflow_prototype_label_orig; // DX20201001 - renamed
     std::string aflow_prototype_params_list_orig; // DX20201001 - renamed
     std::string aflow_prototype_params_values_orig; // DX20201001 - renamed
     std::string aflow_prototype_label_relax; // DX20201001 - renamed
     std::string aflow_prototype_params_list_relax; // DX20201001 - renamed
     std::string aflow_prototype_params_values_relax; // DX20201001 - renamed
-      // DX20190208 - added anrl info - END
+    // DX20190208 - added anrl info - END
     std::string pocc_parameters; // CO20200731
-      // AGL/AEL
-    double agl_thermal_conductivity_300K;//  (W/m*K)
-    double agl_debye;//  (K)
-    double agl_acoustic_debye;//  (K)
-    double agl_gruneisen;//
-    double agl_heat_capacity_Cv_300K;//  (kB/cell)
-    double agl_heat_capacity_Cp_300K;//  (kB/cell)
-    double agl_thermal_expansion_300K;//  (1/K)
-    double agl_bulk_modulus_static_300K;//  (GPa)
-    double agl_bulk_modulus_isothermal_300K;//  (GPa)
-    std::string agl_poisson_ratio_source;//
-    double agl_vibrational_free_energy_300K_cell;// (meV/cell) //CT20181212
-    double agl_vibrational_free_energy_300K_atom;// (meV/atom) //CT20181212
-    double agl_vibrational_entropy_300K_cell;// (meV/cell*K) //CT20181212
-    double agl_vibrational_entropy_300K_atom;// (meV/atom*K) //CT20181212
-    double ael_poisson_ratio;//
-    double ael_bulk_modulus_voigt;//  (GPa)
-    double ael_bulk_modulus_reuss;//  (GPa)
-    double ael_shear_modulus_voigt;//  (GPa)
-    double ael_shear_modulus_reuss;//  (GPa)
-    double ael_bulk_modulus_vrh;//  (GPa)
-    double ael_shear_modulus_vrh;//  (GPa)
-    double ael_elastic_anisotropy;// //CO20181128
-    double ael_youngs_modulus_vrh;//  (GPa) //CT20181212
-    double ael_speed_sound_transverse;// (m/s) //CT20181212
-    double ael_speed_sound_longitudinal;// (m/s) //CT20181212
-    double ael_speed_sound_average;// (m/s) //CT20181212
-    double ael_pughs_modulus_ratio;// //CT20181212
-    double ael_debye_temperature;// (K) //CT20181212
-    double ael_applied_pressure;// (GPa) //CT20181212
+    // AGL/AEL
+    double agl_thermal_conductivity_300K; //  (W/m*K)
+    double agl_debye; //  (K)
+    double agl_acoustic_debye; //  (K)
+    double agl_gruneisen; //
+    double agl_heat_capacity_Cv_300K; //  (kB/cell)
+    double agl_heat_capacity_Cp_300K; //  (kB/cell)
+    double agl_thermal_expansion_300K; //  (1/K)
+    double agl_bulk_modulus_static_300K; //  (GPa)
+    double agl_bulk_modulus_isothermal_300K; //  (GPa)
+    std::string agl_poisson_ratio_source; //
+    double agl_vibrational_free_energy_300K_cell; // (meV/cell) //CT20181212
+    double agl_vibrational_free_energy_300K_atom; // (meV/atom) //CT20181212
+    double agl_vibrational_entropy_300K_cell; // (meV/cell*K) //CT20181212
+    double agl_vibrational_entropy_300K_atom; // (meV/atom*K) //CT20181212
+    double ael_poisson_ratio; //
+    double ael_bulk_modulus_voigt; //  (GPa)
+    double ael_bulk_modulus_reuss; //  (GPa)
+    double ael_shear_modulus_voigt; //  (GPa)
+    double ael_shear_modulus_reuss; //  (GPa)
+    double ael_bulk_modulus_vrh; //  (GPa)
+    double ael_shear_modulus_vrh; //  (GPa)
+    double ael_elastic_anisotropy; // //CO20181128
+    double ael_youngs_modulus_vrh; //  (GPa) //CT20181212
+    double ael_speed_sound_transverse; // (m/s) //CT20181212
+    double ael_speed_sound_longitudinal; // (m/s) //CT20181212
+    double ael_speed_sound_average; // (m/s) //CT20181212
+    double ael_pughs_modulus_ratio; // //CT20181212
+    double ael_debye_temperature; // (K) //CT20181212
+    double ael_applied_pressure; // (GPa) //CT20181212
     double ael_average_external_pressure; // (GPa) //CT20181212
-    aurostd::xmatrix<double> ael_stiffness_tensor;  // ME20191105
-    aurostd::xmatrix<double> ael_compliance_tensor;  // ME20191105
-      // APL //ME20210927
+    aurostd::xmatrix<double> ael_stiffness_tensor; // ME20191105
+    aurostd::xmatrix<double> ael_compliance_tensor; // ME20191105
+    // APL //ME20210927
     double energy_free_vibrational_cell_apl_300K;
     double energy_free_vibrational_atom_apl_300K;
     double entropy_vibrational_cell_apl_300K;
@@ -258,7 +259,7 @@ namespace aflowlib {
     double energy_zero_point_atom_apl;
     double heat_capacity_Cv_cell_apl_300K;
     double heat_capacity_Cv_atom_apl_300K;
-      // QHA  //AS20200831
+    // QHA  //AS20200831
     double gruneisen_qha; // AS20200831
     double gruneisen_qha_300K; // AS20200903
     double thermal_expansion_qha_300K; // AS20200831
@@ -271,12 +272,12 @@ namespace aflowlib {
     double volume_atom_qha_300K; // AS20201008
     double energy_free_atom_qha_300K; // AS20201008
     double energy_free_cell_qha_300K; // AS20201207
-      // BADER
+    // BADER
     std::string bader_net_charges;
-    std::vector<double> vbader_net_charges;// electrons
+    std::vector<double> vbader_net_charges; // electrons
     std::string bader_atomic_volumes;
-    std::vector<double> vbader_atomic_volumes;// Angst^3
-      // legacy
+    std::vector<double> vbader_atomic_volumes; // Angst^3
+    // legacy
     std::string server;
     std::vector<std::string> vserver;
     std::vector<std::vector<std::string>> vserverdir;
@@ -285,53 +286,52 @@ namespace aflowlib {
     std::vector<double> vstoich;
     std::string structure_name;
     std::string structure_description;
-    double distance_gnd;                              // distance_gnd
-    double distance_tie;                              // distance_tie
-    bool pureA, pureB;                                 // pureA,pureB
-    bool fcc, bcc, hcp;                                 // options for lattices
-    double stoich_a, stoich_b;                         // stoich_b,stoich_b
-    double bond_aa, bond_ab, bond_bb;                   // bond_xx // BOND_XX [norm V_ATOM^0.33]
-    std::vector<uint> vNsgroup;                            // vNsgroups
-    std::vector<std::string> vsgroup;                           // vsgroups
-    std::vector<xstructure> vstr;                          // vstructures
-      // details from EntryLoader //HE20220913
+    double distance_gnd; // distance_gnd
+    double distance_tie; // distance_tie
+    bool pureA, pureB; // pureA,pureB
+    bool fcc, bcc, hcp; // options for lattices
+    double stoich_a, stoich_b; // stoich_b,stoich_b
+    double bond_aa, bond_ab, bond_bb; // bond_xx // BOND_XX [norm V_ATOM^0.33]
+    std::vector<uint> vNsgroup; // vNsgroups
+    std::vector<std::string> vsgroup; // vsgroups
+    std::vector<xstructure> vstr; // vstructures
+    // details from EntryLoader //HE20220913
     std::string el_source_type;
     std::string el_source;
-      // dielectric
+    // dielectric
     aurostd::xmatrix<double> freq_plasma;
     aurostd::xmatrix<double> dielectric_static;
-      // functions
-    bool FixDescription();                        // fix description names
-    void clear();                                              // free space
-    uint Load(const std::stringstream& stream, std::ostream& oss);        // load from std::stringstream it std is std::cout
-    uint Load(const std::string& entry, std::ostream& oss);               // load from std::string it std is std::cout
+    // functions
+    bool FixDescription(); // fix description names
+    void clear(); // free space
+    uint Load(const std::stringstream& stream, std::ostream& oss); // load from std::stringstream it std is std::cout
+    uint Load(const std::string& entry, std::ostream& oss); // load from std::string it std is std::cout
     uint Load(const std::vector<uint64_t>& key_hash, const std::vector<std::string>& content); // Load variant for EntryLoader //HE20220404
-    void Set(const std::string& keyword, const std::string& content);   // set a class member to content // HE20220404
+    void Set(const std::string& keyword, const std::string& content); // set a class member to content // HE20220404
     void SetByHash(const uint64_t key_hash, const std::string& content); // set a class member to content based on crc64 keyword hash // HE20220404
-    uint file2aflowlib(const std::string& file, std::ostream& oss = std::cout);       // load from file
+    uint file2aflowlib(const std::string& file, std::ostream& oss = std::cout); // load from file
     uint url2aflowlib(const std::string& url, std::ostream& oss, bool = true); // load from the web (VERBOSE)
-    std::string aflowlib2string(std::string = "out", bool = false);          // ME20210408 - added PRINT_NULL
-    std::string aflowlib2file(std::string file, std::string = "out");            //
-    std::string POCCdirectory2MetadataAUIDjsonfile(const std::string& directory, uint salt = 0);           // CO20200624 - get contents of auid_metadata.json
-    bool directory2auid(const std::string& directory);                                         // from directory and AURL gives AUID and VAUID
-    [[nodiscard]] double enthalpyFormationCell(int T = 300) const;                                        // CO20200624 - CCE correction added
-    [[nodiscard]] double enthalpyFormationAtom(int T = 300) const;                                        // CO20200624 - CCE correction added
-    void correctBadDatabase(bool verbose = true, std::ostream& oss = std::cout);                         // CO20171202 - apennsy fixes
-    void correctBadDatabase(std::ofstream& FileMESSAGE, bool verbose = true, std::ostream& oss = std::cout);   // CO20171202 - apennsy fixes
-    [[nodiscard]] bool ignoreBadDatabase() const;                                                       // CO20171202 - apennsy fixes
-    bool ignoreBadDatabase(std::string& reason) const;                                         // CO20171202 - apennsy fixes
-    std::string getPathAURL(std::ostream& oss = std::cout, bool load_from_common = false) const;                   // converts entry.aurl to url/path (common)
+    std::string aflowlib2string(std::string = "out", bool = false); // ME20210408 - added PRINT_NULL
+    std::string aflowlib2file(std::string file, std::string = "out"); //
+    std::string POCCdirectory2MetadataAUIDjsonfile(const std::string& directory, uint salt = 0); // CO20200624 - get contents of auid_metadata.json
+    bool directory2auid(const std::string& directory); // from directory and AURL gives AUID and VAUID
+    [[nodiscard]] double enthalpyFormationCell(int T = 300) const; // CO20200624 - CCE correction added
+
+    [[nodiscard]] double enthalpyFormationAtom(bool& cce_used, int T) const; // CO20200624 - CCE correction added
+    [[nodiscard]] bool ignoreBadDatabase() const; // CO20171202 - apennsy fixes
+    bool ignoreBadDatabase(std::string& reason) const; // CO20171202 - apennsy fixes
+    std::string getPathAURL(std::ostream& oss = std::cout, bool load_from_common = false) const; // converts entry.aurl to url/path (common)
     std::string getPathAURL(std::ofstream& FileMESSAGE, std::ostream& oss, bool load_from_common = false) const; // converts entry.aurl to url/path (common)
-    [[nodiscard]] std::vector<std::string> getSpecies() const;                                                          // CO20221110 - extracts species from restapi
-    std::vector<std::string> getSpeciesAURL(std::ostream& oss) const;                                          // CO20210201 - extracts species from aurl
-    std::vector<std::string> getSpeciesAURL(std::ofstream& FileMESSAGE, std::ostream& oss) const;                    // CO20210201 - extracts species from aurl
-      // ML stoich features
+    [[nodiscard]] std::vector<std::string> getSpecies() const; // CO20221110 - extracts species from restapi
+    std::vector<std::string> getSpeciesAURL(std::ostream& oss) const; // CO20210201 - extracts species from aurl
+    std::vector<std::string> getSpeciesAURL(std::ofstream& FileMESSAGE, std::ostream& oss) const; // CO20210201 - extracts species from aurl
+    // ML stoich features
     void getStoichFeatures(std::vector<std::string>& vheaders, const std::string& e_props = _AFLOW_XELEMENT_PROPERTIES_ALL_);
     void getStoichFeatures(std::vector<std::string>& vheaders, std::vector<double>& vfeatures, bool vheaders_only = false, const std::string& e_props = _AFLOW_XELEMENT_PROPERTIES_ALL_);
 
-  private:                                                     //
-    void free();                                               // free space
-    void copy(const _aflowlib_entry& b);                       //
+  private: //
+    void free(); // free space
+    void copy(const _aflowlib_entry& b); //
     void LoadCleanup();
   };
 
@@ -355,7 +355,7 @@ namespace aflowlib {
   bool mergeEntries(std::vector<aflowlib::_aflowlib_entry>& naries, const std::vector<aflowlib::_aflowlib_entry>& entries_new);
   bool mergeEntries(std::vector<aflowlib::_aflowlib_entry>& naries, const aflowlib::_aflowlib_entry& entry_new);
 
-// ***************************************************************************
+  // ***************************************************************************
   bool json2aflowlib(const std::string& json, std::string key, std::string& value); // ME I do not understand why you have out this function as a private member... it would have been simpler to be able to use everywhere
   uint auid2present(std::string auid, std::string& aurl, int mode = 1); // returns json.size() if found...
   std::map<std::string, std::string> AflowlibLocator(const std::vector<std::string>&, const std::string&); // HE20240324 change to use entry loader
@@ -373,7 +373,7 @@ namespace aflowlib {
   std::vector<std::vector<std::pair<std::string, std::string>>> getPropertiesFromAFLUXResponse(const std::string& response); // DX20190206 - get properties from AFLUX response
   std::string getSpaceGroupMatchbook(const std::vector<uint>& space_groups, uint relaxation_step); // DX20200929
   std::string getSpaceGroupMatchbook(uint space_group_number, uint relaxation_step, bool only_one_sg = true); // DX20200929
-  uint WEB_Aflowlib_Entry(std::string options, std::ostream& oss);
+  void WEB_Aflowlib_Entry(const std::string& option, std::ostream& oss);
 
   std::string VASPdirectory2auid(const std::string& directory, const std::string& aurl); // CO20200624 - moving from inside _aflowlib_entry
   uint auid2vauid(const std::string auid, std::deque<std::string>& vauid); // splits the auid into vauid

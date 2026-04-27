@@ -94,7 +94,7 @@ aflow
    --readme=aapl                    AFLOW_AAPL help
    --readme=frozsl                  AFLOW_FROZSL help
    --readme=symmetry                AFLOW-SYM help
-   --readme=chull                   AFLOW-CHULL help
+   --readme=nhull                   AFLOW-NHULL help
    --readme=gfa                     AFLOW-GFA help
 
    --np=NUMBER  With MPI=ON (option or supercomputer defaults)

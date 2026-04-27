@@ -15,6 +15,7 @@
 #include "aflow_unit_test.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -28,8 +29,10 @@
 #include <limits>
 #include <map>
 #include <mutex>
+#include <random>
 #include <sstream>
 #include <string>
+#include <thread>
 #include <tuple>
 #include <unordered_map>
 #include <utility>
@@ -62,6 +65,11 @@
 #include "flow/aflow_pflow.h"
 #include "flow/aflow_xclasses.h"
 #include "modules/COMPARE/aflow_compare_structure.h"
+#include "modules/CUMULANTS/aflow_cumulants.h"
+#include "modules/HULL/aflow_nhull.h"
+#include "modules/HULL/aflow_nhull_entry.h"
+#include "modules/HULL/aflow_nhull_facet.h"
+#include "modules/HULL/aflow_nhull_util.h"
 #include "modules/PROTOTYPES/aflow_anrl.h"  //DX20201104
 #include "structure/aflow_lattice.h"
 #include "structure/aflow_surface.h"
@@ -71,13 +79,23 @@
 using namespace std::placeholders;
 
 using std::deque;
+using std::function;
+using std::ifstream;
+using std::iostream;
+using std::istringstream;
+using std::map;
 using std::ofstream;
 using std::ostream;
+using std::ostringstream;
+using std::pair;
 using std::string;
 using std::stringstream;
+using std::tuple;
+using std::unordered_map;
 using std::vector;
 
 using aurostd::xcomplex;
+using aurostd::xmatrix;
 using aurostd::xvector;
 
 namespace unittest {
@@ -100,7 +118,6 @@ namespace unittest {
   }
 
   UnitTest::~UnitTest() {
-    xStream::free();
     free();
   }
 
@@ -135,124 +152,48 @@ namespace unittest {
 
   /// @brief Initialize unit tests and add them to map of test functions.
   void UnitTest::initializeTestFunctions() {
-    xcheck xchk;
-
     // aurostd
-    xchk = initializeXCheck();
-    xchk.func = std::bind(&UnitTest::xscalarTest, this, _1, _2, _3);
-    xchk.function_name = "xscalarTest():";
-    xchk.task_description = "xscalar functions";
-    test_functions["xscalar"] = xchk;
-
-    xchk = initializeXCheck();
-    xchk.func = std::bind(&UnitTest::xvectorTest, this, _1, _2, _3);
-    xchk.function_name = "xvectorTest():";
-    xchk.task_description = "xvector functions";
-    test_functions["xvector"] = xchk;
-
-    xchk = initializeXCheck();
-    xchk.func = std::bind(&UnitTest::xmatrixTest, this, _1, _2, _3);
-    xchk.function_name = "xmatrixTest():";
-    xchk.task_description = "xmatrix functions";
-    test_functions["xmatrix"] = xchk;
-
-    xchk = initializeXCheck();
-    xchk.func = std::bind(&UnitTest::xfitTest, this, _1, _2, _3);
-    xchk.function_name = "xfitTest():";
-    xchk.task_description = "xfit functions";
-    test_functions["xfit"] = xchk;
-
-    xchk = initializeXCheck();
-    xchk.func = std::bind(&UnitTest::aurostdMainTest, this, _1, _2, _3);
-    xchk.function_name = "aurostdMainTest():";
-    xchk.task_description = "aurostd_main functions";
-    test_functions["aurostd_main"] = xchk;
-
-    xchk = initializeXCheck();
-    xchk.func = std::bind(&UnitTest::xfileTest, this, _1, _2, _3);
-    xchk.function_name = "xfileTest():";
-    xchk.task_description = "xfile functions";
-    test_functions["xfile"] = xchk;
-
-    xchk = initializeXCheck();
-    xchk.func = std::bind(&UnitTest::xparserTest, this, _1, _2, _3);
-    xchk.function_name = "xparserTest():";
-    xchk.task_description = "xparser functions";
-    test_functions["xparser"] = xchk;
+    register_test(&UnitTest::xscalarTest, "xscalar", "xscalarTest():", "xscalar functions", "aurostd");
+    register_test(&UnitTest::xvectorTest, "xvector", "xvectorTest():", "xvector functions", "aurostd");
+    register_test(&UnitTest::xmatrixTest, "xmatrix", "xmatrixTest():", "xmatrix functions", "aurostd");
+    register_test(&UnitTest::xfitTest, "xfit", "xfitTest():", "xfit functions", "aurostd");
+    register_test(&UnitTest::aurostdMainTest, "aurostd_main", "aurostdMainTest():", "aurostd_main functions", "aurostd");
+    register_test(&UnitTest::xfileTest, "xfile", "xfileTest():", "xfile functions", "aurostd");
+    register_test(&UnitTest::xparserTest, "xparser", "xparserTest():", "xparser functions", "aurostd");
 
     // json serialization
-    xchk = initializeXCheck();
-    xchk.func = std::bind(&UnitTest::jsonSerialization, this, _1, _2, _3);
-    xchk.function_name = "jsonSerialization():";
-    xchk.task_description = "json serialization";
-    test_functions["json_serialization"] = xchk;
+    register_test(&UnitTest::jsonSerialization, "json_serialization", "jsonSerialization():", "json serialization", "json");
 
     // database
-    xchk = initializeXCheck();
-    xchk.func = std::bind(&UnitTest::schemaTest, this, _1, _2, _3);
-    xchk.function_name = "schemaTest():";
-    xchk.task_description = "AFLOW schema";
-    test_functions["schema"] = xchk;
+    register_test(&UnitTest::schemaTest, "schema", "schemaTest():", "AFLOW schema", "database");
 
     // xstructure
-    xchk = initializeXCheck();
-    xchk.func = std::bind(&UnitTest::atomicEnvironmentTest, this, _1, _2, _3);
-    xchk.function_name = "atomicEnvironmentTest():";
-    xchk.task_description = "Creating atomic environments";
-    test_functions["atomic_environment"] = xchk;
-
-    xchk = initializeXCheck();
-    xchk.func = std::bind(&UnitTest::xstructureParserTest, this, _1, _2, _3);
-    xchk.function_name = "xstructureParserTest():";
-    xchk.task_description = "xstructure parsers";
-    test_functions["xstructure_parser"] = xchk;
-
-    xchk = initializeXCheck();
-    xchk.func = std::bind(&UnitTest::xstructureTest, this, _1, _2, _3);
-    xchk.function_name = "xstructureTest():";
-    xchk.task_description = "xstructure functions";
-    test_functions["xstructure"] = xchk;
-
-    xchk = initializeXCheck();
-    xchk.func = std::bind(&UnitTest::kpathTest, this, _1, _2, _3);
-    xchk.function_name = "kpathTest():";
-    xchk.task_description = "check lattice";
-    test_functions["xstructure_kpath"] = xchk;
+    register_test(&UnitTest::atomicEnvironmentTest, "atomic_environment", "atomicEnvironmentTest():", "Creating atomic environments", "xstructure");
+    register_test(&UnitTest::xstructureParserTest, "xstructure_parser", "xstructureParserTest():", "xstructure parsers", "xstructure");
+    register_test(&UnitTest::xstructureTest, "xstructure", "xstructureTest():", "xstructure functions", "xstructure");
+    register_test(&UnitTest::kpathTest, "xstructure_kpath", "kpathTest():", "check lattice", "xstructure");
 
     // structure generation
-    xchk = initializeXCheck();
-    xchk.func = std::bind(&UnitTest::ceramgenTest, this, _1, _2, _3);
-    xchk.function_name = "ceramgenTest():";
-    xchk.task_description = "pflow::GENERATE_CERAMICS()";
-    test_functions["ceramgen"] = xchk;
-
-    xchk = initializeXCheck();
-    xchk.func = std::bind(&UnitTest::prototypeGeneratorTest, this, _1, _2, _3);
-    xchk.function_name = "prototypeGeneratorTest():";
-    xchk.task_description = "Generate all prototypes and test symmetry";
-    test_functions["proto"] = xchk;
+    register_test(&UnitTest::ceramgenTest, "ceramgen", "ceramgenTest():", "pflow::GENERATE_CERAMICS()", "structure_gen");
+    register_test(&UnitTest::prototypeGeneratorTest, "proto", "prototypeGeneratorTest():", "Generate all prototypes and test symmetry", "structure_gen");
 
     // EntryLoader
-    xchk = initializeXCheck();
-    xchk.func = std::bind(&UnitTest::entryLoaderTest, this, _1, _2, _3);
-    xchk.function_name = "entryLoaderTest():";
-    xchk.task_description = "entryLoader functions";
-    test_functions["entry_loader"] = xchk;
+    register_test(&UnitTest::entryLoaderTest, "entry_loader", "entryLoaderTest():", "entryLoaderTest():", "entry_loader");
+
+    // Qhull
+    register_test(&UnitTest::qhullTest, "new_qhull", "qhullTest():", "qhull functions", "hull");
 
     // ovasp
-    // Not working yet because we cannot load OUTCARs via the RestAPI
-    // xchk = initializeXCheck();
-    // xchk.func = std::bind(&UnitTest::xoutcarTest, this, _1, _2, _3);
-    // xchk.function_name= "xoutcarTest():";
-    // xchk.task_description = "xOUTCAR class";
-    // test_functions["outcar"] = xchk;
+    register_test(&UnitTest::ovaspTest, "ovasp", "ovaspTest():", "xOVASP constructions", "ovasp");
+
+    //dielectric
+    register_test(&UnitTest::dielectricTest, "dielectric", "dielectricTest():", "dielectric functions", "dielectric");
+
+    // cumulants
+    register_test(&UnitTest::cumulantsTest, "cumulants", "cumulantsTest():", "CUMULANTS module", "cumulants");
 
     // lib2raw local
-    xchk = initializeXCheck();
-    xchk.func = std::bind(&UnitTest::lib2rawTest, this, _1, _2, _3);
-    xchk.function_name = "lib2rawTest():";
-    xchk.task_description = "local lib2raw functionality";
-    test_functions["lib2raw"] = xchk;
+    register_test(&UnitTest::lib2rawTest, "lib2raw", "lib2rawTest():", "local lib2raw functionality", "lib2raw");
 
     // surface tests
     register_test(&UnitTest::surface_TriangleArea, "surface_TriangleArea", "surface_TriangleArea():", "surface_TriangleArea", "surface");
@@ -263,6 +204,9 @@ namespace unittest {
     register_test(&UnitTest::surface_PlaneGetVVV, "surface_PlaneGetVVV", "surface_PlaneGetVVV():", "surface_PlaneGetVVV", "surface");
     register_test(&UnitTest::surface_PlaneGetVVV_V2, "surface_PlaneGetVVV_V2", "surface_PlaneGetVVV_V2():", "surface_PlaneGetVVV_V2", "surface");
     register_test(&UnitTest::surface_GetPlaneDensityAtoms, "surface_GetPlaneDensityAtoms", "surface_GetPlaneDensityAtoms():", "surface_GetPlaneDensityAtoms", "surface");
+
+    // data
+    register_test(&UnitTest::xpseudopotentialDataTest, "pspot_data", "get_pseudopotential_data():", "get_pseudopotential_data()", "data");
   }
 
   /// @brief Initialize xcheck struct to an empty object.
@@ -583,7 +527,7 @@ namespace unittest {
   ///
   /// @param task The task to check.
   ///
-  /// @return Whether a tasks has finished without errors.
+  /// @return Whether a task has finished without errors.
   ///
   /// Criteria for returning true:
   ///   1) Task is finished.
@@ -753,7 +697,7 @@ namespace unittest {
     checkEqual(aurostd::file2hash(calculated), aurostd::file2hash(expected), check_function, check_description, passed_checks, results);
   }
 
-  /// @brief Base function to check results and update results.
+  /// @brief Base function to check and update results.
   ///
   /// @param passed            Whether the test has passed.
   /// @param calculated        Calculated value.
@@ -779,6 +723,35 @@ namespace unittest {
       stringstream failstring;
       failstring << " (result: " << calculated << " | expected: " << expected << ")";
       result.back() += failstring.str();
+    }
+    results.push_back(result);
+  }
+
+  /// @brief Alternate function to check and update results.
+  /// Avoids cluttered output in cases where displaying expected and calculated results is not helpful
+  ///
+  /// @param passed            Whether the test has passed.
+  /// @param result_note       Note displayed explaining result
+  /// @param check_function    Function called for the test.
+  /// @param check_description Description of the performed test.
+  /// @param passed_checks     Number of passed checks.
+  /// @param results           Results data - doubles as number of performed checks.
+  void UnitTest::check(const bool passed, const std::string& result_note, const std::string& check_function, const std::string& check_description, uint& passed_checks, std::vector<std::vector<std::string>>& results) {
+    vector<string> result;
+    const uint check_num = results.size() + 1;
+    result.push_back(aurostd::utype2string<uint>(check_num));
+    if (passed) {
+      passed_checks++;
+      result.emplace_back("pass");
+    } else {
+      result.emplace_back("FAIL");
+    }
+    result.push_back(check_function);
+    result.push_back(check_description);
+    if (!result_note.empty()) {
+      result.back() += " (";
+      result.back() += result_note;
+      result.back() += ")";
     }
     results.push_back(result);
   }
@@ -1304,7 +1277,7 @@ namespace unittest {
     // ---------------------------------------------------------------------------
     {
       check_function = "aurostd::equilibrateMatrix()";
-      const xmatrix<double> icm(10, 10);
+      xmatrix<long double> icm(5, 5);
       // define a Hilbert matrix
       for (int i = 1; i <= icm.rows; i++) {
         for (int j = 1; j <= icm.cols; j++) {
@@ -1312,12 +1285,12 @@ namespace unittest {
         }
       }
       check_description = "pre-condition a Hilbert matrix, lowers the condition number";
-      xmatrix<double> em;
-      xmatrix<double> rm;
-      xmatrix<double> cm;
+      xmatrix<long double> em;
+      xmatrix<long double> rm;
+      xmatrix<long double> cm;
       aurostd::equilibrateMatrix(icm, em, rm, cm);
       const bool expected_bool = true;
-      const bool calculated_bool = aurostd::isequal(1.0, aurostd::sign(aurostd::condition_number(icm) - aurostd::condition_number(em)));
+      const bool calculated_bool = aurostd::isequal((long double) 1.0, aurostd::sign(aurostd::condition_number(icm) - aurostd::condition_number(em)));
       checkEqual(calculated_bool, expected_bool, check_function, check_description, passed_checks, results);
       check_description = "pre-condition a Hilbert matrix, finds the inverse";
       checkEqual(icm, aurostd::inverse(rm) * em * aurostd::inverse(cm), check_function, check_description, passed_checks, results);
@@ -1364,7 +1337,7 @@ namespace unittest {
           {4.0, 5.0, 6.0},
           {7.0, 8.0, 9.0}
       };
-      const xmatrix<double> B = A;
+      xmatrix<double> B = A;
 
       for (const std::pair<int, int> p : vector<std::pair<int, int>>({
                {  -2,   -4},
@@ -1497,20 +1470,18 @@ namespace unittest {
     // ---------------------------------------------------------------------------
     {
       check_function = "aurostd::getSmithNormalForm()";
-      check_description = "calculate the Smith form of a rank 3 inverse Hilbert matrix";
+      check_description = "calculate the Smith form of the rank 3 inverse Hilbert matrix";
       xmatrix<int> U1;
       xmatrix<int> V1;
       xmatrix<int> S1;
       const xmatrix<int> A1 = {
-          {
-           9, -36,
-           30, },
-          {-36, 192, -180},
-          {30, -180, 180}
+          {  9,  -36,   30},
+          {-36,  192, -180},
+          { 30, -180,  180}
       };
       aurostd::getSmithNormalForm(A1, U1, V1, S1);
       checkEqual(S1, U1 * A1 * V1, check_function, check_description, passed_checks, results);
-      check_description = "calculate the Smith form of a rank 5 inverse Hilbert matrix";
+      check_description = "calculate the Smith form of the rank 5 inverse Hilbert matrix";
       xmatrix<long long int> U2;
       xmatrix<long long int> V2;
       xmatrix<long long int> S2;
@@ -1523,6 +1494,47 @@ namespace unittest {
       };
       aurostd::getSmithNormalForm(A2, U2, V2, S2);
       checkEqual(S2, U2 * A2 * V2, check_function, check_description, passed_checks, results);
+    }
+
+    // ---------------------------------------------------------------------------
+    // Check | SVDecomposition_Jacobi
+    // ---------------------------------------------------------------------------
+    {
+      check_function = "aurostd::SVDecomposition_Jacobi()";
+      check_description = "calculate the singular value decomposition of a 3x2 matrix";
+      xmatrix<double> U;
+      xmatrix<double> S;
+      xmatrix<double> S_inv;
+      xmatrix<double> V;
+      const xmatrix<double> A1 = {
+          {3, 2,  2},
+          {2, 3, -2},
+      };
+      aurostd::SVDecomposition_Jacobi(A1, U, S, S_inv, V);
+      checkEqual(U * S * aurostd::trasp(V), A1, check_function, check_description, passed_checks, results);
+      check_description = "calculate the singular value decomposition of a 2x3 matrix";
+      const xmatrix<double> A2 = {
+          {3,  2},
+          {2,  3},
+          {2, -2},
+      };
+      aurostd::SVDecomposition_Jacobi(A2, U, S, S_inv, V);
+      checkEqual(U * S * aurostd::trasp(V), A2, check_function, check_description, passed_checks, results);
+    }
+
+    // ---------------------------------------------------------------------------
+    // Check | pseudoinverse
+    // ---------------------------------------------------------------------------
+    {
+      check_function = "aurostd::pseudoinverse()";
+      check_description = "calculate the pseudoinverse of the rank 4 Hilbert matrix";
+      const xmatrix<long double> A1 = {
+          {1.0 / 1.0, 1.0 / 2.0, 1.0 / 3.0, 1.0 / 4.0},
+          {1.0 / 2.0, 1.0 / 3.0, 1.0 / 4.0, 1.0 / 5.0},
+          {1.0 / 3.0, 1.0 / 4.0, 1.0 / 5.0, 1.0 / 6.0},
+          {1.0 / 4.0, 1.0 / 5.0, 1.0 / 6.0, 1.0 / 7.0},
+      };
+      checkEqual(A1 * aurostd::pseudoinverse(A1), aurostd::identity(A1 * aurostd::trasp(A1)), check_function, check_description, passed_checks, results);
     }
   }
 
@@ -1696,9 +1708,32 @@ namespace unittest {
     // ---------------------------------------------------------------------------
     {
       check_function = "aurostd::string2utype()";
+      check_description = "bool - bases 16, 10, 8, 5, 2";
+      multi_check = true;
+      multi_check = (multi_check && (aurostd::string2utype<bool>("-420") == true));
+      multi_check = (multi_check && (aurostd::string2utype<bool>("-420.23") == true));
+      multi_check = (multi_check && (aurostd::string2utype<bool>("922337203685477432") == true));
+      multi_check = (multi_check && (aurostd::string2utype<bool>("T") == true));
+      multi_check = (multi_check && (aurostd::string2utype<bool>("true", 2) == true));
+      multi_check = (multi_check && (aurostd::string2utype<bool>(".true.", 16) == true));
+      multi_check = (multi_check && (aurostd::string2utype<bool>("F", 8) == false));
+      multi_check = (multi_check && (aurostd::string2utype<bool>("false", 5) == false));
+      multi_check = (multi_check && (aurostd::string2utype<bool>(".false.") == false));
+      multi_check = (multi_check && (aurostd::string2utype<bool>("aflow", 16)) == true);
+      multi_check = (multi_check && (aurostd::string2utype<bool>("0.0", 16)) == false);
+      multi_check = (multi_check && (aurostd::string2utype<bool>("0.0000")) == false);
+      multi_check = (multi_check && (aurostd::string2utype<bool>("0", 2)) == false);
+      checkEqual(multi_check, true, check_function, check_description, passed_checks, results);
+
+      check_function = "aurostd::string2utype()";
       check_description = "int - bases 16, 10, 8, 5, 2";
       multi_check = true;
       multi_check = (multi_check && (aurostd::string2utype<int>("-420") == -420));
+      multi_check = (multi_check && (aurostd::string2utype<int>("-420.23") == -420));
+      multi_check = (multi_check && (aurostd::string2utype<long long int>("922337203685477432") == 922337203685477432));
+      multi_check = (multi_check && (aurostd::string2utype<int>("T") == 1));
+      multi_check = (multi_check && (aurostd::string2utype<int>("true") == 1));
+      multi_check = (multi_check && (aurostd::string2utype<int>(".true.") == 1));
       multi_check = (multi_check && (aurostd::string2utype<int>("-420", 16)) == -1056);
       multi_check = (multi_check && (aurostd::string2utype<int>("-0x420", 16)) == -1056);
       multi_check = (multi_check && (aurostd::string2utype<int>("-0X420", 16)) == -1056);
@@ -1707,14 +1742,22 @@ namespace unittest {
       multi_check = (multi_check && (aurostd::string2utype<int>("-0420", 8)) == -272);
       multi_check = (multi_check && (aurostd::string2utype<int>("-420", 5)) == -110);
       multi_check = (multi_check && (aurostd::string2utype<int>("-110100100", 2)) == -420);
+      multi_check = (multi_check && (aurostd::string2utype<int>("aflow", 2)) == 0);
+      multi_check = (multi_check && (aurostd::string2utype<int>("   45.114455.2154.2145", 10)) == 45);
+      multi_check = (multi_check && (aurostd::string2utype<int>("   45.1syfgdhen", 10)) == 45);
+      multi_check = (multi_check && (aurostd::string2utype<int>("   45.1syfgdhen", 8)) == 37);
+      multi_check = (multi_check && (aurostd::string2utype<int>("gf hsdg", 10)) == 0);
+
       checkEqual(multi_check, true, check_function, check_description, passed_checks, results);
       check_description = "float - bases 16, 10, 8, 5, 2";
       multi_check = true;
-      multi_check = (multi_check && (aurostd::string2utype<float>("-4.20") == -4.20f));
-      multi_check = (multi_check && (aurostd::string2utype<float>("-420", 16)) == -1056.0f);
-      multi_check = (multi_check && (aurostd::string2utype<float>("-420", 8)) == -272.0f);
-      multi_check = (multi_check && (aurostd::string2utype<float>("-420", 5)) == -110.0f);
-      multi_check = (multi_check && (aurostd::string2utype<float>("-110100100", 2)) == -420.0f);
+      multi_check = (multi_check && (aurostd::string2utype<float>("-4.20") == -4.20F));
+      multi_check = (multi_check && (aurostd::string2utype<float>("-420", 16)) == -1056.0F);
+      multi_check = (multi_check && (aurostd::string2utype<float>("-420", 8)) == -272.0F);
+      multi_check = (multi_check && (aurostd::string2utype<float>("-420.35", 8)) == -272.0F);
+      multi_check = (multi_check && (aurostd::string2utype<float>("-420", 5)) == -110.0F);
+      multi_check = (multi_check && (aurostd::string2utype<float>("-110100100", 2)) == -420.0F);
+      multi_check = (multi_check && (aurostd::string2utype<float>("   45.1syfgdhen", 10)) == 45.1F);
       checkEqual(multi_check, true, check_function, check_description, passed_checks, results);
 
       check_description = "double - bases 16, 10, 8, 5, 2";
@@ -1824,9 +1867,9 @@ namespace unittest {
     {
       check_function = "aurostd::substring_present_file()";
       check_description = "check if substring is present in file";
-      const string placeholder =
-          "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi "
-          "ut aliquip ex ea commodo consequat.";
+      const string placeholder
+          = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi "
+            "ut aliquip ex ea commodo consequat.";
       const string substring = "exercitation";
       const string filename = aurostd::TmpFileCreate();
       aurostd::string2file(placeholder, filename);
@@ -1848,9 +1891,9 @@ namespace unittest {
     {
       check_function = "aurostd::substrings_present_file()";
       check_description = "check if substrings are present in file (vector)";
-      const string placeholder =
-          "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi "
-          "ut aliquip ex ea commodo consequat.";
+      const string placeholder
+          = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi "
+            "ut aliquip ex ea commodo consequat.";
       const vector<string> substrings = {"exercitation", "dolor"};
       const string filename = aurostd::TmpFileCreate();
       aurostd::string2file(placeholder, filename);
@@ -1872,9 +1915,9 @@ namespace unittest {
     {
       check_function = "aurostd::substrings_map_present_file()";
       check_description = "check if substrings are present in file (unordered_map)";
-      const string placeholder =
-          "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi "
-          "ut aliquip ex ea commodo consequat.";
+      const string placeholder
+          = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi "
+            "ut aliquip ex ea commodo consequat.";
       std::unordered_map<string, bool> substrings_map = {
           {"exercitation", false},
           {       "dolor", false}
@@ -1911,6 +1954,112 @@ namespace unittest {
     // setup test environment
     string check_function;
     string check_description;
+
+    // ---------------------------------------------------------------------------
+    // Check | CopyDirectory and CopyFile //ST20251208 //HE20260129
+    // ---------------------------------------------------------------------------
+    {
+      bool check_passed = false;
+      std::string check_note;
+      const string path_from = aurostd::TmpDirectoryCreate();
+      const string path_to = aurostd::TmpDirectoryCreate();
+      aurostd::DirectoryMake(path_from + "/extra");
+      const std::vector<std::string> filenames = {"/A.txt", "/B.txt", "/C.txt", "/extra/D.txt"};
+      const string filename_from = path_from + filenames[0];
+      const string filename_to = path_to + filenames[0];
+      constexpr size_t COLS = 80;
+      constexpr size_t LINES = 1000;
+      std::random_device rd;
+      std::mt19937 gen(rd());
+      std::uniform_int_distribution<> dist(33, 126);
+      for (const std::string& filename : filenames) {
+        std::ofstream out{path_from + filename, std::ios::binary};
+        for (size_t i = 0; i < LINES; i++) {
+          std::string line;
+          line.reserve(COLS + 1);
+          for (size_t j = 0; j < COLS; j++) {
+            line.push_back(static_cast<char>(dist(gen)));
+          }
+          line.push_back('\n');
+          out << line;
+        }
+        out.close();
+      }
+
+      auto read_lambda = [](const std::string& filename) -> std::string {
+        std::ifstream ifs{filename};
+        std::ostringstream oss;
+        oss << ifs.rdbuf();
+        return oss.str();
+      };
+
+      // gives True if they don't match to enable the use of std::any_of for dir_lambda
+      auto compare_lambda = [&path_from, &path_to, &read_lambda](const std::string& filename) -> bool { return read_lambda(path_from + filename) != read_lambda(path_to + filename); };
+
+      // gives True if they don't match to be the same as compare_lambda
+      auto dir_lambda = [&compare_lambda, &filenames]() -> bool { return std::any_of(filenames.cbegin(), filenames.cend(), compare_lambda); };
+
+      check_description = "copy a file";
+      check_function = "aurostd::CopyFile()";
+      check_note = "";
+      check_passed = aurostd::CopyFile(filename_from, filename_to);
+      if (!check_passed) {
+        check_note = "copy function signaled a problem";
+      } else {
+        check_passed = !compare_lambda(filenames[0]);
+        if (!check_passed) {
+          check_note = "file content does not match";
+        }
+      }
+      check(check_passed, check_note, check_function, check_description, passed_checks, results);
+
+      aurostd::RemoveFile(filename_to);
+
+      check_function = "aurostd::CopyFile_safer()";
+      check_note = "";
+      check_passed = aurostd::CopyFile_safer(filename_from, filename_to);
+      if (!check_passed) {
+        check_note = "copy function signaled a problem";
+      } else {
+        check_passed = !compare_lambda(filenames[0]);
+        if (!check_passed) {
+          check_note = "file content does not match";
+        }
+      }
+      check(check_passed, check_note, check_function, check_description, passed_checks, results);
+      aurostd::RemoveDirectory(path_to);
+
+      check_description = "copy a folder";
+      check_function = "aurostd::CopyDirectory()";
+      check_note = "";
+      check_passed = aurostd::CopyDirectory(path_from, path_to);
+      if (!check_passed) {
+        check_note = "copy function signaled a problem";
+      } else {
+        check_passed = !dir_lambda();
+        if (!check_passed) {
+          check_note = "file content does not match";
+        }
+      }
+      check(check_passed, check_note, check_function, check_description, passed_checks, results);
+      aurostd::RemoveDirectory(path_to);
+
+      check_description = "copy a folder";
+      check_function = "aurostd::CopyDirectory_safer()";
+      check_note = "";
+      check_passed = aurostd::CopyDirectory_safer(path_from, path_to);
+      if (!check_passed) {
+        check_note = "copy function signaled a problem";
+      } else {
+        check_passed = !dir_lambda();
+        if (!check_passed) {
+          check_note = "file content does not match";
+        }
+      }
+      check(check_passed, check_note, check_function, check_description, passed_checks, results);
+      aurostd::RemoveDirectory(path_to);
+      aurostd::RemoveDirectory(path_from);
+    }
 
     // ---------------------------------------------------------------------------
     // Check | FileEmpty //SD20240313
@@ -1972,7 +2121,8 @@ namespace unittest {
       // ---------------------------------------------------------------------------
       check_function = "aurostd::CompressFile()";
       check_description = "compress a file using ";
-      const vector<aurostd::compression_type> compressions = {aurostd::compression_type::BZ2, aurostd::compression_type::GZ, aurostd::compression_type::XZ, aurostd::compression_type::ZIP, aurostd::compression_type::ZSTD};
+      const vector<aurostd::compression_type> compressions = {
+          aurostd::compression_type::BZ2, aurostd::compression_type::GZ, aurostd::compression_type::XZ, aurostd::compression_type::ZIP, aurostd::compression_type::ZSTD};
       const string expected = aurostd::TmpStrCreate();
       string result;
       aurostd::string2file(expected, expected);
@@ -2058,7 +2208,8 @@ namespace unittest {
       check_description = "check if compressed";
       const string expected;
       string result;
-      const vector<aurostd::compression_type> compressions = {aurostd::compression_type::BZ2, aurostd::compression_type::GZ, aurostd::compression_type::XZ, aurostd::compression_type::ZIP, aurostd::compression_type::ZSTD};
+      const vector<aurostd::compression_type> compressions = {
+          aurostd::compression_type::BZ2, aurostd::compression_type::GZ, aurostd::compression_type::XZ, aurostd::compression_type::ZIP, aurostd::compression_type::ZSTD};
       const string base = aurostd::TmpStrCreate() + ".txt";
       checkEqual(aurostd::IsCompressed(base), false, check_function, check_description + " (txt)", passed_checks, results);
       aurostd::string2file(base, base);
@@ -2073,6 +2224,38 @@ namespace unittest {
         aurostd::RemoveFile(base + aurostd::compression_suffix[compression]);
       }
       aurostd::RemoveFile(base);
+    }
+
+    // ---------------------------------------------------------------------------
+    // Check | file modification timestamps
+    // ---------------------------------------------------------------------------
+    {
+      check_function = "aurostd::SecondsSinceFileModified()";
+      check_description = "check duration";
+      const string folder = aurostd::TmpStrCreate("", "", false, true);
+      string base = folder + "/xfile.test";
+      constexpr long int test_time = 3;
+      aurostd::string2file(base, base);
+      std::this_thread::sleep_for(std::chrono::seconds(test_time));
+      long int eclipsed = aurostd::SecondsSinceFileModified(base);
+      // allow off by one error
+      if (eclipsed >= test_time and eclipsed <= test_time + 1) {
+        checkEqual(true, true, check_function, check_description, passed_checks, results);
+      } else {
+        checkEqual(eclipsed, test_time, check_function, check_description, passed_checks, results);
+      }
+      check_function = "aurostd::SecondsSinceDirectoryContentModified()";
+      check_description = "check duration";
+      base = folder + "/extra.test";
+      aurostd::string2file(base, base);
+      std::this_thread::sleep_for(std::chrono::seconds(test_time));
+      eclipsed = aurostd::SecondsSinceDirectoryContentModified(folder);
+      if (eclipsed >= test_time and eclipsed <= test_time + 1) {
+        checkEqual(true, true, check_function, check_description, passed_checks, results);
+      } else {
+        checkEqual(eclipsed, test_time, check_function, check_description, passed_checks, results);
+      }
+      aurostd::RemoveDirectory(folder);
     }
   }
 
@@ -2182,7 +2365,7 @@ namespace unittest {
           {                      "with_del_character",                         "aa"}
       });
 
-      const aurostd::JSON::object jo = aurostd::JSON::loadString(string_json);
+      aurostd::JSON::object jo = aurostd::JSON::loadString(string_json);
       bool overall_test = true;
       for (const auto& [key, value] : string_results) {
         if (static_cast<string>(jo[key]) != value) {
@@ -2286,7 +2469,7 @@ namespace unittest {
       check_description = "test number parsing (double, long long)";
       const std::string number_json = string(utd["xparser"]["number_json"]);
 
-      const aurostd::JSON::object jo = aurostd::JSON::loadString(number_json);
+      aurostd::JSON::object jo = aurostd::JSON::loadString(number_json);
 
       const std::map<string, double> double_results({
           {                     "0e+1",          0},
@@ -2366,7 +2549,7 @@ namespace unittest {
       check_description = "test parsing xvector<";
       const std::string number_json = string(utd["xparser"]["vector_number_json"]);
 
-      const aurostd::JSON::object jo = aurostd::JSON::loadString(number_json);
+      aurostd::JSON::object jo = aurostd::JSON::loadString(number_json);
 
       xvector<double> xvd_res = jo["xvector_double"];
       xvector<double> xvd_exp = {923.49445786, -441.74004105, 465.49355057, 96.15610686, 557.6834903, 147.6777196, 871.81485459, 287.89958188, 863.66132302, 876.36635155};
@@ -2405,7 +2588,7 @@ namespace unittest {
       check_description = "test parsing xmatrix<";
 
       const std::string matrix_json = string(utd["xparser"]["matrix_json"]);
-      const aurostd::JSON::object jo = aurostd::JSON::loadString(matrix_json);
+      aurostd::JSON::object jo = aurostd::JSON::loadString(matrix_json);
 
       const xmatrix<double> xmd_exp = {
           { 2.85899214e+07, 2.70836286e+04,              82,  7.47207733e+08,  4.67299748e+04, -6.25361399e+09, 8.00388892e+08},
@@ -2448,7 +2631,7 @@ namespace unittest {
           {"XGPXD",   853427.8245249396},
           {"UASBY",          4474520688}
       };
-      const aurostd::JSON::object jo = aurostd::JSON::loadString(map_json);
+      aurostd::JSON::object jo = aurostd::JSON::loadString(map_json);
       std::map<string, double> md_res = jo["map"];
       bool overall_test = true;
       for (const std::pair<string, double> entry : md_exp) {
@@ -2497,7 +2680,7 @@ namespace unittest {
 
       const std::string vector_json = string(utd["xparser"]["vector_mixed_json"]);
 
-      const aurostd::JSON::object jo = aurostd::JSON::loadString(vector_json);
+      aurostd::JSON::object jo = aurostd::JSON::loadString(vector_json);
       std::vector<std::string> vs_res = jo["string_vector"];
       std::vector<std::string> vs_exp = {"First w\"ord", "Second word", "Last word"};
       checkEqual(vs_res, vs_exp, check_function, check_description + "string>", passed_checks, results);
@@ -2586,7 +2769,7 @@ namespace unittest {
         checkEqual((std::string) so, "[[1,2,3,4],[5,6,7,8],[9,10,11,12],[13,14,15,16]]", check_function, check_description + "xmatrix<float>", passed_checks, results);
       }
       {
-        const xmatrix<xcomplex<float>> exp(3, 3, 1, 1);
+        xmatrix<xcomplex<float>> exp(3, 3, 1, 1);
         exp(1, 1) = {1.1, 1.11};
         exp(1, 2) = {1.2, 1.22};
         exp(1, 3) = {1.3, 1.33};
@@ -2685,9 +2868,9 @@ namespace unittest {
     {
       check_function = "JSON";
       check_description = "joining two dictionaries";
-      const aurostd::JSON::object dict_one(aurostd::JSON::object_types::DICTIONARY);
-      const aurostd::JSON::object dict_two(aurostd::JSON::object_types::DICTIONARY);
-      const aurostd::JSON::object dict_joined(aurostd::JSON::object_types::DICTIONARY);
+      aurostd::JSON::object dict_one(aurostd::JSON::object_types::DICTIONARY);
+      aurostd::JSON::object dict_two(aurostd::JSON::object_types::DICTIONARY);
+      aurostd::JSON::object dict_joined(aurostd::JSON::object_types::DICTIONARY);
       dict_one["one"] = 1;
       dict_one["both"] = 1;
       dict_two["two"] = 2;
@@ -2719,7 +2902,7 @@ namespace unittest {
   }
 
   /// @brief set the datetime key to empty string
-  void strip_datetime(const aurostd::JSON::object& jo) {
+  void strip_datetime(aurostd::JSON::object& jo) {
     jo["_aflow_serialization"]["datetime"] = "";
   }
 
@@ -2733,9 +2916,9 @@ namespace unittest {
     const string check_description = string("Check JSON string equality for cycled ").append(typeid(T).name());
     try {
       const T t = initializer();
-      const aurostd::JSON::object json1 = t.dumpToJson();
+      aurostd::JSON::object json1 = t.dumpToJson();
       const T t_cycled = T::loadFromJson(json1);
-      const aurostd::JSON::object json2 = t_cycled.dumpToJson();
+      aurostd::JSON::object json2 = t_cycled.dumpToJson();
       strip_datetime(json1);
       strip_datetime(json2);
       checkEqual(json2.toString(), json1.toString(), check_function, check_description, passed_checks, results);
@@ -2801,18 +2984,6 @@ namespace unittest {
         []() {
           xQMVASP ret{};
           ret.GetProperties(aurostd::EmbData::get_test_file("QMVASP.txt"));
-          return ret;
-        },
-        passed_checks, results, errors);
-  }
-
-  /// @authors
-  /// @mod{NA,20250304,created}
-  void UnitTest::xPLASMONICSJsonSerialization(uint& passed_checks, vector<vector<string>>& results, vector<string>& errors) {
-    json_cycle_test<xPLASMONICS>(
-        []() {
-          xPLASMONICS ret{};
-          ret.GetProperties(aurostd::EmbData::get_test_file("PLASMONICS.txt"));
           return ret;
         },
         passed_checks, results, errors);
@@ -2912,12 +3083,12 @@ namespace unittest {
     // ---------------------------------------------------------------------------
     check_function = "aurostd::polynomialCurveFit()";
     check_description = "calculate the coefficients for a quintic polynomial that fits the data";
-    const xvector<double> xdata = {0.551878738140095,  0.815194385592879,  -1.436650500869055, 0.837122604741089, 0.024588378708606,
-                                   -1.521792147897101, -0.998568921765830, -0.222562772922286, 0.964723358008907, 0.986066878262693};
-    const xvector<double> ydata = {-1.895746346279865, -2.426516802630079, -0.329326356733414, -2.476265605752963, -1.148143476025739,
-                                   -0.304622388440250, -0.471352985639471, -0.911928012994989, -2.783990433247946, -2.838593165314427};
-    const xvector<double> wdata = {0.757740130578333, 0.743132468124916, 0.392227019534168, 0.655477890177557, 0.171186687811562,
-                                   0.706046088019609, 0.031832846377421, 0.276922984960890, 0.046171390631154, 0.097131781235848};
+    const xvector<double> xdata = {
+        0.551878738140095, 0.815194385592879, -1.436650500869055, 0.837122604741089, 0.024588378708606, -1.521792147897101, -0.998568921765830, -0.222562772922286, 0.964723358008907, 0.986066878262693};
+    const xvector<double> ydata = {
+        -1.895746346279865, -2.426516802630079, -0.329326356733414, -2.476265605752963, -1.148143476025739, -0.304622388440250, -0.471352985639471, -0.911928012994989, -2.783990433247946, -2.838593165314427};
+    const xvector<double> wdata = {
+        0.757740130578333, 0.743132468124916, 0.392227019534168, 0.655477890177557, 0.171186687811562, 0.706046088019609, 0.031832846377421, 0.276922984960890, 0.046171390631154, 0.097131781235848};
     expected_xvecdbl = {-1.121837858162905, -1.056905122203599, -0.543168130435282, -0.145858244844311, -0.007682867520147, 0.000748981621075};
     calculated_xvecdbl = aurostd::polynomialCurveFit(xdata, ydata, 5, wdata);
     checkEqual(expected_xvecdbl, calculated_xvecdbl, check_function, check_description, passed_checks, results);
@@ -3164,6 +3335,127 @@ namespace unittest {
     }
   }
 
+  void UnitTest::ovaspTest(uint& passed_checks, vector<vector<string>>& results, vector<string>& errors) {
+    const string tmpdir = aurostd::TmpDirectoryCreate("unit_test_ovasp");
+
+    const string qmvasp_tfile = tmpdir + "/QMVASP.txt";
+    aurostd::string2file(aurostd::EmbData::get_test_file("QMVASP.txt"), qmvasp_tfile);
+    const xQMVASP qmvasp(qmvasp_tfile);
+    checkEqual(qmvasp.H_atom_relax, -3.742564, "xQMVASP()", "xQMVASP construction from file", passed_checks, results);
+    checkEqual(qmvasp.H_atom_static, AUROSTD_NAN, "xQMVASP()", "xQMVASP construction from file", passed_checks, results);
+    checkEqual(qmvasp.vforces.size(), 1UL, "xQMVASP()", "xQMVASP construction from file", passed_checks, results);
+
+    const string doscar_tfile = tmpdir + "/DOSCAR.txt";
+    aurostd::string2file(aurostd::EmbData::get_test_file("DOSCAR.txt"), doscar_tfile);
+    const xDOSCAR doscar(doscar_tfile);
+    checkEqual(doscar.Efermi, 8.00489507, "xDOSCAR()", "xDOSCAR construction from file", passed_checks, results);
+    checkEqual(doscar.energy_max, 24.77735449, "xDOSCAR()", "xDOSCAR construction from file", passed_checks, results);
+    checkEqual(doscar.energy_min, -5.13478138, "xDOSCAR()", "xDOSCAR construction from file", passed_checks, results);
+    checkEqual(doscar.denergy, 0.1, "xDOSCAR()", "xDOSCAR construction from file", passed_checks, results);
+
+    const string eig_tfile = tmpdir + "/EIGENVAL.txt";
+    aurostd::string2file(aurostd::EmbData::get_test_file("EIGENVAL.txt"), eig_tfile);
+    const xEIGENVAL eig(eig_tfile);
+    checkEqual(eig.number_bands, 36U, "xEIGENVAL()", "xEIGENVAL construction from file", passed_checks, results);
+    checkEqual(eig.number_kpoints, 256U, "xEIGENVAL()", "xEIGENVAL construction from file", passed_checks, results);
+    checkEqual(eig.energy_max, 87.728, "xEIGENVAL()", "xEIGENVAL construction from file", passed_checks, results);
+    checkEqual(eig.energy_min, -3.1278, "xEIGENVAL()", "xEIGENVAL construction from file", passed_checks, results);
+
+    const string ibz_tfile = tmpdir + "/IBZKPT.txt";
+    aurostd::string2file(aurostd::EmbData::get_test_file("IBZKPT.txt"), ibz_tfile);
+    const xIBZKPT ibz(ibz_tfile);
+    checkEqual(ibz.nweights, 8000U, "xIBZKPT()", "xIBZKPT construction from file", passed_checks, results);
+    checkEqual(ibz.nkpoints_irreducible, 256U, "xIBZKPT()", "xIBZKPT construction from file", passed_checks, results);
+
+    const string kpt_tfile = tmpdir + "/KPOINTS.txt";
+    aurostd::string2file(aurostd::EmbData::get_test_file("KPOINTS.txt"), kpt_tfile);
+    const xKPOINTS kpt(kpt_tfile);
+    checkEqual(kpt.mode, 0, "xKPOINTS()", "xKPOINTS construction from file", passed_checks, results);
+    checkEqual(kpt.nkpoints, 8000, "xKPOINTS()", "xKPOINTS construction from file", passed_checks, results);
+    checkEqual(kpt.grid_type, "Gamma", "xKPOINTS()", "xKPOINTS construction from file", passed_checks, results);
+
+    const string pot_tfile = tmpdir + "/POTCAR.txt";
+    aurostd::string2file(aurostd::EmbData::get_test_file("POTCAR.txt"), pot_tfile);
+    const xPOTCAR pot(pot_tfile);
+    checkEqual(pot.ENMAX, 240.3, "xPOTCAR()", "xPOTCAR construction from file", passed_checks, results);
+    checkEqual(pot.ENMIN, 180.225, "xPOTCAR()", "xPOTCAR construction from file", passed_checks, results);
+    checkEqual(pot.RMAX_min, 2.974, "xPOTCAR()", "xPOTCAR construction from file", passed_checks, results);
+    checkEqual(pot.RMAX_max, 2.974, "xPOTCAR()", "xPOTCAR construction from file", passed_checks, results);
+
+    const string vrx_tfile = tmpdir + "/VASPRUNXML.txt";
+    aurostd::string2file(aurostd::EmbData::get_test_file("VASPRUNXML.txt"), vrx_tfile);
+    const xVASPRUNXML vrx(vrx_tfile);
+    checkEqual(vrx.natoms, 1.0, "xVASPRUNXML()", "xVASPRUNXML construction from file", passed_checks, results);
+
+    const string out_tfile = tmpdir + "/OUTCAR.txt";
+    aurostd::string2file(aurostd::EmbData::get_test_file("OUTCAR.txt"), out_tfile);
+    xOUTCAR out(out_tfile);
+    checkEqual(out.NELM, 60, "xOUTCAR()", "xOUTCAR construction from file", passed_checks, results);
+    checkEqual(out.NIONS, 1, "xOUTCAR()", "xOUTCAR construction from file", passed_checks, results);
+    checkEqual(out.IALGO, 38, "xOUTCAR()", "xOUTCAR construction from file", passed_checks, results);
+    checkEqual(out.ISMEAR, 1, "xOUTCAR()", "xOUTCAR construction from file", passed_checks, results);
+
+    out.GetBandGap(out.Efermi);
+    checkEqual(out.Egap.front(), -AUROSTD_NAN, "xOUTCAR()", "xOUTCAR construction from file", passed_checks, results);
+    checkEqual(out.Egap_type.front(), "metal", "xOUTCAR()", "xOUTCAR construction from file", passed_checks, results);
+
+    aurostd::RemoveDirectory(tmpdir);
+  }
+
+  /// @brief verify mathematical accuracy of XOUTCAR dielectric functions
+  /// @note A dielectric calculation was performed on Si to produce frequency dependent dielectric matrix
+  /// @see
+  /// @doi{10.1103/PhysRevB.27.985}
+  /// @authors
+  /// @mod{NHA,20251116,created function}
+  void UnitTest::dielectricTest(uint& passed_checks, vector<vector<string>>& results, vector<string>& errors) {
+    const string check_func = "XOUTCAR_dielectric";
+    const vector<double> intra_real_verified = {
+        8.9962900000000001, 8.9963619999999995, 8.9965759999999992, 8.9969330000000003, 8.9974329999999991, 8.9980759999999993, 8.9988620000000008, 8.9997910000000001, 9.000864,           9.0020790000000002,
+        9.0034379999999992, 9.0049410000000005, 9.0065880000000007, 9.0083789999999997, 9.0103139999999993, 9.0123929999999994, 9.0146169999999994, 9.0169859999999993, 9.0195000000000007, 9.0221590000000003,
+        9.0249649999999999, 9.0279159999999994, 9.0310140000000008, 9.0342590000000005, 9.0376499999999993, 9.0411900000000003, 9.0448769999999996, 9.0487129999999993, 9.0526970000000002, 9.0568310000000007};
+    const vector<double> intra_im_verified = {
+        0.000000000000000000, 0.001433000000000000, 0.0028670000000000002, 0.0043010000000000001, 0.0057349999999999996, 0.0071710000000000003, 0.0086060000000000008, 0.0100430000000,
+        0.011481000000000000, 0.012921000000000000, 0.014361000000000002,  0.015803999999999999,  0.017247999999999999,  0.018693999999999999,  0.020143000000000001,  0.021593000000000001,
+        0.023046000000000001, 0.024502000000000003, 0.025961000000000001,  0.027422000000000002,  0.028887000000000003,  0.030355000000000000,  0.031827000000000001,  0.033301999999999998,
+        0.034780999999999999, 0.036263999999999998, 0.037752000000000001,  0.039244000000000001,  0.040739999999999998,  0.042241000000000001};
+    const vector<double> EELS_verified = {
+        0.00000000000000000000, 1.7705668732315631e-05, 3.542200521713607e-05,  5.3134961554959499e-05, 7.0842846514947559e-05, 8.8568671949350677e-05, 0.00010627369014402978, 0.00012399325865473552,
+        0.00014171329986747774, 0.00015944451800580192, 0.00017716046876869128, 0.0001948964550911989,  0.00021262609215140624, 0.00023035999960744786, 0.00024810877836849019, 0.00026584607247050283,
+        0.00028359473222434563, 0.00030135301302048597, 0.00031911916973442555, 0.00033687917238259675, 0.00035465569610725484, 0.00037243484627397109, 0.0003902269677087916,  0.00040801801740359528,
+        0.00042581856825337188, 0.00044362654738172526, 0.00046145256872511561, 0.00047928238828890985, 0.00049711430441148874, 0.00051495848229323599};
+    const vector<double> reflectivity_iso_verified = {
+        0.24992269439112227, 0.24992419879231761, 0.24992867026239729, 0.2499361294539881,  0.24994657605311624, 0.24996000967406046, 0.24997642968671099, 0.24999583549726434,
+        0.25001824710999604, 0.25004362198225621, 0.25007200063128066, 0.25010338203364119, 0.25013776478000782, 0.25017514750175229, 0.25021552872538766, 0.25025890662975137,
+        0.25030530037352822, 0.25035470803116283, 0.25040712754970673, 0.25046255664640488, 0.25052103477922538, 0.25058251782831176, 0.25064704489142259, 0.25071461313334953,
+        0.25078519907067992, 0.2508588620049399,  0.25093555745104196, 0.25101532352166839, 0.25109813608794512, 0.25118403323459781};
+
+    xOUTCAR xout;
+    xout.GetProperties(aurostd::EmbData::get_test_file("OUTCAR_dielectric.txt"));
+    xout.GetOptical();
+
+    // ---------------------------------------------------------------------------
+    // Check 1 | dielectric_full_iso_real
+    // ---------------------------------------------------------------------------
+    vector<double> intra_re_sample(xout.dielectric_full_iso_real.begin(), xout.dielectric_full_iso_real.begin() + 30);
+    checkEqual(intra_re_sample, intra_real_verified, check_func, "Intraband_re_accuracy", passed_checks, results);
+    // ---------------------------------------------------------------------------
+    // Check 2 | dielectric_full_iso_imag
+    // ---------------------------------------------------------------------------
+    vector<double> intra_im_sample(xout.dielectric_full_iso_imag.begin(), xout.dielectric_full_iso_imag.begin() + 30);
+    checkEqual(intra_im_sample, intra_im_verified, check_func, "Intraband_im_accuracy", passed_checks, results);
+    // ---------------------------------------------------------------------------
+    // Check 3 | energy_loss_function_iso
+    // ---------------------------------------------------------------------------
+    vector<double> EELS_sample(xout.energy_loss_function_iso.begin(), xout.energy_loss_function_iso.begin() + 30);
+    checkEqual(EELS_sample, EELS_verified, check_func, "EELS_accuracy", passed_checks, results);
+    // ---------------------------------------------------------------------------
+    // Check 4 | reflectivity_iso
+    // ---------------------------------------------------------------------------
+    vector<double> reflectivity_sample(xout.reflectivity_iso.begin(), xout.reflectivity_iso.begin() + 30);
+    checkEqual(reflectivity_sample, reflectivity_iso_verified, check_func, "Reflectivity_accuracy", passed_checks, results);
+  }
+
   // database
   void UnitTest::schemaTest(uint& passed_checks, vector<vector<string>>& results, vector<string>& errors) {
     const bool LDEBUG = (false || XHOST.DEBUG);
@@ -3220,6 +3512,308 @@ namespace unittest {
     checkEqual(ninconsistent, (uint) 0, check_function, check_description, passed_checks, results);
   }
 
+  void UnitTest::qhullTest(uint& passed_checks, vector<vector<string>>& results, vector<string>& errors) {
+    (void) errors; // Suppress compiler warnings
+    string check_function;
+    string check_description;
+
+    //Set-up test environments: create a convex hull of MnPdPt
+    string test_alloy = "MnPdPt";
+    string sc_auid = "aflow:0309029b2b3f8940";
+    aurostd::xoption vpflow;
+
+    vpflow.flag(nhull::convex_flags.m_nhull_print, false);
+    vpflow.flag(nhull::convex_flags.m_interquartile_range, true);
+    vpflow.flag(nhull::convex_flags.m_nminus1_flag, true);
+    vpflow.flag(nhull::convex_flags.m_stability_criterion_flag, true);
+    vpflow.addattachedscheme(nhull::convex_flags.m_alloy, test_alloy, true);
+    vpflow.addattachedscheme(nhull::convex_flags.m_stability_criterion_flag, sc_auid, true);
+
+    nhull::ConvexHull test_run = nhull::convexHull(vpflow);
+
+    //set all tests to fail by default if we fail to initialize hull:
+    //test1:
+    bool hull_initialized_fail = true;
+    string hull_initialized_reason = "hull_initialization_failed";
+    //test2:
+    bool phase_decomp_fail = true;
+    bool dhull_fail = true;
+    string phase_decomp_reason = "hull_initialization_failed";
+    string dhull_reason = "hull_initialization_failed";
+    //test3:
+    bool nminus1_fail = true;
+    bool stability_criterion_fail = true;
+    string nminus1_reason = "hull_initialization_failed";
+    string sc_reason = "hull_initialization_failed";
+    //test4:
+    bool below_facet_fail1 = true;
+    bool below_facet_fail2 = true;
+    bool below_facet_fail3 = true;
+    bool below_facet_fail4 = true;
+    bool below_facet_fail5 = true;
+    bool below_facet_fail6 = true;
+    string check_description1 = "hull_initialization_failed";
+    string check_description2 = "hull_initialization_failed";
+    string check_description3 = "hull_initialization_failed";
+    string check_description4 = "hull_initialization_failed";
+    string check_description5 = "hull_initialization_failed";
+    string check_description6 = "hull_initialization_failed";
+    //test5
+    bool distance_fail = true;
+    string distance_fail_reason = "hull_initialization_failed";
+
+    // ---------------------------------------------------------------------------
+    // Test 1: check to make sure hull was properly initialized
+    // ---------------------------------------------------------------------------
+    vector<nhull::Entry> calculated_points = test_run.getPoints();
+    if (!calculated_points.empty()) {
+      hull_initialized_fail = false;
+      hull_initialized_reason = "hull_initialization_passed";
+    }
+
+    if (!hull_initialized_fail) {
+     // ---------------------------------------------------------------------------
+     // Test 2: verify hull equivalence with test data
+     // ---------------------------------------------------------------------------
+      phase_decomp_fail = false;
+      dhull_fail = false;
+      phase_decomp_reason = "";
+      dhull_reason = "";
+      aurostd::JSON::object jo = aurostd::JSON::parse(aurostd::EmbData::get_test_file("MnPdPt_hull.json"));
+      vector<nhull::Entry> reference_points = static_cast<vector<nhull::Entry>>(jo);
+
+      for (const nhull::Entry& entry : calculated_points) {
+        for (const nhull::Entry& ref_entry : reference_points) {
+          if (entry.auid == ref_entry.auid && !entry.flagged_entry && entry.nspecies != 1 && entry.is_hull_point == false) {
+            auto phase_decomp = entry.nhull_phase_decomp;
+            auto ref_phase_decomp = ref_entry.nhull_phase_decomp;
+            double energy = entry.distance_hull_enthalpy_formation_atom;
+            double ref_energy = ref_entry.distance_hull_enthalpy_formation_atom;
+
+            //phase decomp test
+            for (auto phase : ref_phase_decomp) {
+              if (fabs(phase_decomp[phase.first] - phase.second) > NHULL_UNIT_TEST_TOL) {
+                phase_decomp_fail = true;
+                phase_decomp_reason += "Auid: " + entry.auid + " failed phase decomp test!\n";
+              }
+            }
+
+            //distance to hull test
+            //ref_energy is loaded from JSON which saves energy is meVs. Hull runs in eVs, so a conversion is done here:
+            if (fabs(ref_energy / 1000 - energy) > NHULL_UNIT_TEST_TOL) {
+              dhull_fail = true;
+              dhull_reason += "Auid: " + entry.auid + " failed dhull test!\n";
+            }
+          }
+        }
+      }
+
+      if (!phase_decomp_fail) {
+        phase_decomp_reason = "passed phase decomp test";
+      }
+      if (!dhull_fail) {
+        dhull_reason = "passed distance-to-hull test";
+      }
+
+      // ---------------------------------------------------------------------------
+      // Test 3: verify stability criterion and nminus1
+      // ---------------------------------------------------------------------------
+      nminus1_fail = false;
+      stability_criterion_fail = false;
+      nminus1_reason = "";
+      sc_reason = "";
+
+      std::pair<string, double> verified_data_MnPdPt_auid_nminus1_1 = {"aflow:0309029b2b3f8940", 72.4623};
+      std::pair<string, double> verified_data_MnPdPt_auid_nminus1_2 = {"aflow:fb9eaa58604ce774", 32.9375};
+      std::pair<string, double> verified_data_MnPdPt_auid_sc_1 = {sc_auid, 72.4623};
+      std::pair<string, double> verified_data_MnPdPt_auid_sc_2 = {"aflow:11ca5563e6e32342", 0.575667};
+
+      for (const auto& entry : calculated_points) {
+        //nminus1 and stability criterion is loaded from JSON which saves energy is meVs. Hull runs in eVs, so a conversion is done here:
+        if (entry.auid == verified_data_MnPdPt_auid_nminus1_1.first) {
+          if (fabs(verified_data_MnPdPt_auid_nminus1_1.second / 1000 - entry.m_nminus1_enthalpy_gain) > NHULL_UNIT_TEST_TOL) {
+            nminus1_fail = true;
+            nminus1_reason += "Auid: " + entry.auid + " failed nminus1 test!\n";
+          }
+        }
+        if (entry.auid == verified_data_MnPdPt_auid_nminus1_2.first) {
+          if (fabs(verified_data_MnPdPt_auid_nminus1_2.second / 1000 - entry.m_nminus1_enthalpy_gain) > NHULL_UNIT_TEST_TOL) {
+            nminus1_fail = true;
+            nminus1_reason += "Auid: " + entry.auid + " failed nminus1 test!\n";
+          }
+        }
+        if (entry.auid == verified_data_MnPdPt_auid_sc_1.first) {
+          if (fabs(verified_data_MnPdPt_auid_sc_1.second / 1000 - entry.m_stability_criterion) > NHULL_UNIT_TEST_TOL) {
+            stability_criterion_fail = true;
+            sc_reason += "Auid: " + entry.auid + " failed sc test!\n";
+          }
+        }
+        if (entry.auid == verified_data_MnPdPt_auid_sc_2.first) {
+          if (fabs(verified_data_MnPdPt_auid_sc_2.second / 1000 - entry.m_stability_criterion) > NHULL_UNIT_TEST_TOL) {
+            stability_criterion_fail = true;
+            sc_reason += "Auid: " + entry.auid + " failed sc test!\n";
+          }
+        }
+      }
+
+      if (!nminus1_fail) {
+        nminus1_reason = "passed nminus1 test";
+      }
+      if (!stability_criterion_fail) {
+        sc_reason = "passed sc test";
+      }
+
+      // ---------------------------------------------------------------------------
+      // Test 4: facet identification
+      // ---------------------------------------------------------------------------
+
+      std::vector<aurostd::xvector<double>> v;
+      aurostd::xvector<double> qhull_point;
+      bool expected;
+
+      //test1 2D
+      check_description1 = "check below facet test1 passed";
+      expected = true;
+      below_facet_fail1 = false;
+      v = {
+          {1, 0, 5},
+          {0, 1, 2},
+          {0, 0, 8}
+      };
+      qhull_point = {.4, .5, 17};
+      nhull::NhullFacet facet1(v, 0, 0, 3);
+      if (nhull::checkPointBelowHull(facet1, qhull_point) != expected) {
+        below_facet_fail1 = true;
+        check_description1 = "check below facettest1 failed";
+      }
+
+      //test2 2D
+      check_description2 = "check below facet test2 passed";
+      expected = false;
+      below_facet_fail2 = false;
+      v = {
+          {1, 0, 7},
+          {0, 1, 2},
+          {0, 0, 8}
+      };
+      qhull_point = {.6, .5, 17};
+      nhull::NhullFacet facet2(v, 0, 0, 3);
+      if (nhull::checkPointBelowHull(facet2, qhull_point) != expected) {
+        below_facet_fail2 = true;
+        check_description2 = "check below facet test2 failed";
+      }
+
+      //test3 2D
+      check_description3 = "check below facet test3 passed";
+      expected = false;
+      below_facet_fail3 = false;
+      v = {
+          {1, 0, 2},
+          {0, 1, 9},
+          {0, 0, 7}
+      };
+      qhull_point = {1.1, 0, 17};
+      nhull::NhullFacet facet3(v, 0, 0, 3);
+      if (nhull::checkPointBelowHull(facet3, qhull_point) != expected) {
+        below_facet_fail3 = true;
+        check_description3 = "check below facet test3 failed";
+      }
+
+      //test4 2D
+      check_description4 = "check below facet test4 passed";
+      expected = false;
+      below_facet_fail4 = false;
+      v = {
+          {1, 0, 4},
+          {0, 1, 7},
+          {0, 0, 5}
+      };
+      qhull_point = {-.1, 0, 17};
+      nhull::NhullFacet facet4(v, 0, 0, 3);
+      if (nhull::checkPointBelowHull(facet4, qhull_point) != expected) {
+        below_facet_fail4 = true;
+        check_description4 = "check below facet test4 failed";
+      }
+
+      //test5 3D
+      check_description5 = "check below facet test5 passed";
+      expected = true;
+      below_facet_fail5 = false;
+      v = {
+          {1, 0, 0, 4},
+          {0, 1, 0, 7},
+          {0, 0, 0, 5},
+          {0, 0, 1, 5}
+      };
+      qhull_point = {0.25, 0.25, 0.25, 17};
+      nhull::NhullFacet facet5(v, 0, 0, 4);
+      if (nhull::checkPointBelowHull(facet5, qhull_point) != expected) {
+        below_facet_fail5 = true;
+        check_description5 = "check below facet test5 failed";
+      }
+
+      //test6 3D
+      check_description6 = "check below facet test6 passed";
+      expected = false;
+      below_facet_fail6 = false;
+      v = {
+          {1, 0, 0, 4},
+          {0, 1, 0, 7},
+          {0, 0, 0, 5},
+          {0, 0, 1, 5}
+      };
+      qhull_point = {1, 0.25, 0.25, 17};
+      nhull::NhullFacet facet6(v, 0, 0, 4);
+      if (nhull::checkPointBelowHull(facet6, qhull_point) != expected) {
+        below_facet_fail6 = true;
+        check_description6 = "check below facet test6 failed";
+      }
+
+      // ---------------------------------------------------------------------------
+      // Test 5: general distance formula
+      // ---------------------------------------------------------------------------
+      distance_fail = false;
+      distance_fail_reason = "passed distance formula test";
+      const aurostd::xvector<double> test_point = {0, 0.5862, -0.1137};
+      std::vector<aurostd::xvector<double>> dummy_vertices;
+      aurostd::xvector<double> facet_normal = {0.379, 0.417, 0.826};
+      double facet_offset = 0.036734999999999962;
+      const double expected_distance = 0.1873;
+
+      nhull::NhullFacet test_facet(dummy_vertices, facet_normal, facet_offset, 3);
+
+      if (std::fabs(test_facet.distance(test_point) - expected_distance) > 1e-4) {
+        distance_fail = true;
+        distance_fail_reason = "failed vertical distance to facet";
+      }
+    }
+
+    //All checks done here:
+    //test1:
+    check_function = "check hull initialization";
+    checkEqual(hull_initialized_fail, false, check_function, hull_initialized_reason, passed_checks, results);
+    //test2:
+    check_function = "calc_vertical_distance_and_phase_decomposition()";
+    checkEqual(dhull_fail, false, check_function, dhull_reason, passed_checks, results);
+    checkEqual(phase_decomp_fail, false, check_function, phase_decomp_reason, passed_checks, results);
+    //test3:
+    check_function = "calculateNminus1()";
+    checkEqual(nminus1_fail, false, check_function, nminus1_reason, passed_checks, results);
+    check_function = "calculateStabilityCriterion()";
+    checkEqual(stability_criterion_fail, false, check_function, sc_reason, passed_checks, results);
+
+    check_function = "nhull::checkPointBelowHull()";
+    checkEqual(below_facet_fail1, false, check_function, check_description1, passed_checks, results);
+    checkEqual(below_facet_fail2, false, check_function, check_description2, passed_checks, results);
+    checkEqual(below_facet_fail3, false, check_function, check_description3, passed_checks, results);
+    checkEqual(below_facet_fail4, false, check_function, check_description4, passed_checks, results);
+    checkEqual(below_facet_fail5, false, check_function, check_description5, passed_checks, results);
+    checkEqual(below_facet_fail6, false, check_function, check_description6, passed_checks, results);
+
+    check_function = "NhullFacet::distance()";
+    checkEqual(distance_fail, false, check_function, distance_fail_reason, passed_checks, results);
+  }
+
   // structure tests
   void UnitTest::atomicEnvironmentTest(uint& passed_checks, vector<vector<string>>& results, vector<string>& errors) {
     (void) errors;  // Suppress compiler warnings
@@ -3234,14 +3828,13 @@ namespace unittest {
 
     {
       // load test system
-      const string auid = "aflow:d912e209c81aeb94";
-      const string aurl = "aflowlib.duke.edu:AFLOWDATA/LIB2_RAW/Ca_svCu_pv/138";
       aflowlib::_aflowlib_entry entry;
       xstructure str;
+      aflowlib::EntryLoader el;
+      el.m_xstructure_relaxed = true;
+      el.loadAUID("aflow:d912e209c81aeb94");
 
-      entry.aurl = aurl;
-      entry.auid = auid;
-      pflow::loadXstructures(entry);
+      entry = *el.m_entries_flat->back();
       str = entry.vstr.back();
       vector<AtomEnvironment> AE = getAtomEnvironments(str, 1);
       check_function = "getAtomEnvironments()";
@@ -3259,7 +3852,7 @@ namespace unittest {
       // ---------------------------------------------------------------------------
       // Check | coordinate matching
       check_description = "coordinate matching";
-      const xvector<double> compare_point = {-1.9551925593108925e0, -2.2642136090979212e0, 2.4896636484942385e0};
+      const xvector<double> compare_point = {-2.9522760602661933, 1.020477106008512, 2.4272163095277017};
       checkEqual(AE[1].index2Point(2), compare_point, check_function, check_description, passed_checks, results);
 
       // ---------------------------------------------------------------------------
@@ -3281,7 +3874,7 @@ namespace unittest {
 
     // create hull
       AE[test_AE].constructAtomEnvironmentHull();
-      check_function = "contructAtomEnvironmentHull()";
+      check_function = "constructAtomEnvironmentHull()";
 
     // ---------------------------------------------------------------------------
     // Check | hull bit set
@@ -3291,13 +3884,11 @@ namespace unittest {
     // ---------------------------------------------------------------------------
     // Check | hull volume
       check_description = "hull volume";
-      checkEqual(AE[test_AE].volume, 31.4622167689, check_function, check_description, passed_checks, results);
-
+      checkEqual(AE[test_AE].volume, 33.035348492423054, check_function, check_description, passed_checks, results);
     // ---------------------------------------------------------------------------
     // Check | hull area
       check_description = "hull area";
-      checkEqual(AE[test_AE].area, 60.4979100628, check_function, check_description, passed_checks, results);
-
+      checkEqual(AE[test_AE].area, 62.498084711616272, check_function, check_description, passed_checks, results);
     // ---------------------------------------------------------------------------
     // Check | triangle count
       check_description = "triangle count";
@@ -3682,7 +4273,7 @@ namespace unittest {
     // create 3x1x1 supercell expansion matrix
     check_function = "xstructure::foldAtomsInCell()";
     check_description = "expand cell (3x1x1)";
-    const xmatrix<double> supercell_matrix = aurostd::eye<double>(3, 3);
+    xmatrix<double> supercell_matrix = aurostd::eye<double>(3, 3);
     supercell_matrix(1, 1) = 3.0;
     const xmatrix<double> lattice_new = supercell_matrix * xstr.lattice; // transform lattice
 
@@ -3777,35 +4368,35 @@ namespace unittest {
     // ---------------------------------------------------------------------------
 
     // create xstr_str
-    xstr_str =
-        "O Co Sr\n"
-        "1.00000000000000\n"
-        "  5.4205419737648093    0.0000000000000000    0.0000000000000000\n"
-        "  0.0000000000000000    5.4205419737648093    0.0000000000000000\n"
-        "  0.0000000000000000    0.0000000000000000    7.6623790337915390\n"
-        "O    Co   Sr\n"
-        "12    4    4\n"
-        "Direct\n"
-        "  0.7499997640097504  0.2500002359902496  0.5000000000000000\n"
-        "  0.2500002359902496  0.7499997640097504  0.5000000000000000\n"
-        "  0.2499997640097504  0.7500002359902496  0.0000000000000000\n"
-        "  0.7500002359902496  0.2499997640097504  0.0000000000000000\n"
-        "  0.7499997640097504  0.7499997640097504  0.5000000000000000\n"
-        "  0.2500002359902496  0.2500002359902496  0.5000000000000000\n"
-        "  0.2499997640097504  0.2499997640097504  0.0000000000000000\n"
-        "  0.7500002359902496  0.7500002359902496  0.0000000000000000\n"
-        "  0.5000000000000000  0.5000000000000000  0.7499999723900999\n"
-        "  0.0000000000000000  0.0000000000000000  0.7500000276099001\n"
-        "  0.0000000000000000  0.0000000000000000  0.2499999723900999\n"
-        "  0.5000000000000000  0.5000000000000000  0.2500000276099001\n"
-        "  0.0000000000000000  0.0000000000000000  0.5000000000000000\n"
-        "  0.5000000000000000  0.5000000000000000  0.0000000000000000\n"
-        "  0.5000000000000000  0.5000000000000000  0.5000000000000000\n"
-        "  0.0000000000000000  0.0000000000000000  0.0000000000000000\n"
-        "  0.5000000000000000  0.0000000000000000  0.7500000000000000\n"
-        "  0.0000000000000000  0.5000000000000000  0.7500000000000000\n"
-        "  0.5000000000000000  0.0000000000000000  0.2500000000000000\n"
-        "  0.0000000000000000  0.5000000000000000  0.2500000000000000\n";
+    xstr_str
+        = "O Co Sr\n"
+          "1.00000000000000\n"
+          "  5.4205419737648093    0.0000000000000000    0.0000000000000000\n"
+          "  0.0000000000000000    5.4205419737648093    0.0000000000000000\n"
+          "  0.0000000000000000    0.0000000000000000    7.6623790337915390\n"
+          "O    Co   Sr\n"
+          "12    4    4\n"
+          "Direct\n"
+          "  0.7499997640097504  0.2500002359902496  0.5000000000000000\n"
+          "  0.2500002359902496  0.7499997640097504  0.5000000000000000\n"
+          "  0.2499997640097504  0.7500002359902496  0.0000000000000000\n"
+          "  0.7500002359902496  0.2499997640097504  0.0000000000000000\n"
+          "  0.7499997640097504  0.7499997640097504  0.5000000000000000\n"
+          "  0.2500002359902496  0.2500002359902496  0.5000000000000000\n"
+          "  0.2499997640097504  0.2499997640097504  0.0000000000000000\n"
+          "  0.7500002359902496  0.7500002359902496  0.0000000000000000\n"
+          "  0.5000000000000000  0.5000000000000000  0.7499999723900999\n"
+          "  0.0000000000000000  0.0000000000000000  0.7500000276099001\n"
+          "  0.0000000000000000  0.0000000000000000  0.2499999723900999\n"
+          "  0.5000000000000000  0.5000000000000000  0.2500000276099001\n"
+          "  0.0000000000000000  0.0000000000000000  0.5000000000000000\n"
+          "  0.5000000000000000  0.5000000000000000  0.0000000000000000\n"
+          "  0.5000000000000000  0.5000000000000000  0.5000000000000000\n"
+          "  0.0000000000000000  0.0000000000000000  0.0000000000000000\n"
+          "  0.5000000000000000  0.0000000000000000  0.7500000000000000\n"
+          "  0.0000000000000000  0.5000000000000000  0.7500000000000000\n"
+          "  0.5000000000000000  0.0000000000000000  0.2500000000000000\n"
+          "  0.0000000000000000  0.5000000000000000  0.2500000000000000\n";
     aurostd::StringstreamClean(xstrss);
     xstrss << xstr_str;
     try {
@@ -3933,8 +4524,13 @@ namespace unittest {
     if (error.empty()) {
       string updated_label_and_params;
       if (!anrl::structureAndLabelConsistent(xstr, static_cast<string>(pd.content[uid]["label"]), updated_label_and_params, tolerance_sym)) { // DX20201105 - added symmetry tolerance
-        error = "The structure has a higher symmetry than indicated by the label (orig: proto=" + static_cast<string>(pd.content[uid]["label"]) +
-                ", params=" + static_cast<string>(pd.content[uid]["parameter_values"]) + ")." + " The correct label and parameters for this structure are:\n" + updated_label_and_params;
+        error = "The structure has a higher symmetry than indicated by the label (orig: proto="
+              + static_cast<string>(pd.content[uid]["label"])
+              + ", params="
+              + static_cast<string>(pd.content[uid]["parameter_values"])
+              + ")."
+              + " The correct label and parameters for this structure are:\n"
+              + updated_label_and_params;
       } else {
         sym = true;
       }
@@ -3947,14 +4543,22 @@ namespace unittest {
       const vector<string> protos_matching = compare::getMatchingPrototypes(xstr, vpflow, catalog);
       // if it matches to more than one
       if (protos_matching.size() > 1 && !anrl::isSpecialCaseEquivalentPrototypes(protos_matching)) {
-        error = static_cast<string>(pd.content[uid]["label"]) + ", params=" + static_cast<string>(pd.content[uid]["parameter_values"]) +
-                " matches multiple prototypes (and not a documented special case): " + aurostd::joinWDelimiter(protos_matching, ",") + "." +
-                " If the prototype was newly added, ONLY include it in the encyclopedia" + " for a valid reason (e.g., historical, special designation, etc.)" +
-                " and document this in anrl::isSpecialCaseEquivalentPrototypes().";
+        error = static_cast<string>(pd.content[uid]["label"])
+              + ", params="
+              + static_cast<string>(pd.content[uid]["parameter_values"])
+              + " matches multiple prototypes (and not a documented special case): "
+              + aurostd::joinWDelimiter(protos_matching, ",")
+              + "."
+              + " If the prototype was newly added, ONLY include it in the encyclopedia"
+              + " for a valid reason (e.g., historical, special designation, etc.)"
+              + " and document this in anrl::isSpecialCaseEquivalentPrototypes().";
         // if it doesn't match with ITSELF
       } else if (protos_matching.empty()) {
-        error = static_cast<string>(pd.content[uid]["label"]) + ", params=" + static_cast<string>(pd.content[uid]["parameter_values"]) + " does not match to any prototypes" +
-                " (requires special symmetry tolerance or there is a bug with XtalFinder).";
+        error = static_cast<string>(pd.content[uid]["label"])
+              + ", params="
+              + static_cast<string>(pd.content[uid]["parameter_values"])
+              + " does not match to any prototypes"
+              + " (requires special symmetry tolerance or there is a bug with XtalFinder).";
       } else {
         unique = true;
       }
@@ -4016,110 +4620,6 @@ namespace unittest {
     check_function = "compare::getMatchingPrototypes()";
     check_description = "protoypes are unique";
     checkEqual(nprotos[2], num_protos, check_function, check_description, passed_checks, results);
-  }
-
-  // ovasp
-  void UnitTest::xoutcarTest(uint& passed_checks, vector<vector<string>>& results, vector<string>& errors) {
-    const bool LDEBUG = (false || XHOST.DEBUG);
-
-    // setup test environment
-    string check_function;
-    string check_description;
-    string calculated_str;
-    string expected_str;
-    bool calculated_bool = false;
-    bool expected_bool = false;
-    double calculated_dbl = 0.0;
-    double expected_dbl = 0.0;
-
-    string system;
-    string path;
-    string query;
-    string file;
-    string efile;
-    string ext;
-    string tfile;
-    vector<string> files;
-    xOUTCAR xout;
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////
-    // FCC/Si1_ICSD_150530
-    system = "ICSD_WEB/FCC/Si1_ICSD_150530";
-
-    // Fetch and parse required files first - abort test if unsuccessful
-    path = AFLOWLIB_SERVER_DEFAULT + "/AFLOWDATA/" + system;
-    query = path + "/?files";
-    aurostd::httpGetTokens(query, files, ",");
-    if (files.empty()) {
-      errors.push_back("Could not fetch query: " + query);
-      return;
-    }
-
-    // OUTCAR.static
-    file = "OUTCAR.static";
-    if (!aurostd::CompressFileWithinList(files, file, efile)) {
-      errors.push_back("No " + file + " found within " + query);
-      return;
-    }
-
-    ext = aurostd::GetFileExtension(efile);
-    tfile = aurostd::TmpFileCreate("Egap_file1") + ext;
-    query = path + "/" + efile;
-    if (!(aurostd::httpGetFileStatus(query, tfile) && aurostd::FileExist(tfile))) {
-      errors.push_back("Could not fetch query: " + query);
-      return;
-    }
-
-    check_function = "xOUTCAR::GetProperties()";
-    check_description = "load OUTCAR.static";
-    if (!xout.GetPropertiesFile(tfile, !LDEBUG)) {
-      errors.push_back("Could not parse " + file);
-      return;
-    }
-#ifndef _AFLOW_TEMP_PRESERVE_
-    aurostd::RemoveFile(tfile);
-#endif
-    double const EFERMI = xout.Efermi;
-
-    // OUTCAR.bands
-    file = "OUTCAR.bands";
-    if (!aurostd::CompressFileWithinList(files, file, efile)) {
-      query = path + "/?files"; // reload query for error message
-      errors.push_back("No " + file + " found within " + query);
-      return;
-    }
-    ext = aurostd::GetFileExtension(efile);
-    tfile = aurostd::TmpFileCreate("Egap_file1") + ext;
-    query = path + "/" + efile;
-    if (!(aurostd::httpGetFileStatus(query, tfile) && aurostd::FileExist(tfile))) {
-      errors.push_back("Could not fetch query: " + query);
-      return;
-    }
-    if (!xout.GetPropertiesFile(tfile, !LDEBUG)) {
-      errors.push_back("Could not parse " + file);
-      return;
-    }
-#ifndef _AFLOW_TEMP_PRESERVE_
-    aurostd::RemoveFile(tfile);
-#endif
-
-    // GetBandGap
-    check_function = "xOUTCAR::GetBandGap()";
-
-    check_description = "Calculate Egap successfully";
-    expected_bool = true;
-    const bool parsed = calculated_bool = xout.GetBandGap(EFERMI);
-    checkEqual(calculated_bool, expected_bool, check_function, check_description, passed_checks, results);
-
-    check_description = "Egap value";
-    expected_dbl = 6.1000e-01;
-    calculated_dbl = (parsed ? xout.Egap[0] : AUROSTD_MAX_DOUBLE);
-    checkEqual(calculated_dbl, expected_dbl, check_function, check_description, passed_checks, results);
-
-    check_description = "Egap type";
-    expected_str = "insulator-indirect";
-    calculated_str = (parsed ? xout.Egap_type[0] : "N/A");
-    checkEqual(calculated_str, expected_str, check_function, check_description, passed_checks, results);
   }
 
   /// Tests functionality of the --lib2raw option with the --local option.
@@ -4213,26 +4713,27 @@ namespace unittest {
       }
     }
 
-    const vector<string> other_checks{"Au1_ICSD_53763_bandsdata.json.xz",
-                                      "Au1_ICSD_53763_dosdata.json.xz",
-                                      "OSZICAR.static",
-                                      "INCAR.bands",
-                                      "LOCK",
+    const vector<string> other_checks{
+        "Au1_ICSD_53763_bandsdata.json.xz",
+        "Au1_ICSD_53763_dosdata.json.xz",
+        "OSZICAR.static",
+        "INCAR.bands",
+        "LOCK",
 
-                                      "CONTCAR.relax",
-                                      "CONTCAR.relax1",
-                                      "CONTCAR.relax.abinit",
-                                      "CONTCAR.relax.aims",
-                                      "CONTCAR.relax.vasp",
+        "CONTCAR.relax",
+        "CONTCAR.relax1",
+        "CONTCAR.relax.abinit",
+        "CONTCAR.relax.aims",
+        "CONTCAR.relax.vasp",
 
-                                      "KPOINTS.relax",
-                                      "KPOINTS.static",
+        "KPOINTS.relax",
+        "KPOINTS.static",
 
-                                      "OUTCAR.bands",
-                                      "OUTCAR.relax.xz",
+        "OUTCAR.bands",
+        "OUTCAR.relax.xz",
 
-                                      "POSCAR.bands",
-                                      "POSCAR.orig"};
+        "POSCAR.bands",
+        "POSCAR.orig"};
     for (const string& file : other_checks) {
       checkFiles(string(test_RAW).append("/").append(file), string(system_RAW_path).append("/").append(file), check_function, "checking equality for file: " + file, passed_checks, results);
     }
@@ -4422,6 +4923,168 @@ namespace unittest {
   }
 
   void UnitTest::surface_GetPlaneDensityAtoms(uint& passed_checks, vector<vector<string>>& results, vector<string>& errors) {}
+
+  void UnitTest::cumulantsTest(uint& passed_checks, vector<vector<string>>& results, vector<string>& errors) {
+    const string check_func = "cumulants::CumulantsCalculator";
+    const string tmpdir = aurostd::TmpDirectoryCreate("unit_test_cumulants");
+    const vector<int> sol_chem = {283, 334, 382, 426, 464, 498, 524, 543, 555, 558, 552, 537, 514, 481, 440, 390, 331, 261, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    const vector<int> sol_chem_dvc = {218, 250, 279, 304, 327, 345, 359, 369, 373, 371, 363, 349, 328, 300, 265, 218, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    const vector<int> sol_coh = {276, 328, 374, 413, 445, 473, 494, 509, 517, 517, 506, 486, 456, 417, 368, 311, 244, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    const vector<int> sol_coh_dvc = {217, 251, 279, 301, 319, 333, 342, 348, 349, 343, 330, 309, 279, 238, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    aurostd::EmbData::save_to_file("cumulants_test.tar.xz", "TEST", tmpdir + "/cumulants_test.tar.xz");
+    aurostd::DecompressFiles(tmpdir + "/cumulants_test.tar.xz", tmpdir);
+    aurostd::xoption cumulants_opts;
+    cumulants_opts.push_attached("CUMULANTS::DIRECTORY", tmpdir + "/AlZn");
+    cumulants_opts.push_attached("CUMULANTS::NUM_CUMULANTS", "2");
+    cumulants_opts.push_attached("CUMULANTS::POLY_ORDERS", "2,2");
+    cumulants_opts.push_attached("CUMULANTS::CONC_START", "0.9,0.1");
+    cumulants_opts.push_attached("CUMULANTS::CONC_STOP", "0.1,0.9");
+    cumulants_opts.push_attached("CUMULANTS::CONC_STEP", "0.025");
+    cumulants_opts.push_attached("CUMULANTS::POCC_TEMP", "2000");
+    cumulants_opts.push_attached("CUMULANTS::MIN_TEMP", "200");
+    {
+      cumulants::CumulantsCalculator cc = cumulants::CumulantsCalculator::fromOptions(cumulants_opts);
+      cc.calculateSpinodal();
+      aurostd::JSON::object cumulants_jo = cc.getOutput();
+      checkEqual(vector<int>(cumulants_jo["crit_temps"]), sol_chem, check_func, "chemical spinodal without DVC", passed_checks, results);
+    }
+    {
+      cumulants_opts.flag("CUMULANTS::DVC", true);
+      cumulants::CumulantsCalculator cc = cumulants::CumulantsCalculator::fromOptions(cumulants_opts);
+      cc.calculateSpinodal();
+      aurostd::JSON::object cumulants_jo = cc.getOutput();
+      checkEqual(vector<int>(cumulants_jo["crit_temps"]), sol_chem_dvc, check_func, "chemical spinodal with DVC", passed_checks, results);
+    }
+    {
+      cumulants_opts.flag("CUMULANTS::DVC", false);
+      cumulants_opts.push_attached("CUMULANTS::KVEC", "1.0,0.0,0.0");
+      cumulants_opts.push_attached("CUMULANTS::POLY_ORDERS_ELAS", "2,4");
+      cumulants::CumulantsCalculator cc = cumulants::CumulantsCalculator::fromOptions(cumulants_opts);
+      cc.calculateSpinodal();
+      aurostd::JSON::object cumulants_jo = cc.getOutput();
+      checkEqual(vector<int>(cumulants_jo["crit_temps"]), sol_coh, check_func, "coherent spinodal without DVC", passed_checks, results);
+    }
+    {
+      cumulants_opts.flag("CUMULANTS::DVC", true);
+      cumulants::CumulantsCalculator cc = cumulants::CumulantsCalculator::fromOptions(cumulants_opts);
+      cc.calculateSpinodal();
+      aurostd::JSON::object cumulants_jo = cc.getOutput();
+      checkEqual(vector<int>(cumulants_jo["crit_temps"]), sol_coh_dvc, check_func, "coherent spinodal with DVC", passed_checks, results);
+    }
+    aurostd::RemoveDirectory(tmpdir);
+  }
+
+  void UnitTest::xpseudopotentialDataTest(uint& passed_checks, std::vector<std::vector<std::string>>& results, std::vector<std::string>& errors) {
+    const std::vector<xPOTCAR> vxpseudopotential = get_pseudopotential_data();
+
+    // collisions for potcars with same values but different AUIDs
+    unsigned int collisions = 0;
+    for (size_t i = 0; i < vxpseudopotential.size(); i++) {
+      for (size_t j = i + 1; j < vxpseudopotential.size(); j++) {
+        const bool collision = vxpseudopotential[i].AUID != vxpseudopotential[j].AUID
+                            && vxpseudopotential[i].vTITEL.at(0) == vxpseudopotential[j].vTITEL.at(0)
+                            && vxpseudopotential[i].vLEXCH.at(0) == vxpseudopotential[j].vLEXCH.at(0)
+                            && std::abs(vxpseudopotential[i].vEATOM.at(0) - vxpseudopotential[j].vEATOM.at(0)) < 0.00001
+                            && std::abs(vxpseudopotential[i].vRMAX.at(0) - vxpseudopotential[j].vRMAX.at(0)) < 0.0001;
+        if (collision) {
+          std::cerr
+              << "xPOTCAR COLLISION: "
+              << "first FILENAME="
+              << vxpseudopotential[i].filename
+              << " "
+              << "second FILENAME="
+              << vxpseudopotential[j].filename
+              << " "
+              << "AUID="
+              << vxpseudopotential[i].AUID
+              << " "
+              << "TITEL="
+              << vxpseudopotential[i].vTITEL.at(0)
+              << " "
+              << "LEXCH="
+              << vxpseudopotential[i].vLEXCH.at(0)
+              << " "
+              << "EATOM="
+              << vxpseudopotential[i].vEATOM.at(0)
+              << " "
+              << "RMAX="
+              << vxpseudopotential[i].vRMAX.at(0)
+              << " "
+              << std::endl;
+          collisions++;
+        }
+      }
+    }
+    checkEqual(collisions, 0U, "get_pseudopotential_data()", "check value, not auid, collisions in get_pseudopotential_data()", passed_checks, results);
+
+    // collisions for potcars with same AUIDS
+    collisions = 0;
+    for (size_t i = 0; i < vxpseudopotential.size(); i++) {
+      for (size_t j = i + 1; j < vxpseudopotential.size(); j++) {
+        const bool collision = vxpseudopotential[i].AUID == vxpseudopotential[j].AUID;
+        const bool skip_it = aurostd::substring2bool(vxpseudopotential[i].filename, "pot_GGA/potcar.Apr00/Xe")
+                          || aurostd::substring2bool(vxpseudopotential[i].filename, "pot_GGA/potcar.Apr00/Kr")
+                          || aurostd::substring2bool(vxpseudopotential[i].filename, "pot_GGA/potcar.Apr00/Li_pv")
+                          || aurostd::substring2bool(vxpseudopotential[i].filename, "pot_LDA/potcar.Apr00/Li_pv");
+        if (collision && !skip_it) {
+          std::cerr
+              << "xPOTCAR COLLISION: "
+              << "first FILENAME="
+              << vxpseudopotential[i].filename
+              << " "
+              << "second FILENAME="
+              << vxpseudopotential[j].filename
+              << " "
+              << "AUID="
+              << vxpseudopotential[i].AUID
+              << std::endl;
+          collisions++;
+        }
+      }
+    }
+    checkEqual(collisions, 0U, "get_pseudopotential_data()", "check only auid collisions in get_pseudopotential_data()", passed_checks, results);
+
+    // collisions for potcars with same values
+    collisions = 0;
+    for (size_t i = 0; i < vxpseudopotential.size(); i++) {
+      for (size_t j = i + 1; j < vxpseudopotential.size(); j++) {
+        const bool collision = vxpseudopotential[i].vTITEL.at(0) == vxpseudopotential[j].vTITEL.at(0)
+                            && vxpseudopotential[i].vLEXCH.at(0) == vxpseudopotential[j].vLEXCH.at(0)
+                            && std::abs(vxpseudopotential[i].vEATOM.at(0) - vxpseudopotential[j].vEATOM.at(0)) < 0.00001
+                            && std::abs(vxpseudopotential[i].vRMAX.at(0) - vxpseudopotential[j].vRMAX.at(0)) < 0.0001;
+        const bool skip_it = aurostd::substring2bool(vxpseudopotential[i].filename, "pot_GGA/potcar.Apr00/Xe")
+                          || aurostd::substring2bool(vxpseudopotential[i].filename, "pot_GGA/potcar.Apr00/Kr")
+                          || aurostd::substring2bool(vxpseudopotential[i].filename, "pot_GGA/potcar.Apr00/Li_pv")
+                          || aurostd::substring2bool(vxpseudopotential[i].filename, "pot_LDA/potcar.Apr00/Li_pv");
+        if (collision && !skip_it) {
+          std::cerr
+              << "xPOTCAR COLLISION: "
+              << "first FILENAME="
+              << vxpseudopotential[i].filename
+              << " "
+              << "second FILENAME="
+              << vxpseudopotential[j].filename
+              << " "
+              << "TITEL="
+              << vxpseudopotential[i].vTITEL.at(0)
+              << " "
+              << "LEXCH="
+              << vxpseudopotential[i].vLEXCH.at(0)
+              << " "
+              << "EATOM="
+              << vxpseudopotential[i].vEATOM.at(0)
+              << " "
+              << "RMAX="
+              << vxpseudopotential[i].vRMAX.at(0)
+              << " "
+              << std::endl;
+          collisions++;
+        }
+      }
+    }
+    checkEqual(collisions, 0U, "get_pseudopotential_data()", "check only value collisions in get_pseudopotential_data()", passed_checks, results);
+  }
+
 } // namespace unittest
 
 // ***************************************************************************

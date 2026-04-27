@@ -5,10 +5,12 @@
 // ***************************************************************************
 
 #include <cmath>
+#include <fstream>
 #include <functional>
 #include <iomanip>
 #include <ios>
 #include <ostream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -34,10 +36,17 @@
 
 #define _DEBUG_APL_PHONCALC_ false  // CO20190116
 
-using aurostd::xvector;
+using std::ofstream;
+using std::ostream;
 using std::string;
+using std::stringstream;
 using std::vector;
+
 using namespace std::placeholders;
+
+using aurostd::xcomplex;
+using aurostd::xmatrix;
+using aurostd::xvector;
 
 //////////////////////////////////////////////////////////////////////////////
 //                                                                          //
@@ -46,64 +55,7 @@ using namespace std::placeholders;
 //////////////////////////////////////////////////////////////////////////////
 
 namespace apl {
-
-  PhononCalculator::PhononCalculator(ostream& oss) : xStream(oss) {
-    free();
-    _qm = QMesh(oss);
-    _supercell = Supercell(oss);
-    setDirectory("./");
-    _ncpus = 1;
-  }
-
-  PhononCalculator::PhononCalculator(ofstream& mf, ostream& oss) : xStream(mf, oss) {
-    free();
-    _qm = QMesh(mf, oss);
-    _supercell = Supercell(mf, oss);
-    setDirectory("./");
-    _ncpus = 1;
-  }
-
-  PhononCalculator::PhononCalculator(const PhononCalculator& that) : xStream(*that.getOFStream(), *that.getOSS()) {
-    if (this != &that) {
-      free();
-    }
-    copy(that);
-  }
-
-  // Copy constructors
-  PhononCalculator& PhononCalculator::operator=(const PhononCalculator& that) {
-    if (this != &that) {
-      free();
-    }
-    copy(that);
-    return *this;
-  }
-
-  void PhononCalculator::copy(const PhononCalculator& that) {
-    if (this == &that) {
-      return;
-    }
-    xStream::copy(that);
-    _bornEffectiveChargeTensor = that._bornEffectiveChargeTensor;
-    _dielectricTensor = that._dielectricTensor;
-    _directory = that._directory;
-    _forceConstantMatrices = that._forceConstantMatrices;
-    _gammaEwaldCorr = that._gammaEwaldCorr;
-    _inverseDielectricTensor = that._inverseDielectricTensor;
-    _isGammaEwaldPrecomputed = that._isGammaEwaldPrecomputed;
-    _ncpus = that._ncpus;
-    _qm = that._qm;
-    _recsqrtDielectricTensorDeterminant = that._recsqrtDielectricTensorDeterminant;
-    _supercell = that._supercell;
-    _system = that._system;
-  }
-
-  PhononCalculator::~PhononCalculator() {
-    xStream::free();
-    free();
-  }
-
-  void PhononCalculator::free() {
+  void PhononCalculator::clear() {
     _bornEffectiveChargeTensor.clear();
     _dielectricTensor.clear();
     _directory = "";
@@ -118,22 +70,6 @@ namespace apl {
     _system = "";
     _supercell.clear();
   }
-
-  void PhononCalculator::clear() {
-    free();
-  }
-
-  // xStream initializers
-  void PhononCalculator::initialize(ostream& oss) {
-    _qm.initialize(oss);
-    _supercell.initialize(oss);
-  }
-
-  void PhononCalculator::initialize(ofstream& mf, ostream& oss) {
-    _qm.initialize(mf, oss);
-    _supercell.initialize(mf, oss);
-  }
-
 }  // namespace apl
 
 //////////////////////////////////////////////////////////////////////////////
@@ -388,7 +324,7 @@ namespace apl {
     line = vlines[line_count++];
     // CO END
     vector<xmatrix<double>> row;
-    const xmatrix<double> m(3, 3);
+    xmatrix<double> m(3, 3);
     while (true) {
       if (line_count == vlines.size()) { // CO
         message = "Incomplete <fcms> tag.";
@@ -448,7 +384,7 @@ namespace apl {
     }
 
     // Get Born effective charge tensors
-    const xmatrix<double> m(3, 3);
+    xmatrix<double> m(3, 3);
     while (true) {
       if (line_count == vlines.size()) {
         message = "Cannot find <born> tag.";
@@ -666,7 +602,7 @@ namespace apl {
   xvector<double> PhononCalculator::getFrequency(const xvector<double>& kpoint, const xvector<double>& kpoint_nac, const IPCFreqFlags& flags, xmatrix<xcomplex<double>>& eigenvectors, vector<xvector<double>>& gvel, bool calc_gvel) {
     // Compute frequency(omega) from eigenvalues [in eV/A/A/atomic_mass_unit]
     vector<xmatrix<xcomplex<double>>> dDynMat;
-    const xvector<double> omega = getEigenvalues(kpoint, kpoint_nac, eigenvectors, dDynMat, calc_gvel);
+    xvector<double> omega = getEigenvalues(kpoint, kpoint_nac, eigenvectors, dDynMat, calc_gvel);
 
     // Get value of conversion factor
     const double conversionFactor = getFrequencyConversionFactor(apl::RAW | apl::OMEGA, flags);
@@ -806,8 +742,8 @@ namespace apl {
     const uint pcAtomsSize = _supercell.getInputStructure().atoms.size();
 
     const uint _nBranches = getNumberOfBranches();
-    const xmatrix<xcomplex<double>> dynamicalMatrix(_nBranches, _nBranches, 1, 1);
-    const xmatrix<xcomplex<double>> dynamicalMatrix0(_nBranches, _nBranches, 1, 1);
+    xmatrix<xcomplex<double>> dynamicalMatrix(_nBranches, _nBranches, 1, 1);
+    xmatrix<xcomplex<double>> dynamicalMatrix0(_nBranches, _nBranches, 1, 1);
 
     xcomplex<double> phase;
     double value = 0.0;
@@ -937,7 +873,7 @@ namespace apl {
     const xstructure& pc = _supercell.getInputStructure();  // CO  //ME20200207 - grab input structure (need iatoms)
 
     // to correct the q=\Gamma as a limit
-    const xvector<double> q(_q);
+    xvector<double> q(_q);
     if (aurostd::modulus(q) < _FLOAT_TOL_) {
       q(1) = _FLOAT_TOL_ * 1.001;
     }
@@ -946,7 +882,7 @@ namespace apl {
     const uint pcIAtomsSize = pc.iatoms.size();
 
     const uint _nBranches = getNumberOfBranches();
-    const xmatrix<xcomplex<double>> dynamicalMatrix(_nBranches, _nBranches);
+    xmatrix<xcomplex<double>> dynamicalMatrix(_nBranches, _nBranches);
 
     if (aurostd::modulus(q) > _FLOAT_TOL_) {
       if (calc_derivative) {  // reset derivative
@@ -1013,11 +949,11 @@ namespace apl {
 
     if (!_isGammaEwaldPrecomputed) {
       const xvector<double> zero(3);
-      const xmatrix<xcomplex<double>> dynamicalMatrix0(getEwaldSumDipoleDipoleContribution(zero, false));
+      xmatrix<xcomplex<double>> dynamicalMatrix0(getEwaldSumDipoleDipoleContribution(zero, false));
 
       _gammaEwaldCorr.clear();
       for (uint ipc1 = 0; ipc1 < pcAtomsSize; ipc1++) {
-        const xmatrix<xcomplex<double>> sum(3, 3);
+        xmatrix<xcomplex<double>> sum(3, 3);
         for (uint ipc2 = 0; ipc2 < pcAtomsSize; ipc2++) {
           for (int ix = 1; ix <= 3; ix++) {
             for (int iy = 1; iy <= 3; iy++) {
@@ -1032,7 +968,7 @@ namespace apl {
     }
 
     //
-    const xmatrix<xcomplex<double>> dynamicalMatrix(getEwaldSumDipoleDipoleContribution(kpoint));
+    xmatrix<xcomplex<double>> dynamicalMatrix(getEwaldSumDipoleDipoleContribution(kpoint));
 
     for (uint ipc1 = 0; ipc1 < pcAtomsSize; ipc1++) {
       for (int ix = 1; ix <= 3; ix++) {
@@ -1059,7 +995,7 @@ namespace apl {
     const uint pcAtomsSize = pc.atoms.size();
 
     const uint _nBranches = getNumberOfBranches();
-    const xmatrix<xcomplex<double>> dynamicalMatrix(_nBranches, _nBranches);
+    xmatrix<xcomplex<double>> dynamicalMatrix(_nBranches, _nBranches);
 
     const double gmax = 14.0;
     const double lambda = 1.0;
@@ -1098,12 +1034,12 @@ namespace apl {
               for (uint ipc1 = 0; ipc1 < pcAtomsSize; ipc1++) {
                 // xvector<double> zag = g * _bornEffectiveChargeTensor[pc.atoms[ipc1].type];
                 const int iat1 = pc.atoms[ipc1].index_iatoms;
-                const xvector<double> zag = g * _bornEffectiveChargeTensor[iat1];
+                xvector<double> zag = g * _bornEffectiveChargeTensor[iat1];
 
                 for (uint ipc2 = 0; ipc2 < pcAtomsSize; ipc2++) {
                   // xvector<double> zbg = g * _bornEffectiveChargeTensor[pc.atoms[ipc2].type];
                   const int iat2 = pc.atoms[ipc2].index_iatoms;
-                  const xvector<double> zbg = g * _bornEffectiveChargeTensor[iat2];
+                  xvector<double> zbg = g * _bornEffectiveChargeTensor[iat2];
 
                   // xcomplex<double> e;
                   //(void)_supercell.calcShellPhaseFactor(ipc2,ipc1,g,e);
@@ -1193,8 +1129,8 @@ namespace apl {
         const double D = sqrt(scalar_product(delta, rc));
 
         //
-        const xmatrix<double> H(3, 3);
-        const xvector<double> x = lambda * delta;
+        xmatrix<double> H(3, 3);
+        xvector<double> x = lambda * delta;
         const double y = lambda * D;
         const double y2 = y * y;
         const double ym2 = 1.0 / y2;
@@ -1214,7 +1150,7 @@ namespace apl {
         const int iat2 = pc.atoms[ipc2].index_iatoms;
         const xmatrix<double> za = _bornEffectiveChargeTensor[iat1];
         const xmatrix<double> zb = _bornEffectiveChargeTensor[iat2];
-        const xmatrix<double> zhz = za * H * zb;
+        xmatrix<double> zhz = za * H * zb;
 
         //
         xcomplex<double> e;  // = exp( iONE * scalar_product(qpoint,rc) );
@@ -1237,7 +1173,7 @@ namespace apl {
       // xmatrix<double> z = _bornEffectiveChargeTensor[pc.atoms[ipc1].type];
       const int iat1 = pc.atoms[ipc1].index_iatoms;
       const xmatrix<double> z = _bornEffectiveChargeTensor[iat1];
-      const xmatrix<double> zez = z * _inverseDielectricTensor * z;
+      xmatrix<double> zez = z * _inverseDielectricTensor * z;
 
       for (int ix = 1; ix <= 3; ix++) {
         for (int iy = 1; iy <= 3; iy++) {

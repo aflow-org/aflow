@@ -7,8 +7,7 @@
 // Stefano Curtarolo - 2007-2019 Duke
 // Corey Oses - 2015-2019 Duke
 
-#ifndef _AFLOW_KBIN_CPP
-#define _AFLOW_KBIN_CPP
+#include "config.h"
 
 #include <cstddef>
 #include <fstream>
@@ -17,6 +16,7 @@
 #include <istream>
 #include <ostream>
 #include <sstream>
+#include <string>
 #include <vector>
 
 #include "AUROSTD/aurostd.h"
@@ -43,6 +43,7 @@ using std::istringstream;
 using std::ofstream;
 using std::ostream;
 using std::ostringstream;
+using std::string;
 using std::stringstream;
 using std::vector;
 
@@ -669,7 +670,6 @@ namespace KBIN {
   }
 } // namespace KBIN
 
-#endif
 // ***************************************************************************
 // *                                                                         *
 // *           Aflow STEFANO CURTAROLO - Duke University 2003-2024           *

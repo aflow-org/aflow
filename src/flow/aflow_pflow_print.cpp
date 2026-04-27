@@ -6,17 +6,19 @@
 // Stefano Curtarolo
 // Dane Morgan
 
-#ifndef _AFLOW_PFLOW_PRINT_CPP_
-#define _AFLOW_PFLOW_PRINT_CPP_
-
 #include <cmath>
 #include <cstddef>
 #include <cstdio>
 #include <cstdlib>
 #include <deque>
+#include <fstream>
 #include <iomanip>
 #include <ios>
+#include <iostream>
+#include <istream>
 #include <ostream>
+#include <sstream>
+#include <string>
 #include <vector>
 
 #include "AUROSTD/aurostd.h"
@@ -40,9 +42,24 @@
 #include "structure/aflow_xatom.h"
 #include "structure/aflow_xstructure.h"
 
+using std::cerr;
+using std::deque;
+using std::endl;
 using std::ends;
+using std::ifstream;
+using std::iostream;
+using std::istringstream;
+using std::ofstream;
+using std::ostream;
+using std::ostringstream;
 using std::setprecision;
 using std::setw;
+using std::string;
+using std::stringstream;
+using std::vector;
+
+using aurostd::xmatrix;
+using aurostd::xvector;
 
 // ***************************************************************************
 // pflow::PrintACE
@@ -122,19 +139,19 @@ namespace pflow {
     oss << "The given angles are those made by the lines A to B and B to C (atom B is at the vertex)." << endl;
     oss << "The given angles are always taken 0<=angle<=180." << endl;
     oss << "Angles are only calculated for the first " << MAX_NUM_ANGLE - 1 << " neighbors within " << cutoff << endl;
-    const xmatrix<int> ijk(3, 3);
-    const xvector<int> pflag(3);
+    xmatrix<int> ijk(3, 3);
+    xvector<int> pflag(3);
     for (size_t ia1 = 0; ia1 < neigh_mat.size(); ia1++) {
       pflag(1) = 1;
       const _atom a1 = neigh_mat[ia1].at(0);
-      const xvector<double> a1pos = a1.cpos;
+      xvector<double> a1pos = a1.cpos;
       for (int i = 1; i <= 3; i++) {
         ijk(1, i) = a1.ijk(i);
       }
       for (size_t ia2 = 0; (ia2 < neigh_mat[ia1].size() && ia2 < MAX_NUM_ANGLE); ia2++) {
         pflag(2) = 1;
         const _atom a2 = neigh_mat[ia1].at(ia2);
-        const xvector<double> a2pos = a2.cpos;
+        xvector<double> a2pos = a2.cpos;
         for (int i = 1; i <= 3; i++) {
           ijk(2, i) = a2.ijk(i);
         }
@@ -142,13 +159,13 @@ namespace pflow {
         {
           pflag(3) = 1;
           const _atom a3 = neigh_mat.at(a2.basis)[ia3]; //[CO20200130 - number->basis]_atom a3=neigh_mat.at(a2.number)[ia3];
-          const xvector<double> a3pos = a3.cpos;
+          xvector<double> a3pos = a3.cpos;
           for (int i = 1; i <= 3; i++) {
             ijk(3, i) = a3.ijk(i);
           }
-          const xvector<double> a1toa2(3);
-          const xvector<double> a2toa3(3);
-          const xvector<double> a1toa3(3);
+          xvector<double> a1toa2(3);
+          xvector<double> a2toa3(3);
+          xvector<double> a1toa3(3);
           for (int ic = 1; ic <= 3; ic++) {
             a1toa2(ic) = a2pos(ic) - a1pos(ic);
             a2toa3(ic) = a3pos(ic) - a2pos(ic);
@@ -630,8 +647,8 @@ namespace pflow {
     oss.setf(std::ios::fixed, std::ios::floatfield);
     oss.precision(10);
     const xvector<double> abc_angles(data);
-    const xmatrix<double> lattice = GetClat(abc_angles); // angles in radiants
-    roundoff(lattice, 1.0e-4);
+    xmatrix<double> lattice = GetClat(abc_angles); // angles in radiants
+    lattice = roundoff(lattice, 1.0e-4);
     oss << lattice(1, 1) << " " << lattice(1, 2) << " " << lattice(1, 3) << endl;
     oss << lattice(2, 1) << " " << lattice(2, 2) << " " << lattice(2, 3) << endl;
     oss << lattice(3, 1) << " " << lattice(3, 2) << " " << lattice(3, 3) << endl;
@@ -689,7 +706,7 @@ namespace pflow {
 
     // Stoichiometry
     const int wid = 8;
-    ntyp_max = max(ntyp1, ntyp2);
+    ntyp_max = aurostd::max(ntyp1, ntyp2);
     vector<double> tmp_stoich1(ntyp_max, 0);
     vector<double> tmp_stoich2(ntyp_max, 0);
     oss << "Stoichiometry" << endl;
@@ -771,7 +788,7 @@ namespace pflow {
       cutoff = 4 * 0.6204 * std::pow(vavg, 1.0 / 3.0);
     }
     pflow::CmpStrDist(str1_newvol, str2_newvol, cutoff, dist1, dist2, dist_diff, dist_diff_n);
-    ntyp_min = min(ntyp1, ntyp2);
+    ntyp_min = aurostd::min(ntyp1, ntyp2);
     nprs_min = dist_diff.size();
     oss << "Avg of Distance Magnitude Differences" << endl;
     oss << "  Rescaling vol/atom of Str1 and Str2 to the average vol/atom: " << vavg << endl;
@@ -782,7 +799,7 @@ namespace pflow {
     int tnn = 0;
     for (int it1 = 0; it1 < ntyp_min; it1++) {
       for (int it2 = it1; it2 < ntyp_min; it2++) {
-        const int id = it2 - it1 + ntyp_min * it1 - max(0, it1 * (it1 - 1) / 2);
+        const int id = it2 - it1 + ntyp_min * it1 - aurostd::max(0, it1 * (it1 - 1) / 2);
         const int nn = dist_diff[id].size();
         oss << "  P" << id << " Pair between types: " << it1 << " " << it2 << endl;
         oss << "    P" << id << " Comparing neighbors within cutoff (number): " << cutoff << " (" << nn << ")" << endl;
@@ -838,7 +855,7 @@ namespace pflow {
     for (int it1 = 0; it1 < ntyp_max; it1++) {
       for (int it2 = it1; it2 < ntyp_max; it2++) {
         if (it1 < ntyp1 && it2 < ntyp1) {
-          const int id1 = it2 - it1 + ntyp1 * it1 - max(0, it1 * (it1 - 1) / 2);
+          const int id1 = it2 - it1 + ntyp1 * it1 - aurostd::max(0, it1 * (it1 - 1) / 2);
           n1[id1] = dist1[id1].size();
           oss << setw(4) << n1[id1] << " ";
         }
@@ -849,7 +866,7 @@ namespace pflow {
     for (int it1 = 0; it1 < ntyp_max; it1++) {
       for (int it2 = it1; it2 < ntyp_max; it2++) {
         if (it1 < ntyp2 && it2 < ntyp2) {
-          const int id2 = it2 - it1 + ntyp2 * it1 - max(0, it1 * (it1 - 1) / 2);
+          const int id2 = it2 - it1 + ntyp2 * it1 - aurostd::max(0, it1 * (it1 - 1) / 2);
           n2[id2] = dist2[id2].size();
           oss << setw(4) << n2[id2] << " ";
         }
@@ -859,7 +876,7 @@ namespace pflow {
     oss << "  NN Err   ";
     for (int it1 = 0; it1 < ntyp_max; it1++) {
       for (int it2 = it1; it2 < ntyp_max; it2++) {
-        const int id = it2 - it1 + ntyp_max * it1 - max(0, it1 * (it1 - 1) / 2);
+        const int id = it2 - it1 + ntyp_max * it1 - aurostd::max(0, it1 * (it1 - 1) / 2);
         oss << setw(4) << n2[id] - n1[id] << " ";
       }
     }
@@ -1065,7 +1082,7 @@ namespace pflow {
     const double c_over_a = data(3) / data(1);
 
     // get lattice and angles (Bohr)
-    const xvector<double> data_Bohr(6);
+    xvector<double> data_Bohr(6);
     data_Bohr(1) = data(1) * angstrom2bohr;
     data_Bohr(2) = data(2) * angstrom2bohr;
     data_Bohr(3) = data(3) * angstrom2bohr;
@@ -1479,7 +1496,7 @@ namespace pflow {
       str_aus.GetReciprocalLatticeType(sym_eps);
     }
 
-    const xvector<double> data = Getabc_angles(str_aus.klattice, DEGREES);
+    xvector<double> data = Getabc_angles(str_aus.klattice, DEGREES);
     const double kvol = GetVol(str_aus.klattice);
 
     stringstream ss_output;
@@ -1600,7 +1617,7 @@ namespace pflow {
     const double c_over_a = data(3) / data(1);
 
     // get lattice and angles (Bohr)
-    const xvector<double> data_Bohr(6);
+    xvector<double> data_Bohr(6);
     data_Bohr(1) = data(1) * angstrom2bohr;
     data_Bohr(2) = data(2) * angstrom2bohr;
     data_Bohr(3) = data(3) * angstrom2bohr;
@@ -2062,7 +2079,7 @@ void PrintMSI(const xstructure& str, ostream& oss) {
 
   xvector<double> v(3);
   xmatrix<double> R1a(3, 3);
-  const xmatrix<double> R1b(3, 3);
+  xmatrix<double> R1b(3, 3);
   xmatrix<double> R2(3, 3);
   xmatrix<double> Rtot(3, 3);
   xvector<double> a(3);
@@ -2141,7 +2158,7 @@ void PrintMSI(const xstructure& str, ostream& oss) {
   // Mout(Rtot,oss);
   // oss << "HERE " << cxyn << " " << cosa << " " << cosb << " " << cosg << " " << cosp << " " << sinp << endl;
   //  Now rotate all the lattice vectors and the positions.
-  const xmatrix<double> c2lat(3, 3);
+  xmatrix<double> c2lat(3, 3);
   std::vector<xvector<double>> c2pos(sstr.atoms.size());
 
   v = Rtot * a;
@@ -2694,7 +2711,7 @@ namespace pflow {
           atom_tmp.partial_occupation_value = str_sg.wyckoff_sites_ITC[i].site_occupation;
           str_expanded.AddAtom(atom_tmp, false); // CO20230319 - add by species
         }
-        const xvector<double> data = Getabc_angles(str_sg.standard_lattice_ITC, DEGREES);
+        xvector<double> data = Getabc_angles(str_sg.standard_lattice_ITC, DEGREES);
         str_expanded = WyckoffPOSITIONS(str_sg.space_group_ITC, str_sg.setting_ITC, str_expanded); // DX20220921 - changed str_sg to str_expanded in last argument
         str_expanded.lattice = GetClat(data(1), data(2), data(3), data(4), data(5),
                                        data(6)); // DX20221128 - need to use GetClat to get standard representation of the ITC unit cell (rather than using std_lattice_ITC(), which could be rotated)
@@ -2796,7 +2813,7 @@ namespace pflow {
           xvector<double> position;
           for (size_t i = 0; i < str_sg.wyccar_ITC.size(); i++) {
             if (i > 4 && i != str_sg.wyccar_ITC.size() - 1) { // Skip title, scale, lattice parameters, number of atoms, and coordinate type, and last newline
-              const aurostd::JSON::object Wyckoff_json(aurostd::JSON::object_types::DICTIONARY);
+              aurostd::JSON::object Wyckoff_json(aurostd::JSON::object_types::DICTIONARY);
 
               position.clear();
 
@@ -2923,7 +2940,7 @@ namespace pflow {
       str_sg.SpaceGroup_ITC(sym_eps, -1, setting, no_scan);
     }
 
-    const xvector<double> data = Getabc_angles(str_sg.standard_lattice_ITC, DEGREES);
+    xvector<double> data = Getabc_angles(str_sg.standard_lattice_ITC, DEGREES);
     stringstream ss_output;
     if (ftype == txt_ft || (XHOST.vflag_control.flag("WWW"))) {
       ss_output << " Space group number                           = " << str_sg.space_group_ITC << endl;
@@ -2963,7 +2980,7 @@ namespace pflow {
       }
     }
     if (ftype == json_ft || (XHOST.vflag_control.flag("WWW"))) {
-      const aurostd::JSON::object json(aurostd::JSON::object_types::DICTIONARY);
+      aurostd::JSON::object json(aurostd::JSON::object_types::DICTIONARY);
       const bool roff = true;
 
       // space group number
@@ -2995,7 +3012,7 @@ namespace pflow {
             vector<string> tokens;
             aurostd::string2tokens(str_sg.wyccar_ITC[i], tokens, " ");
             if (tokens.size() == 7) {
-              const aurostd::JSON::object Wyckoff_json(aurostd::JSON::object_types::DICTIONARY);
+              aurostd::JSON::object Wyckoff_json(aurostd::JSON::object_types::DICTIONARY);
               position(1) = aurostd::string2utype<double>(tokens[0]);
               position(2) = aurostd::string2utype<double>(tokens[1]);
               position(3) = aurostd::string2utype<double>(tokens[2]);
@@ -3152,7 +3169,7 @@ void PrintShell(const xstructure& str, const int& ns, const double& rmin, const 
   for (int ix = 0; ix < lin_dens; ix++) {
     for (int iy = 0; iy < lin_dens; iy++) {
       for (int iz = 0; iz < lin_dens; iz++) {
-        const xvector<double> pt(3);
+        xvector<double> pt(3);
         pt(1) = ix / (double) lin_dens;
         pt(2) = iy / (double) lin_dens;
         pt(3) = iz / (double) lin_dens;
@@ -3476,7 +3493,7 @@ void PrintXYZInSphere(const xstructure& a, const double& radius, ostream& oss) {
   sstr = ReScale(sstr, 1.0);
 
   int atoms_inside = 0;
-  const xvector<double> x(3);
+  xvector<double> x(3);
   // Print out data in InSphere format
   for (int i = -_SPHERE_CUT_OFF_; i < _SPHERE_CUT_OFF_; i++) {
     for (int j = -_SPHERE_CUT_OFF_; j < _SPHERE_CUT_OFF_; j++) {
@@ -3674,8 +3691,6 @@ void PrintXray(const xstructure& str, double lambda, ostream& oss) {
     } // if dist>0
   } // for
 }
-
-#endif
 
 // **************************************************************************
 // *                                                                        *

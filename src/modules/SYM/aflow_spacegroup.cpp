@@ -5,9 +5,6 @@
 // ***************************************************************************
 // Stefano Curtarolo, 2009-2011 Duke
 
-#ifndef _AFLOW_SPACEGROUP_CPP
-#define _AFLOW_SPACEGROUP_CPP
-
 #include "modules/SYM/aflow_spacegroup.h"
 
 #include <cstddef>
@@ -25,9 +22,11 @@
 
 #include "structure/aflow_xatom.h"
 #include "structure/aflow_xstructure.h"
+
 using std::cerr;
 using std::endl;
 using std::ifstream;
+using std::iostream;
 using std::istream;
 using std::istringstream;
 using std::ofstream;
@@ -11368,8 +11367,6 @@ OPS# 96 \n\
 ";
 
 // ***************************************************************************
-
-#endif
 
 // ***************************************************************************
 // *                                                                         *

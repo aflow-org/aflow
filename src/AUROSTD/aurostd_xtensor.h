@@ -198,6 +198,11 @@ namespace aurostd {
   int estarijk(aurostd::xvector<int>);
 } // namespace aurostd
 
+namespace aurostd {
+  template <class utype> xtensor<utype> convert_voigt_to_tensor(const xmatrix<utype>& cij) __xprototype;
+  template <class utype> xmatrix<utype> convert_tensor_to_voigt(const xtensor<utype>& cijkl) __xprototype;
+} // namespace aurostd
+
 #endif
 //****************************************************************************
 // *                                                                         *

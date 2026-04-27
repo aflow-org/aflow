@@ -34,8 +34,10 @@ namespace aurostd {
   template <class utype> size_t _size(utype) __xprototype;
   template <class utype> size_t _size(xcomplex<utype>) __xprototype;
   template <class utype> utype abs(utype) __xprototype;
-  template <class utype> utype sqrt(utype) __xprototype;
-  template <class utype> utype exp(utype) __xprototype;
+  template <class utype> double sqrt(utype) __xprototype;
+  long double sqrt(long double) __xprototype;
+  template <class utype> double exp(utype) __xprototype;
+  long double exp(long double) __xprototype;
   template <class utype> utype sign(utype) __xprototype;
   template <class utype> utype mod(utype, utype) __xprototype;
   template <class utype> utype mod_floored(utype, utype) __xprototype;
@@ -314,19 +316,41 @@ namespace aurostd {
 //----------------------------------------------------------------------------
 // pow  pow  pow  pow  pow
 namespace aurostd {
-  template <class utype> utype pow(utype, utype);
+  template <class utype> double pow(utype, utype);
+  long double pow(long double, long double);
+}
+
+//----------------------------------------------------------------------------
+// sin  sin  sin  sin  sin
+namespace aurostd {
+  template <class utype> double sin(utype);
+    long double sin(long double);
+} 
+
+//----------------------------------------------------------------------------
+// cos  cos  cos  cos  cos
+namespace aurostd {
+  template <class utype> double cos(utype);
+  long double cos(long double);
+} 
+
+//----------------------------------------------------------------------------
+// atan2  atan2  atan2  atan2  atan2
+namespace aurostd {
+  template <class utype> double atan2(utype, utype);
+  long double atan2(long double, long double);
 }
 
 //--------------------------------------------------------------- round
 namespace aurostd {
   double round(double x, uint digits = 0); // SD20220603
-  int roundDouble(double doub, int multiple, bool up);  // CO20220624 (moved from chull)
-  bool greaterEqualZero(double val);  // CO20220624 (moved from chull)
-  bool lessEqualZero(double val); // CO20220624 (moved from chull)
-  bool notPositive(double val, bool soft_cutoff, double tol);  // CO20220624 (moved from chull)
-  bool notNegative(double val, bool soft_cutoff, double tol);  // CO20220624 (moved from chull)
-  bool zeroWithinTol(double val, double tol); // CO20220624 (moved from chull)
-  bool nonZeroWithinTol(double val, double tol);  // CO20220624 (moved from chull)
+  int roundDouble(double doub, int multiple, bool up);  // CO20220624
+  bool greaterEqualZero(double val);  // CO20220624
+  bool lessEqualZero(double val); // CO20220624
+  bool notPositive(double val, bool soft_cutoff, double tol);  // CO20220624
+  bool notNegative(double val, bool soft_cutoff, double tol);  // CO20220624
+  bool zeroWithinTol(double val, double tol); // CO20220624
+  bool nonZeroWithinTol(double val, double tol);  // CO20220624
 } // namespace aurostd
 
 //--------------------------------------------------------------- isequal

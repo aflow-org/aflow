@@ -6,9 +6,6 @@
 // Written by Stefano Curtarolo 1994-2011
 // Positions taken from the Bilbao Crystallographic Database
 
-#ifndef _WYCKOFF_CPP_
-#define _WYCKOFF_CPP_
-
 #include "modules/SYM/aflow_wyckoff.h"
 
 #include <cstddef>
@@ -36,6 +33,7 @@
 using std::cerr;
 using std::endl;
 using std::ifstream;
+using std::iostream;
 using std::istream;
 using std::istringstream;
 using std::ofstream;
@@ -89,7 +87,7 @@ bool SpaceGroupOptionRequired(uint sg) {
 
 // ----------------------------------------------------------------------------
 xvector<double> wv(const double& x, const double& y, const double& z) {
-  const xvector<double> out(3);
+  xvector<double> out(3);
   out[1] = x;
   out[2] = y;
   out[3] = z;
@@ -10557,8 +10555,6 @@ bool GroupedWyckoffPosition::operator<(const GroupedWyckoffPosition& b) const {
 // ***************************************************************************
 // END:: GroupedWyckoffPosition Class
 // ***************************************************************************
-
-#endif //_WYCKOFF_IMPLEMENTATIONS_
 
 // ***************************************************************************
 // *                                                                         *

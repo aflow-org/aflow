@@ -7,9 +7,6 @@
 // Stefano Curtarolo - 2007 Duke
 // Corey Oses - 2017 Duke
 
-#ifndef _AFLOW_IAIMS_CPP
-#define _AFLOW_IAIMS_CPP
-
 #include <cstddef>
 #include <deque>
 #include <fstream>
@@ -1228,8 +1225,6 @@ namespace KBIN {
     }
   }
 } // namespace KBIN
-
-#endif
 
 // ***************************************************************************
 // *                                                                         *

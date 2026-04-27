@@ -7,11 +7,8 @@
 // ***************************************************************************
 // Written by Patrick Avery
 // psavery@buffalo.edu
-#ifndef _AFLOW_AGL_HUGONIOT_CPP
-#define _AFLOW_AGL_HUGONIOT_CPP
 
 #include <cfloat>
-#include <climits>
 #include <cmath>
 #include <cstddef>
 #include <fstream>
@@ -817,7 +814,6 @@ namespace AGL_functions {
   }
 } // namespace AGL_functions
 
-#endif // _AFLOW_AGL_HUGONIOT_CPP
 // ***************************************************************************
 // *                                                                         *
 // *           Aflow STEFANO CURTAROLO - Duke University 2003-2024           *

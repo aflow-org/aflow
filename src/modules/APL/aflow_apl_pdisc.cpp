@@ -15,6 +15,7 @@
 #include <iostream>
 #include <map>
 #include <ostream>
+#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -41,6 +42,13 @@ using std::cerr;
 using std::deque;
 using std::setprecision;
 using std::setw;
+using std::string;
+using std::stringstream;
+using std::vector;
+
+using aurostd::xcomplex;
+using aurostd::xmatrix;
+using aurostd::xvector;
 
 //////////////////////////////////////////////////////////////////////////////
 //                                                                          //
@@ -50,53 +58,7 @@ using std::setw;
 
 namespace apl {
 
-  // ///////////////////////////////////////////////////////////////////////////
-
-  PhononDispersionCalculator::PhononDispersionCalculator() {
-    free();
-  }
-
-  PhononDispersionCalculator::PhononDispersionCalculator(PhononCalculator& pc) {
-    free();
-    _pc = &pc;
-    _pc_set = true;
-    _system = _pc->_system;  // ME20190614
-  }
-
-  PhononDispersionCalculator::PhononDispersionCalculator(const PhononDispersionCalculator& that) {
-    if (this != &that) {
-      free();
-    }
-    copy(that);
-  }
-
-  PhononDispersionCalculator& PhononDispersionCalculator::operator=(const PhononDispersionCalculator& that) {
-    if (this != &that) {
-      free();
-    }
-    copy(that);
-    return *this;
-  }
-
-  void PhononDispersionCalculator::copy(const PhononDispersionCalculator& that) {
-    if (this == &that) {
-      return;
-    }
-    _frequencyFormat = that._frequencyFormat;
-    _freqs = that._freqs;
-    _pc = that._pc;
-    _pc_set = that._pc_set;
-    _pb = that._pb;
-    _qpoints = that._qpoints;
-    _system = that._system;
-    _temperature = that._temperature;
-  }
-
-  PhononDispersionCalculator::~PhononDispersionCalculator() {
-    free();
-  }
-
-  void PhononDispersionCalculator::free() {
+  void PhononDispersionCalculator::clear() {
     _qpoints.clear();
     _freqs.clear();
     _frequencyFormat = apl::NONE;
@@ -108,7 +70,7 @@ namespace apl {
   }
 
   void PhononDispersionCalculator::clear(PhononCalculator& pc) {
-    free();
+    clear();
     _pc = &pc;
     _pc_set = true;
   }
@@ -494,7 +456,7 @@ namespace apl {
     xeigen.number_loops = 0;
     xeigen.spin = 0;
     xeigen.Vol = GetVolume(_pc->getInputCellStructure()) / xeigen.number_atoms;
-    const xvector<double> lattice(3);
+    xvector<double> lattice(3);
     lattice[1] = _pc->getInputCellStructure().a * 1E-10;
     lattice[2] = _pc->getInputCellStructure().b * 1E-10;
     lattice[3] = _pc->getInputCellStructure().c * 1E-10;
@@ -578,53 +540,7 @@ namespace apl {
 
 namespace apl {
 
-  // ///////////////////////////////////////////////////////////////////////////
-
-  PathBuilder::PathBuilder() {
-    free();
-  }
-
-  PathBuilder::PathBuilder(ModeEnumType mode) {
-    free();
-    setMode(mode);
-  }
-
-  PathBuilder::PathBuilder(const PathBuilder& that) {
-    if (this != &that) {
-      free();
-    }
-    copy(that);
-  }
-
-  PathBuilder& PathBuilder::operator=(const PathBuilder& that) {
-    if (this != &that) {
-      free();
-    }
-    copy(that);
-    return *this;
-  }
-
-  void PathBuilder::copy(const PathBuilder& that) {
-    if (this == &that) {
-      return;
-    }
-    _mode = that._mode;
-    _store = that._store;
-    _path = that._path;
-    _points = that._points;
-    _labels = that._labels;
-    reciprocalLattice = that.reciprocalLattice;
-    cartesianLattice = that.cartesianLattice;
-    _pointsVectorDimension = that._pointsVectorDimension;
-    _pointsVectorStartingIndex = that._pointsVectorStartingIndex;
-    _nPointsPerSubPath = that._nPointsPerSubPath;
-  }
-
-  PathBuilder::~PathBuilder() {
-    free();
-  }
-
-  void PathBuilder::free() {
+  void PathBuilder::clear() {
     _mode = SINGLE_POINT_MODE;
     _store = CARTESIAN_LATTICE;
     _path.clear();
@@ -635,10 +551,6 @@ namespace apl {
     _pointsVectorDimension = 0;
     _pointsVectorStartingIndex = 0;
     _nPointsPerSubPath = 0;
-  }
-
-  void PathBuilder::clear() {
-    free();
   }
 
   // ///////////////////////////////////////////////////////////////////////////
@@ -663,7 +575,7 @@ namespace apl {
 
   void PathBuilder::addPoint(const string& l, int dim, ...) {
     va_list arguments;
-    const xvector<double> point(dim, 1);
+    xvector<double> point(dim, 1);
 
     va_start(arguments, dim);
     for (int i = 0; i < dim; i++) {
@@ -690,7 +602,7 @@ namespace apl {
     }
 
     if (p.lrows != _pointsVectorStartingIndex) {
-      const xvector<double> pp(_pointsVectorDimension + _pointsVectorStartingIndex, _pointsVectorStartingIndex);
+      xvector<double> pp(_pointsVectorDimension + _pointsVectorStartingIndex, _pointsVectorStartingIndex);
       for (int i = 0; i < _pointsVectorDimension; i++) {
         pp(_pointsVectorStartingIndex + i) = p(p.lrows + i);
       }

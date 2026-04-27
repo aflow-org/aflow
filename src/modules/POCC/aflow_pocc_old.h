@@ -27,27 +27,21 @@
 #include "structure/aflow_xstructure.h"
 
 // ***************************************************************************
-using std::cerr;
-using std::istream;
-using std::ostringstream;
-using std::setfill;
-// using aurostd::file2stringstream;
-// using aurostd::utype2string;
-// using aurostd::PaddedPRE;
 
 // pocc definitions
-const std::string _ELEMENTS_STRING_ =
-    "Ac Ag Al Am Ar As At Au B Ba Be Bi Bk Br C Ca Cd Ce Cf Cl Cm Co Cr Cs Cu Dy Er Es Eu F Fe Fm Fr Ga Gd Ge H He Hf Hg Ho I In Ir K Kr La Li Lr Lu Md Mg Mn Mo N Na Nb Nd Ne Ni No Np O Os P Pa Pb Pd Pm Po Pr "
-    "Pt Pu Ra Rb Re Rh Rn Ru S Sb Sc Se Si Sm Sn Sr Ta Tb Tc Te Th Ti Tl Tm U V W Xe Y Yb Zn Zr";
+const std::string _ELEMENTS_STRING_
+    = "Ac Ag Al Am Ar As At Au B Ba Be Bi Bk Br C Ca Cd Ce Cf Cl Cm Co Cr Cs Cu Dy Er Es Eu F Fe Fm Fr Ga Gd Ge H He Hf Hg Ho I In Ir K Kr La Li Lr Lu Md Mg Mn Mo N Na Nb Nd Ne Ni No Np O Os P Pa Pb Pd Pm Po "
+      "Pr "
+      "Pt Pu Ra Rb Re Rh Rn Ru S Sb Sc Se Si Sm Sn Sr Ta Tb Tc Te Th Ti Tl Tm U V W Xe Y Yb Zn Zr";
 
 // ***************************************************************************
 // aflow_contrib_kesong_multienum.h
 // ***************************************************************************
 namespace pocc {
-  void POSCAR2ENUM(istream& input);
+  void POSCAR2ENUM(std::istream& input);
   std::string POSCAR2ENUM(xstructure& a);
-  bool MultienumPrintAllXstr(istream& input);
-  bool MultienumPrintSortedXstr(istream& input);
+  bool MultienumPrintAllXstr(std::istream& input);
+  bool MultienumPrintSortedXstr(std::istream& input);
   void POSCAR2ENUM(xstructure& a, std::stringstream& oss, std::ofstream& FileMESSAGE, _aflags& aflags);
   std::vector<xstructure> MultienumGenerateXstr(xstructure& xstr, std::ofstream& FileMESSAGE, _aflags& aflags);
 } // namespace pocc
@@ -108,13 +102,13 @@ bool sortenergy(strno_energy str_i, strno_energy str_j);
 namespace pocc {
   std::string POSCAR2GulpInput(xstructure& xstr);
   std::string POSCAR2GulpInput(xstructure& xstr, std::vector<std::string> AtomSpecies);
-  void POSCAR2GULP(istream& input);
+  void POSCAR2GULP(std::istream& input);
   std::vector<double> CalculateEnergyUsingGulp(std::vector<xstructure>& vxstr);
   double CalculateEnergyUsingGulp(xstructure& xstr);
   double CalculateEnergyUsingGulp(xstructure& xstr, std::vector<std::string> AtomSpecies);
   std::vector<xstructure> SortGroupXstrUFFEnergy(std::vector<xstructure> groupxstr);
   std::vector<xstructure> SortGroupXstr(std::vector<xstructure> groupxstr, std::vector<std::string> AtomSpecies);
-  bool MultienumPrintSortedXstr(istream& input);
+  bool MultienumPrintSortedXstr(std::istream& input);
 } // namespace pocc
 
 // ***************************************************************************
@@ -157,7 +151,7 @@ xstructure CleanNameXstr(xstructure& xstr);
 xstructure AssignNameXstr(xstructure& xstr, std::vector<std::string> names);
 std::vector<xstructure> AssignNameXstr(std::vector<xstructure>& vxstr, std::vector<std::string> names);
 namespace pocc {
-  void HNFCELL(istream& input);
+  void HNFCELL(std::istream& input);
 }
 std::vector<xstructure> Partial2Supercell(xstructure xstr_ori);
 std::vector<xstructure> CalculateInitialSupercell(xstructure xstr, int n, std::ofstream& FileMESSAGE, _aflags& aflags);

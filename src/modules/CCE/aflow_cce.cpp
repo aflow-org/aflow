@@ -26,6 +26,7 @@
 #include "AUROSTD/aurostd_defs.h"
 #include "AUROSTD/aurostd_xerror.h"
 #include "AUROSTD/aurostd_xfile.h"
+#include "AUROSTD/aurostd_xmatrix.h"
 #include "AUROSTD/aurostd_xoption.h"
 #include "AUROSTD/aurostd_xscalar.h"
 
@@ -53,6 +54,9 @@ using std::ostringstream;
 using std::string;
 using std::stringstream;
 using std::vector;
+
+using aurostd::xmatrix;
+using aurostd::xoption;
 
 #define CCE_DEBUG false
 #define OX_NUMS_FROM_EN_ALLEN 1
@@ -883,19 +887,19 @@ namespace cce {
 
     double anion_electronegativity = 0;
     for (size_t k = 0, ksize = structure.species.size(); k < ksize; k++) {
-      z = GetAtomNumber(KBIN::VASP_PseudoPotential_CleanName(structure.species[k]));
+      z = GetAtomNumber(aurostd::VASP_PseudoPotential_CleanName(structure.species[k]));
       const xelement::xelement element(z);
       if (element.electronegativity_Allen == NNN) {
-        message << " VERY BAD NEWS: There is no known electronegativity value for " << KBIN::VASP_PseudoPotential_CleanName(structure.species[k]) << ".";
+        message << " VERY BAD NEWS: There is no known electronegativity value for " << aurostd::VASP_PseudoPotential_CleanName(structure.species[k]) << ".";
         throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, message, _INPUT_ILLEGAL_);
       } else {
         cce_vars.electronegativities[k] = element.electronegativity_Allen;
         if (LDEBUG) {
-          cerr << __AFLOW_FUNC__ << " electronegativity of species " << k << " (" << KBIN::VASP_PseudoPotential_CleanName(structure.species[k]) << "): " << cce_vars.electronegativities[k] << endl;
+          cerr << __AFLOW_FUNC__ << " electronegativity of species " << k << " (" << aurostd::VASP_PseudoPotential_CleanName(structure.species[k]) << "): " << cce_vars.electronegativities[k] << endl;
         }
         if (cce_vars.electronegativities[k] > anion_electronegativity) {
           anion_electronegativity = cce_vars.electronegativities[k];
-          cce_vars.anion_species = KBIN::VASP_PseudoPotential_CleanName(structure.species[k]);
+          cce_vars.anion_species = aurostd::VASP_PseudoPotential_CleanName(structure.species[k]);
         }
       }
     }
@@ -1151,7 +1155,7 @@ namespace cce {
   vector<double> get_dist_cutoffs(const xstructure& structure) {
     const bool LDEBUG = (false || XHOST.DEBUG || CCE_DEBUG);
     vector<double> cutoffs(structure.species.size());
-    const xmatrix<double> distsij = GetDistMatrix(structure); // gives matrix with nearest neighbor distances between all species pairs with species running over rows and columns
+    xmatrix<double> distsij = GetDistMatrix(structure); // gives matrix with nearest neighbor distances between all species pairs with species running over rows and columns
     vector<double> near_neigh_dist(structure.species.size());
     for (int i = 1, isize = distsij.rows + 1; i < isize; i++) {
       for (int j = 1, jsize = distsij.cols + 1; j < jsize; j++) {
@@ -1425,7 +1429,7 @@ namespace cce {
     // using aurostd sort functions
     vector<double> electronegativities_sorted = cce_vars.electronegativities;
     for (size_t j = 0, jsize = structure.species.size(); j < jsize; j++) { // loop over all species
-      cce_vars.species_electronegativity_sorted[j] = KBIN::VASP_PseudoPotential_CleanName(structure.species[j]);
+      cce_vars.species_electronegativity_sorted[j] = aurostd::VASP_PseudoPotential_CleanName(structure.species[j]);
     }
     // for the oxidation state algorithm the species must be sorted by electronegativity and the preferred
     // and all known oxidation states will be automatically sorted by electronegativity in the subsequent loading
@@ -1447,7 +1451,7 @@ namespace cce {
     const _atom atom;
     uint z = 0;
     for (size_t i = 0, isize = structure.species.size(); i < isize; i++) {
-      z = GetAtomNumber(KBIN::VASP_PseudoPotential_CleanName(cce_vars.species_electronegativity_sorted[i]));
+      z = GetAtomNumber(aurostd::VASP_PseudoPotential_CleanName(cce_vars.species_electronegativity_sorted[i]));
       xelement::xelement element(z);
       // load preferred oxidation states for each species
       cce_vars.num_pref_ox_states_electronegativity_sorted[i] = element.oxidation_states_preferred.size();
@@ -1458,7 +1462,7 @@ namespace cce {
         if (LDEBUG) {
           cerr << __AFLOW_FUNC__ << " num_pref_ox_states_electronegativity_sorted[" << i << "]: " << cce_vars.num_pref_ox_states_electronegativity_sorted[i] << endl;
           for (uint k = 0, ksize = cce_vars.num_pref_ox_states_electronegativity_sorted[i]; k < ksize; k++) {
-            cerr << __AFLOW_FUNC__ << " preferred oxidation state " << k << " of species " << i << " (" << KBIN::VASP_PseudoPotential_CleanName(cce_vars.species_electronegativity_sorted[i])
+            cerr << __AFLOW_FUNC__ << " preferred oxidation state " << k << " of species " << i << " (" << aurostd::VASP_PseudoPotential_CleanName(cce_vars.species_electronegativity_sorted[i])
                  << "): " << cce_vars.pref_ox_states_electronegativity_sorted[i][k] << endl;
           }
         }
@@ -1467,7 +1471,7 @@ namespace cce {
         cce_flags.flag("NO_PREF_OX_STATES", true);
         if (LDEBUG) {
           cerr << endl;
-          cerr << __AFLOW_FUNC__ << " BAD NEWS: There are no preferred oxidation states for species " << i << " (" << KBIN::VASP_PseudoPotential_CleanName(cce_vars.species_electronegativity_sorted[i]) << ")." << endl;
+          cerr << __AFLOW_FUNC__ << " BAD NEWS: There are no preferred oxidation states for species " << i << " (" << aurostd::VASP_PseudoPotential_CleanName(cce_vars.species_electronegativity_sorted[i]) << ")." << endl;
           cerr << __AFLOW_FUNC__ << " Therefore the oxidation states cannot be determined on this basis." << endl;
         }
       }
@@ -1480,7 +1484,7 @@ namespace cce {
         if (LDEBUG) {
           cerr << __AFLOW_FUNC__ << " num_all_ox_states_electronegativity_sorted[" << i << "]: " << cce_vars.num_all_ox_states_electronegativity_sorted[i] << endl;
           for (uint k = 0, ksize = cce_vars.num_all_ox_states_electronegativity_sorted[i]; k < ksize; k++) {
-            cerr << __AFLOW_FUNC__ << " all oxidation state " << k << " of species " << i << " (" << KBIN::VASP_PseudoPotential_CleanName(cce_vars.species_electronegativity_sorted[i])
+            cerr << __AFLOW_FUNC__ << " all oxidation state " << k << " of species " << i << " (" << aurostd::VASP_PseudoPotential_CleanName(cce_vars.species_electronegativity_sorted[i])
                  << "): " << cce_vars.all_ox_states_electronegativity_sorted[i][k] << endl;
           }
           cerr << endl;
@@ -1488,7 +1492,7 @@ namespace cce {
       } else {
         cce_vars.num_all_ox_states_electronegativity_sorted[i] = 0;
         cce_flags.flag("NO_OX_STATES", true);
-        message << "BAD NEWS: There are no known oxidation states for species " << i << " (" << KBIN::VASP_PseudoPotential_CleanName(cce_vars.species_electronegativity_sorted[i]) << ")." << endl;
+        message << "BAD NEWS: There are no known oxidation states for species " << i << " (" << aurostd::VASP_PseudoPotential_CleanName(cce_vars.species_electronegativity_sorted[i]) << ")." << endl;
         message << "Therefore the oxidation states cannot be determined on this basis." << endl;
         if (cce_flags.flag("RUN_FULL_CCE")) {
           message << "The formation enthalpy of this system is hence not correctable!" << endl;
@@ -1522,12 +1526,12 @@ namespace cce {
   void treat_SbO2_special_case(const xstructure& structure, xoption& cce_flags, CCE_Variables& cce_vars, ostream& oss) {
     const bool LDEBUG = (false || XHOST.DEBUG || CCE_DEBUG);
     stringstream message;
-    if (!(structure.species.size() == 2 && ((KBIN::VASP_PseudoPotential_CleanName(structure.species[0]) == "O" && KBIN::VASP_PseudoPotential_CleanName(structure.species[1]) == "Sb") ||
-                                            (KBIN::VASP_PseudoPotential_CleanName(structure.species[0]) == "Sb" && KBIN::VASP_PseudoPotential_CleanName(structure.species[1]) == "O")))) {
+    if (!(structure.species.size() == 2 && ((aurostd::VASP_PseudoPotential_CleanName(structure.species[0]) == "O" && aurostd::VASP_PseudoPotential_CleanName(structure.species[1]) == "Sb") ||
+                                            (aurostd::VASP_PseudoPotential_CleanName(structure.species[0]) == "Sb" && aurostd::VASP_PseudoPotential_CleanName(structure.species[1]) == "O")))) {
       return;
     }
     uint num_O_before_Sb = 0;
-    if (KBIN::VASP_PseudoPotential_CleanName(structure.species[0]) == "O" && KBIN::VASP_PseudoPotential_CleanName(structure.species[1]) == "Sb") {
+    if (aurostd::VASP_PseudoPotential_CleanName(structure.species[0]) == "O" && aurostd::VASP_PseudoPotential_CleanName(structure.species[1]) == "Sb") {
       num_O_before_Sb = 4;
     } else {
       num_O_before_Sb = 0;
@@ -1610,12 +1614,12 @@ namespace cce {
   void treat_Pb3O4_special_case(const xstructure& structure, xoption& cce_flags, CCE_Variables& cce_vars, ostream& oss) {
     stringstream message;
     const bool LDEBUG = (false || XHOST.DEBUG || CCE_DEBUG);
-    if (!(structure.species.size() == 2 && ((KBIN::VASP_PseudoPotential_CleanName(structure.species[0]) == "O" && KBIN::VASP_PseudoPotential_CleanName(structure.species[1]) == "Pb") ||
-                                            (KBIN::VASP_PseudoPotential_CleanName(structure.species[0]) == "Pb" && KBIN::VASP_PseudoPotential_CleanName(structure.species[1]) == "O")))) {
+    if (!(structure.species.size() == 2 && ((aurostd::VASP_PseudoPotential_CleanName(structure.species[0]) == "O" && aurostd::VASP_PseudoPotential_CleanName(structure.species[1]) == "Pb") ||
+                                            (aurostd::VASP_PseudoPotential_CleanName(structure.species[0]) == "Pb" && aurostd::VASP_PseudoPotential_CleanName(structure.species[1]) == "O")))) {
       return;
     }
     uint num_O_before_Pb = 0;
-    if (KBIN::VASP_PseudoPotential_CleanName(structure.species[0]) == "O" && KBIN::VASP_PseudoPotential_CleanName(structure.species[1]) == "Pb") {
+    if (aurostd::VASP_PseudoPotential_CleanName(structure.species[0]) == "O" && aurostd::VASP_PseudoPotential_CleanName(structure.species[1]) == "Pb") {
       num_O_before_Pb = 4;
     } else {
       num_O_before_Pb = 0;
@@ -1699,12 +1703,12 @@ namespace cce {
   void treat_Ti_O_Magneli_phase_special_case(const xstructure& structure, xoption& cce_flags, CCE_Variables& cce_vars, ostream& oss) {
     const bool LDEBUG = (false || XHOST.DEBUG || CCE_DEBUG);
     stringstream message;
-    if (!(structure.species.size() == 2 && ((KBIN::VASP_PseudoPotential_CleanName(structure.species[0]) == "O" && KBIN::VASP_PseudoPotential_CleanName(structure.species[1]) == "Ti") ||
-                                            (KBIN::VASP_PseudoPotential_CleanName(structure.species[0]) == "Ti" && KBIN::VASP_PseudoPotential_CleanName(structure.species[1]) == "O")))) {
+    if (!(structure.species.size() == 2 && ((aurostd::VASP_PseudoPotential_CleanName(structure.species[0]) == "O" && aurostd::VASP_PseudoPotential_CleanName(structure.species[1]) == "Ti") ||
+                                            (aurostd::VASP_PseudoPotential_CleanName(structure.species[0]) == "Ti" && aurostd::VASP_PseudoPotential_CleanName(structure.species[1]) == "O")))) {
       return;
     }
     uint num_O_before_Ti = 0;
-    if (KBIN::VASP_PseudoPotential_CleanName(structure.species[0]) == "O" && KBIN::VASP_PseudoPotential_CleanName(structure.species[1]) == "Ti") {
+    if (aurostd::VASP_PseudoPotential_CleanName(structure.species[0]) == "O" && aurostd::VASP_PseudoPotential_CleanName(structure.species[1]) == "Ti") {
       num_O_before_Ti = 5;
     } else {
       num_O_before_Ti = 0;
@@ -1805,12 +1809,12 @@ namespace cce {
   void treat_Fe3O4_special_case(const xstructure& structure, xoption& cce_flags, CCE_Variables& cce_vars, ostream& oss) {
     const bool LDEBUG = (false || XHOST.DEBUG || CCE_DEBUG);
     stringstream message;
-    if (!(structure.species.size() == 2 && ((KBIN::VASP_PseudoPotential_CleanName(structure.species[0]) == "O" && KBIN::VASP_PseudoPotential_CleanName(structure.species[1]) == "Fe") ||
-                                            (KBIN::VASP_PseudoPotential_CleanName(structure.species[0]) == "Fe" && KBIN::VASP_PseudoPotential_CleanName(structure.species[1]) == "O")))) {
+    if (!(structure.species.size() == 2 && ((aurostd::VASP_PseudoPotential_CleanName(structure.species[0]) == "O" && aurostd::VASP_PseudoPotential_CleanName(structure.species[1]) == "Fe") ||
+                                            (aurostd::VASP_PseudoPotential_CleanName(structure.species[0]) == "Fe" && aurostd::VASP_PseudoPotential_CleanName(structure.species[1]) == "O")))) {
       return;
     }
     uint num_O_before_Fe = 0;
-    if (KBIN::VASP_PseudoPotential_CleanName(structure.species[0]) == "O" && KBIN::VASP_PseudoPotential_CleanName(structure.species[1]) == "Fe") {
+    if (aurostd::VASP_PseudoPotential_CleanName(structure.species[0]) == "O" && aurostd::VASP_PseudoPotential_CleanName(structure.species[1]) == "Fe") {
       num_O_before_Fe = 4;
     } else {
       num_O_before_Fe = 0;
@@ -1896,12 +1900,12 @@ namespace cce {
   void treat_X3O4_special_case(const xstructure& structure, xoption& cce_flags, CCE_Variables& cce_vars, const string& cation_species, ostream& oss) {
     const bool LDEBUG = (false || XHOST.DEBUG || CCE_DEBUG);
     stringstream message;
-    if (!(structure.species.size() == 2 && ((KBIN::VASP_PseudoPotential_CleanName(structure.species[0]) == "O" && KBIN::VASP_PseudoPotential_CleanName(structure.species[1]) == cation_species) ||
-                                            (KBIN::VASP_PseudoPotential_CleanName(structure.species[0]) == cation_species && KBIN::VASP_PseudoPotential_CleanName(structure.species[1]) == "O")))) {
+    if (!(structure.species.size() == 2 && ((aurostd::VASP_PseudoPotential_CleanName(structure.species[0]) == "O" && aurostd::VASP_PseudoPotential_CleanName(structure.species[1]) == cation_species) ||
+                                            (aurostd::VASP_PseudoPotential_CleanName(structure.species[0]) == cation_species && aurostd::VASP_PseudoPotential_CleanName(structure.species[1]) == "O")))) {
       return;
     }
     uint num_O_before_cation_species = 0;
-    if (KBIN::VASP_PseudoPotential_CleanName(structure.species[0]) == "O" && KBIN::VASP_PseudoPotential_CleanName(structure.species[1]) == cation_species) {
+    if (aurostd::VASP_PseudoPotential_CleanName(structure.species[0]) == "O" && aurostd::VASP_PseudoPotential_CleanName(structure.species[1]) == cation_species) {
       num_O_before_cation_species = 4;
     } else {
       num_O_before_cation_species = 0;
@@ -1990,8 +1994,8 @@ namespace cce {
     const bool LDEBUG = (false || XHOST.DEBUG || CCE_DEBUG);
     stringstream message;
     const vector<string> valkali_metals{"Li", "Na", "K", "Rb", "Cs", "Fr"};
-    if (!(structure.species.size() == 2 && ((KBIN::VASP_PseudoPotential_CleanName(structure.species[0]) == "O" && aurostd::WithinList(valkali_metals, KBIN::VASP_PseudoPotential_CleanName(structure.species[1]))) ||
-                                            (aurostd::WithinList(valkali_metals, KBIN::VASP_PseudoPotential_CleanName(structure.species[0])) && KBIN::VASP_PseudoPotential_CleanName(structure.species[1]) == "O")))) {
+    if (!(structure.species.size() == 2 && ((aurostd::VASP_PseudoPotential_CleanName(structure.species[0]) == "O" && aurostd::WithinList(valkali_metals, aurostd::VASP_PseudoPotential_CleanName(structure.species[1]))) ||
+                                            (aurostd::WithinList(valkali_metals, aurostd::VASP_PseudoPotential_CleanName(structure.species[0])) && aurostd::VASP_PseudoPotential_CleanName(structure.species[1]) == "O")))) {
       return;
     } // check whether it is a binary alkali metal oxide
     if (LDEBUG) {
@@ -1999,12 +2003,12 @@ namespace cce {
     }
     uint num_alkali_before_O = 0; // num cations before O not O before cations since setting oxidation states of anions below, not for cations as in other cases
     string alkali_metal;
-    if (KBIN::VASP_PseudoPotential_CleanName(structure.species[0]) == "O" && aurostd::WithinList(valkali_metals, KBIN::VASP_PseudoPotential_CleanName(structure.species[1]))) {
+    if (aurostd::VASP_PseudoPotential_CleanName(structure.species[0]) == "O" && aurostd::WithinList(valkali_metals, aurostd::VASP_PseudoPotential_CleanName(structure.species[1]))) {
       num_alkali_before_O = 0;
-      alkali_metal = KBIN::VASP_PseudoPotential_CleanName(structure.species[1]);
+      alkali_metal = aurostd::VASP_PseudoPotential_CleanName(structure.species[1]);
     } else {
       num_alkali_before_O = 2;
-      alkali_metal = KBIN::VASP_PseudoPotential_CleanName(structure.species[0]);
+      alkali_metal = aurostd::VASP_PseudoPotential_CleanName(structure.species[0]);
     }
     double amount_O = 0;
     double amount_alkali = 0;
@@ -2095,8 +2099,8 @@ namespace cce {
   void treat_MnMoO4_special_case(const xstructure& structure, xoption& cce_flags, CCE_Variables& cce_vars, ostream& oss) {
     const bool LDEBUG = (false || XHOST.DEBUG || CCE_DEBUG);
     stringstream message;
-    if (!(structure.species.size() == 3 && KBIN::VASP_PseudoPotential_CleanName(structure.species[0]) == "Mn" && KBIN::VASP_PseudoPotential_CleanName(structure.species[1]) == "Mo" &&
-          KBIN::VASP_PseudoPotential_CleanName(structure.species[2]) == "O")) {
+    if (!(structure.species.size() == 3 && aurostd::VASP_PseudoPotential_CleanName(structure.species[0]) == "Mn" && aurostd::VASP_PseudoPotential_CleanName(structure.species[1]) == "Mo" &&
+          aurostd::VASP_PseudoPotential_CleanName(structure.species[2]) == "O")) {
       return;
     }
     double amount_Mn = 0;
@@ -2155,8 +2159,8 @@ namespace cce {
   void treat_Ca2Fe2O5_CaFe2O4_LDA_special_case(const xstructure& structure, xoption& cce_flags, CCE_Variables& cce_vars, ostream& oss) {
     const bool LDEBUG = (false || XHOST.DEBUG || CCE_DEBUG);
     stringstream message;
-    if (!(structure.species.size() == 3 && KBIN::VASP_PseudoPotential_CleanName(structure.species[0]) == "Ca" && KBIN::VASP_PseudoPotential_CleanName(structure.species[1]) == "Fe" &&
-          KBIN::VASP_PseudoPotential_CleanName(structure.species[2]) == "O")) {
+    if (!(structure.species.size() == 3 && aurostd::VASP_PseudoPotential_CleanName(structure.species[0]) == "Ca" && aurostd::VASP_PseudoPotential_CleanName(structure.species[1]) == "Fe" &&
+          aurostd::VASP_PseudoPotential_CleanName(structure.species[2]) == "O")) {
       return;
     }
     double amount_Ca = 0;
@@ -2231,8 +2235,8 @@ namespace cce {
   void treat_FeTiO3_LDA_special_case(const xstructure& structure, xoption& cce_flags, CCE_Variables& cce_vars, ostream& oss) {
     const bool LDEBUG = (false || XHOST.DEBUG || CCE_DEBUG);
     stringstream message;
-    if (!(structure.species.size() == 3 && KBIN::VASP_PseudoPotential_CleanName(structure.species[0]) == "Fe" && KBIN::VASP_PseudoPotential_CleanName(structure.species[1]) == "O" &&
-          KBIN::VASP_PseudoPotential_CleanName(structure.species[2]) == "Ti")) {
+    if (!(structure.species.size() == 3 && aurostd::VASP_PseudoPotential_CleanName(structure.species[0]) == "Fe" && aurostd::VASP_PseudoPotential_CleanName(structure.species[1]) == "O" &&
+          aurostd::VASP_PseudoPotential_CleanName(structure.species[2]) == "Ti")) {
       return;
     }
     double amount_Fe = 0;

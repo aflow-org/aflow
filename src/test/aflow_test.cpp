@@ -4,15 +4,10 @@
 // *                                                                         *
 // ***************************************************************************
 
-#ifndef _AFLOW_TEST_CPP_
-#define _AFLOW_TEST_CPP_
-
 #include <cmath>
 #include <cstddef>
 #include <cstdio>
-#include <deque>
 #include <fstream>
-#include <ios>
 #include <iostream>
 #include <istream>
 #include <ostream>
@@ -29,24 +24,20 @@
 
 using aurostd::xmatrix;
 using aurostd::xvector;
-using std::cerr;
-using std::cin;
-using std::cout;
-using std::deque;
 using std::endl;
-using std::ends;
 using std::ifstream;
-using std::ios_base;
 using std::istream;
 using std::istringstream;
 using std::ofstream;
 using std::ostream;
 using std::ostringstream;
-using std::setprecision;
-using std::setw;
 using std::string;
 using std::stringstream;
 using std::vector;
+
+#define NTERM 5
+#define SPREAD 0.1
+#define NPT 100
 
 // ***************************************************************************
 
@@ -556,7 +547,7 @@ void PERFORM_TEST3(ostream& oss) {
   }
   oss << vicsd.size() << endl;
   vector<string> tokens;
-  vector<string> tokens2;
+  const vector<string> tokens2;
   for (size_t i = 0; i < vicsd.size(); i++) {
     aurostd::string2tokens(vicsd[i], tokens);
     oss << "/home/auro/work/AFLOW3/aflow --noldau --aflow_proto=" << tokens.at(tokens.size() - 3) << endl;
@@ -615,10 +606,6 @@ void PERFORM_TEST3(ostream& oss) {
   // oss << vprotos3.size() << endl;
 }
 
-#define NTERM 5
-#define SPREAD 0.1
-#define NPT 100
-
 void pinku_funcs(float x, aurostd::xvector<float>& afunc) {
   int i;
   afunc[1] = 1.0;
@@ -633,11 +620,11 @@ int pinku_main() {
   int j;
   float chisq;
 
-  const xvector<int> ia(1, NTERM);
+  xvector<int> ia(1, NTERM);
   xvector<float> a(1, NTERM);
-  const xvector<float> x(1, NPT);
-  const xvector<float> y(1, NPT);
-  const xvector<float> sig(1, NPT);
+  xvector<float> x(1, NPT);
+  xvector<float> y(1, NPT);
+  xvector<float> sig(1, NPT);
   xmatrix<float> covar(1, NTERM, 1, NTERM);
 
   for (i = 1; i <= NPT; i++) {
@@ -688,8 +675,6 @@ int pinku_main() {
   printf("\n");
   return 0;
 }
-
-#endif // _AFLOW_TEST_CPP_
 
 // **************************************************************************
 // *                                                                        *

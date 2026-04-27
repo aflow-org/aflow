@@ -28,11 +28,14 @@ The easiest way to install `aflow` is to utilize our binary releases via the dif
 encapsulate software and all its dependencies, making it easy to install applications without worrying about system-wide
 conflicts or missing libraries. It ensures also that `aflow` is kept up to date. Snaps are secure by default, running in
 isolated environments (sandboxes), and they work across various Linux distributions. The drawback is that `aflow` can
-only interact with files in your home directory.
+only interact with files in your home directory. The `aflow` configuration can be found under `~/snap/aflow/common/aflow.rc`
+when using snap.
 
 ```shell
-snap install aflow
+sudo snap install aflow
 ```
+
+
 
 #### .deb (Ubuntu & Debian)
 
@@ -41,16 +44,16 @@ binaries. We pre-build `.deb` packages for different systems, and they can be do
 
 They can either be installed by double-clicking on an Ubuntu desktop system or using `dpkg` on the commandline.
 ```shell
-curl -O https://github.com/aflow-org/aflow/releases/download/v4.0.5/aflow-4.0.5-ubuntu24-amd64.deb
-sudo dpkg -i ./aflow-4.0.5-ubuntu24-amd64.deb
+curl -O https://github.com/aflow-org/aflow/releases/download/v4.1/aflow-4.1-ubuntu24-amd64.deb
+sudo dpkg -i ./aflow-4.1-ubuntu24-amd64.deb
 ```
 
 #### .sh (Self-extracting installer script)
 
 This self-extracting installer allows for an interactive installation experience by simply running the following:
 ```shell
-curl -O https://github.com/aflow-org/aflow/releases/download/v4.0.5/aflow-4.0.5-ubuntu24-amd64.sh
-sh aflow-4.0.5-ubuntu24-amd64.sh
+curl -O https://github.com/aflow-org/aflow/releases/download/v4.1/aflow-4.1-ubuntu24-amd64.sh
+sh aflow-4.1-ubuntu24-amd64.sh
 ```
 Use the `--help` option to see available installation options.
 
@@ -94,10 +97,13 @@ If `git` is available, it is recommended to download the source code directly fr
 ```
 git clone --recurse-submodules https://github.com/aflow-org/aflow.git
 ```
-Otherwise, the full source can be downloaded on the [GitHub Release](https://github.com/aflow-org/aflow/releases/) page.
+The `--recurse-submodules` flag downloads the [AFLOW Prototype Encyclopedia](https://github.com/aflow-org/aflow_prototype_encyclopedia), which contains over 2000 crystallographic prototype definitions used to classify crystal structures.
+
+Otherwise, the full source can be downloaded on the [GitHub Release](https://github.com/aflow-org/aflow/releases/) page (including the [AFLOW Prototype Encyclopedia](https://github.com/aflow-org/aflow_prototype_encyclopedia)).
+
 ```shell
-curl -O https://github.com/aflow-org/aflow/archive/refs/tags/aflow_4.0.5.orig.tar.xz
-tar -xzmf aflow_4.0.5.orig.tar.xz
+curl -OL https://github.com/aflow-org/aflow/releases/download/v4.1/aflow_4.1.orig.tar.gz
+tar -xzmf aflow_4.1.orig.tar.gz
 ```
 
 ### Build tools
@@ -133,11 +139,12 @@ The following libraries are used:
   - for SSL & TLS connections
 - [libcurl](https://curl.se/libcurl/)
   - for querying __AFLOW__ API
+  - at least version 7.83.0
 
 To install dependencies system-wide on Debian based systems:
 ```shell
 sudo apt update
-sudo apt install libarchive libssl-dev libcurl4-openssl-dev
+sudo apt install libarchive-dev libssl-dev libcurl4-openssl-dev
 ```
 To install dependencies system-wide on macOS:
 ```shell
@@ -182,16 +189,14 @@ sudo cmake --install build/release_vcpkg/
 - if the vcpkg build fails due to problems with an external library:
   - remove the binary cache of vcpkg: `rm -rf ~/.cache/vcpkg/archives/`
   - remove the build folder: `rm -rf build/release_vcpkg`
-  - rerun the cmake preparation step: `cmake --preset release_vcpkg`
+  - rerun the cmake preparation step: `cmake -S src --preset release_vcpkg`
   - note: this problem can happen if the compiler or base libraries on an HPC machine changes
 - Make sure you have no spaces in the path to vcpkg or the project. Vcpkg will complain and not work.
-
-
 
 ## Testing
 Multiple tests are defined in [CMakeLists.txt](src/CMakeLists.txt) to check the integrity of the build `aflow` binary. When `aflow` is 
 built from source the full test suite can be run in the build directory. For a quick check a special test group is 
-available: `ctest -L quick --parallel 8`, while `ctest -E 'ut.structure_gen.proto|ut.aflowlib.lib2raw' --parallel 8`
+available: `ctest -L quick --parallel 8`, while `ctest -E "ut.structure_gen.proto|ut.aflowlib.lib2raw" --parallel 8`
 should be used for a detailed test run. If a test failed, `ctest --rerun-failed --parallel 8 --extra-verbose` reruns only 
 the failed test with more details.
 
@@ -227,3 +232,12 @@ in any scientific context.
 To document the inner working of `aflow` [doxygen](https://doxygen.nl/) is used. Details on how to build the code documentation and 
 style are described in [docs/README.md](docs/README.md). An online version of this documentation is available at 
 [aflow.org/aflow-documentation/](https://aflow.org/aflow-documentation/).
+
+## License
+
+This project is licensed under the [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.html) - see the [LICENSE](LICENSE) file for details.
+The included [AFLOW Prototype Encyclopedia](https://github.com/aflow-org/aflow_prototype_encyclopedia) submodule is licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
+
+## Contributing
+
+We welcome contributions! Please read our [Contributing Guidelines](.github/CONTRIBUTING.md) for details.

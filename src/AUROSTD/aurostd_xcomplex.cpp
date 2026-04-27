@@ -5,12 +5,12 @@
 // ***************************************************************************
 // Written by Stefano Curtarolo 1994-2011
 
-#ifndef _AUROSTD_XCOMPLEX_CPP_
-#define _AUROSTD_XCOMPLEX_CPP_
-
 #include "aurostd_xcomplex.h"
 
+#include <fstream>
 #include <iostream>
+#include <sstream>
+#include <string>
 
 #include "aurostd_automatic_template.h"
 #include "aurostd_defs.h"
@@ -19,6 +19,14 @@
 #ifndef XXEND
 #define XXEND 1
 #endif
+
+using std::ifstream;
+using std::iostream;
+using std::istringstream;
+using std::ofstream;
+using std::ostringstream;
+using std::string;
+using std::stringstream;
 
 // ----------------------------------------------------------------------------
 // --------------------------------------------------------------- constructors
@@ -688,7 +696,6 @@ namespace aurostd {
   // ----------------------------------------- implementation for extra data type
 
 } // namespace aurostd
-#endif  // _COMPLEX_IMPLEMENTATIONS_
 
 // **************************************************************************
 // *                                                                        *

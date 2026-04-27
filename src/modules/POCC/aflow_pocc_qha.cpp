@@ -24,9 +24,6 @@
 // This file provides a framework to calculate thermal properties for
 // disordered materials modeled using the POCC + QHA methodology.
 
-#ifndef _AFLOW_POCC_QHA_CPP_
-#define _AFLOW_POCC_QHA_CPP_
-
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
@@ -76,6 +73,8 @@ using std::setw;
 using std::string;
 using std::stringstream;
 using std::vector;
+
+using aurostd::xvector;
 
 namespace pocc {
   void writeQHAdatablock(stringstream& output, vector<vector<double>> data, string block_name) {
@@ -310,7 +309,7 @@ namespace pocc {
     // calculate the thermal expansion as a logarithmic derivative of volume
     const double dT = (pocc_qha_thermo_properties[0][minsize - 1][0] - pocc_qha_thermo_properties[0][0][0]) / (minsize - 1);
 
-    const xvector<double> logV(minsize);
+    xvector<double> logV(minsize);
     for (size_t row = 0; row < minsize; row++) {
       logV[row + 1] = log(averaged_qha_data_T[row][1]);
     }
@@ -350,5 +349,3 @@ namespace pocc {
     }
   }
 } // namespace pocc
-
-#endif

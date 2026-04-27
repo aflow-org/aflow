@@ -4,8 +4,6 @@
 // *                                                                         *
 // ***************************************************************************
 // Written by Stefano Curtarolo - 2020
-#ifndef _AFLOWLIB_LIBRARIES_SCRUBBER_CPP
-#define _AFLOWLIB_LIBRARIES_SCRUBBER_CPP
 
 #include "aflowlib/aflowlib_libraries_scrubber.h"
 
@@ -823,8 +821,6 @@ namespace aflowlib {
     return 0;
   }
 } // namespace aflowlib
-
-#endif // _AFLOWLIB_LIBRARIES_SCRUBBER_CPP
 
 // **************************************************************************
 // *                                                                        *

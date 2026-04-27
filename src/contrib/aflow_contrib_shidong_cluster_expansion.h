@@ -64,9 +64,6 @@
 #define _EXIT_SVD_FAIL 101
 #define _EXIT_FIT_NUM_TOO_LARGE 102
 
-using std::cerr;
-using std::istream;
-
 enum { _A_ATOM = -1, _B_ATOM = 1 };
 
 const int _DEFAULT_PRECISION = 6; // default precison of iostream object
@@ -295,7 +292,7 @@ public:
   void SetStrCluster(const ceallclusters& ceallcluster_in);
 
   ceallclusters GetStrCluster() {
-    cerr << "calculated? " << str_cluster_calculated << std::endl;
+    std::cerr << "calculated? " << str_cluster_calculated << std::endl;
     return *str_cluster;
   };
 
@@ -318,7 +315,7 @@ public:
   void PrintOutProbability();
 
   void WriteFile(std::ostream& os);
-  void ReadIn(istream& os);
+  void ReadIn(std::istream& os);
 };
 
 // ***************************************************************************
@@ -373,13 +370,13 @@ public:
   std::vector<double> GetCorrelation(std::vector<int>& index_list); // get the correlations
 
   void SetUp(const ceallclusters& cluster1, ceECIcluster& cluster2);
-  void SetUp(const ceallclusters& cluster1, ceECIcluster& cluster2, istream& corfilein);
+  void SetUp(const ceallclusters& cluster1, ceECIcluster& cluster2, std::istream& corfilein);
 
   void SetStrCluster(const ceallclusters& ceallcluster_in);
   void SetStoichB(double stoich_b_in) { stoich_b = stoich_b_in; };
 
   ceallclusters GetStrCluster() {
-    cerr << "calculated? " << str_cluster_calculated << std::endl;
+    std::cerr << "calculated? " << str_cluster_calculated << std::endl;
     return *str_cluster;
   };
 
@@ -388,13 +385,13 @@ public:
   void GetECICorrelation();
   void SetAllECICluster(ceECIcluster& subcluster);
   void SetECICluster(ceECIcluster& subcluster);
-  void GetAllECICorrelation(istream& filein);
-  int GetAllECICorrelation(istream& filein, int pos);
+  void GetAllECICorrelation(std::istream& filein);
+  int GetAllECICorrelation(std::istream& filein, int pos);
 
   void PrintOutCorrelation();
   void WriteFile(std::ostream& os);
-  bool ReadIn(istream& fin);
-  int ReadIn(istream& fin, int pos);
+  bool ReadIn(std::istream& fin);
+  int ReadIn(std::istream& fin, int pos);
 
   std::vector<int> AllECICluster() { return allECI_cluster; };
   std::vector<int> ECICluster() { return ECI_cluster; };
@@ -476,7 +473,7 @@ public:
   void SetStrCluster(const ceallclusters& ceallcluster_in);
   void SetStrCluster(const ceallclusters* ceallcluster_in);
   ceallclusters GetStrCluster() {
-    cerr << "calculated? " << str_cluster_calculated << std::endl;
+    std::cerr << "calculated? " << str_cluster_calculated << std::endl;
     return *str_cluster;
   };
 

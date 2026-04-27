@@ -7,16 +7,15 @@
 
 // based on the Pauling File
 
-#ifndef _AFLOW_MIX_EXPERIMENTS_CPP
-#define _AFLOW_MIX_EXPERIMENTS_CPP
 #include <string>
 
+#include "AUROSTD/aurostd_xparser.h"
+
 #include "aflow_defs.h"
-#include "flow/aflow_ivasp.h"
 
 // ***************************************************************************
 int MiscibilityExperimentsCheck(std::string system_in) {  // (nomix,unknown,mix)
-  const std::string system = KBIN::VASP_PseudoPotential_CleanName(system_in);
+  const std::string system = aurostd::VASP_PseudoPotential_CleanName(system_in);
   if (system.length() < 2) {
     return MISCIBILITY_SYSTEM_MISCIBLE; // pure element is miscible with itself
   }
@@ -1948,7 +1947,6 @@ int MiscibilityExperimentsCheck(std::string system_in) {  // (nomix,unknown,mix)
   return MISCIBILITY_SYSTEM_UNKNOWN; // unknown
 }
 // ***************************************************************************
-#endif
 
 // ***************************************************************************
 // *                                                                         *

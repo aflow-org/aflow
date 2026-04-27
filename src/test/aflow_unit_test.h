@@ -80,14 +80,14 @@ namespace unittest {
     void displayResult(const xcheck& xchk);
 
     template <typename utype>
-    void check(const bool passed,
+    void check(bool passed,
                const std::vector<utype>& calculated,
                const std::vector<utype>& expected,
                const std::string& check_function,
                const std::string& checkDescription,
                uint& passed_checks,
                std::vector<std::vector<std::string>>& results);
-    void check(const bool passed,
+    void check(bool passed,
                const std::vector<double>& calculated,
                const std::vector<double>& expected,
                const std::string& check_function,
@@ -95,14 +95,14 @@ namespace unittest {
                uint& passed_checks,
                std::vector<std::vector<std::string>>& results);
     template <typename utype>
-    void check(const bool passed,
+    void check(bool passed,
                const aurostd::xmatrix<utype>& calculated,
                const aurostd::xmatrix<utype>& expected,
                const std::string& check_function,
                const std::string& checkDescription,
                uint& passed_checks,
                std::vector<std::vector<std::string>>& results);
-    void check(const bool passed,
+    void check(bool passed,
                const aurostd::xmatrix<double>& calculated,
                const aurostd::xmatrix<double>& expected,
                const std::string& check_function,
@@ -113,7 +113,8 @@ namespace unittest {
     void checkFiles(const std::string& calculated, const std::string& expected, const std::string& check_function, const std::string& check_description, uint& passed_checks, std::vector<std::vector<std::string>>& results);
 
     template <typename utype>
-    void check(const bool passed, const utype& calculated, const utype& expected, const std::string& check_function, const std::string& checkDescription, uint& passed_checks, std::vector<std::vector<std::string>>& results);
+    void check(bool passed, const utype& calculated, const utype& expected, const std::string& check_function, const std::string& checkDescription, uint& passed_checks, std::vector<std::vector<std::string>>& results);
+    void check(bool passed, const std::string& result_note, const std::string& check_function, const std::string& check_description, uint& passed_checks, std::vector<std::vector<std::string>>& results);
 
     template <typename utype>
     void checkEqual(const std::vector<utype>& calculated, const std::vector<utype>& expected, const std::string& check_function, const std::string& check_description, uint& passed_checks, std::vector<std::vector<std::string>>& results);
@@ -154,6 +155,12 @@ namespace unittest {
     void xEIGENVALJsonSerialization(uint& passed_checks, std::vector<std::vector<std::string>>& results, std::vector<std::string>& errors);
     void xOUTCARJsonSerialization(uint& passed_checks, std::vector<std::vector<std::string>>& results, std::vector<std::string>& errors);
 
+      // ovasp
+    void ovaspTest(uint& passed_checks, std::vector<std::vector<std::string>>& results, std::vector<std::string>& errors);
+
+    //dielectric testing
+    void dielectricTest(uint& passed_checks, std::vector<std::vector<std::string>>& results, std::vector<std::string>& errors);
+
       // database
     void schemaTest(uint&, std::vector<std::vector<std::string>>&, std::vector<std::string>&);
 
@@ -187,6 +194,14 @@ namespace unittest {
 
       // entryLoader
     void entryLoaderTest(uint&, std::vector<std::vector<std::string>>&, std::vector<std::string>&);
+
+    //qhull
+    void qhullTest(uint&, std::vector<std::vector<std::string>>&, std::vector<std::string>&);
+      // cumulants
+    void cumulantsTest(uint&, std::vector<std::vector<std::string>>&, std::vector<std::string>&);
+
+    // data
+    void xpseudopotentialDataTest(uint&, std::vector<std::vector<std::string>>&, std::vector<std::string>&);
   };
 
   class RedirectStream {

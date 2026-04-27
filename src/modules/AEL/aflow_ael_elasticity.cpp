@@ -6,8 +6,6 @@
 // ***************************************************************************
 // Written by Cormac Toher
 // cormac.toher@duke.edu
-#ifndef _AFLOW_AEL_ELASTICITY_CPP
-#define _AFLOW_AEL_ELASTICITY_CPP
 
 #include "modules/AEL/aflow_ael_elasticity.h"
 
@@ -42,7 +40,6 @@
 #include "structure/aflow_xstructure.h"
 
 using std::cerr;
-using std::cout;
 using std::endl;
 using std::ifstream;
 using std::istream;
@@ -643,7 +640,7 @@ namespace AEL_functions {
 // AEL_functions::Get_ElasticTensor_xmatrix
 // ***************************************************************************
 namespace AEL_functions {
-  uint Get_ElasticTensor_xmatrix(_xvasp& xvasp, const string& AflowIn, _aflags& aflags, _kflags& kflags, _vflags& vflags, xmatrix<double> ElasticTensor, ofstream& FileMESSAGE) {
+  uint Get_ElasticTensor_xmatrix(_xvasp& xvasp, const string& AflowIn, _aflags& aflags, _kflags& kflags, _vflags& vflags, aurostd::xmatrix<double> ElasticTensor, ofstream& FileMESSAGE) {
     // Class to contain AEL input and output data
     _AEL_data AEL_data;
     ostringstream aus;
@@ -2135,14 +2132,14 @@ namespace AEL_functions {
         aurostd::StringstreamClean(aus);
         aus << _AELSTR_MESSAGE_ << "Opening file AEL_structures.json" << endl;
         aurostd::PrintMessageStream(FileMESSAGE, aus, XHOST.QUIET);
-        const aurostd::JSON::object json(aurostd::JSON::object_types::DICTIONARY);
+        aurostd::JSON::object json(aurostd::JSON::object_types::DICTIONARY);
         json["AEL_structures"] = aurostd::JSON::object(aurostd::JSON::object_types::LIST);
-        const aurostd::JSON::object json_dis_struc(aurostd::JSON::object_types::DICTIONARY);
+        aurostd::JSON::object json_dis_struc(aurostd::JSON::object_types::DICTIONARY);
         json_dis_struc["distortion"] = nullptr;
         json_dis_struc["structure"] = xstructure2json(xvasp.str);
         json["AEL_structures"].push_back(json_dis_struc);
         for (uint i = 0; i < vaspRuns.size(); i++) {
-          const aurostd::JSON::object json_loop(aurostd::JSON::object_types::DICTIONARY);
+          aurostd::JSON::object json_loop(aurostd::JSON::object_types::DICTIONARY);
           json_loop["distortion"] = runname[i];
           json_loop["structure"] = xstructure2json(vaspRuns[i].str);
           json["AEL_structures"].push_back(json_loop);
@@ -2187,10 +2184,10 @@ namespace AEL_functions {
         return 8;
       } else {
         uint idSuccessRun;
-        const aurostd::JSON::object json(aurostd::JSON::object_types::DICTIONARY);
+        aurostd::JSON::object json(aurostd::JSON::object_types::DICTIONARY);
         json["AEL_energy_structures"] = aurostd::JSON::object(aurostd::JSON::object_types::LIST);
         for (uint i = 0; i < AEL_data.structurecalculated.size(); i++) {
-          const aurostd::JSON::object json_loop(aurostd::JSON::object_types::DICTIONARY);
+          aurostd::JSON::object json_loop(aurostd::JSON::object_types::DICTIONARY);
           idSuccessRun = AEL_data.structurecalculated[i];
           json_loop["distortion"] = runname[idSuccessRun];
           json_loop["strain_matrix"] = AEL_data.strain_matrix_list[idSuccessRun];
@@ -2829,8 +2826,6 @@ namespace AEL_functions {
 // **************************************************************************
 //  End of AFLOW AEL
 // **************************************************************************
-
-#endif  // _AFLOW_AEL_ELASTICITY_CPP
 
 // ***************************************************************************
 // *                                                                         *

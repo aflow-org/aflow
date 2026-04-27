@@ -1,0 +1,407 @@
+[
+  {
+    "species": "La",
+    "LDAU": true,
+    "type": 2,
+    "l": 3,
+    "U": 8.1,
+    "J": 0.6,
+    "note": "REF: PRB 73, 115403 (2006)"
+  },
+  {
+    "species": "Ce",
+    "LDAU": true,
+    "type": 2,
+    "l": 3,
+    "U": 7.0,
+    "J": 0.7,
+    "note": "REF J. Chem. Phys. 123, 064701 (2005); PHYSICAL REVIEW B 75, 035115 (2007)"
+  },
+  {
+    "species": "Pr",
+    "LDAU": true,
+    "type": 2,
+    "l": 3,
+    "U": 6.5,
+    "J": 1.0,
+    "note": "REF [56] of setyawan ht-bands"
+  },
+  {
+    "species": "Gd",
+    "LDAU": true,
+    "type": 2,
+    "l": 3,
+    "U": 6.7,
+    "J": 0.7,
+    "note": "REF J. Phys.:Condens. Matter 9, 767 (1997); PHYSICAL REVIEW B 73, 094410 (2006)"
+  },
+  {
+    "species": "Nd",
+    "LDAU": true,
+    "type": 2,
+    "l": 3,
+    "U": 7.2,
+    "J": 1.0,
+    "note": "REF: WSETYAWAN fitting to XPS-BIS 4f levels: J. Phys. F Met. Phys. 11, 121 (1981)"
+  },
+  {
+    "species": "Sm",
+    "LDAU": true,
+    "type": 2,
+    "l": 3,
+    "U": 7.4,
+    "J": 1.0,
+    "note": "REF: WSETYAWAN fitting to XPS-BIS 4f levels: J. Phys. F Met. Phys. 11, 121 (1981)"
+  },
+  {
+    "species": "Eu",
+    "LDAU": true,
+    "type": 2,
+    "l": 3,
+    "U": 6.4,
+    "J": 1.0,
+    "note": "REF: WSETYAWAN fitting to XPS-BIS 4f levels: J. Phys. F Met. Phys. 11, 121 (1981)"
+  },
+  {
+    "species": "Tm",
+    "LDAU": true,
+    "type": 2,
+    "l": 3,
+    "U": 7.0,
+    "J": 1.0,
+    "note": "REF: WSETYAWAN fitting to XPS-BIS 4f levels: J. Phys. F Met. Phys. 11, 121 (1981)"
+  },
+  {
+    "species": "Dy",
+    "LDAU": true,
+    "type": 2,
+    "l": 3,
+    "U": 5.6,
+    "J": 0.0,
+    "note": "10.1016/j.physc.2009.06.003"
+  },
+  {
+    "species": "Yb",
+    "LDAU": true,
+    "type": 2,
+    "l": 3,
+    "U": 7.0,
+    "J": 0.67,
+    "note": "REF J. Phys.: Condens. Matter 18, 6769-6775 (2006)"
+  },
+  {
+    "species": "Yb2+",
+    "LDAU": true,
+    "type": 2,
+    "l": 3,
+    "U": 5.3,
+    "J": 0.0,
+    "note": "REF Antonov PRB 58 9752 (1998) YbX X=As Sb Bi"
+  },
+  {
+    "species": "Yb3+",
+    "LDAU": true,
+    "type": 2,
+    "l": 3,
+    "U": 8.8,
+    "J": 0.0,
+    "note": "REF Antonov PRB 58 9752 (1998)"
+  },
+  {
+    "species": "Lu",
+    "LDAU": true,
+    "type": 2,
+    "l": 3,
+    "U": 4.8,
+    "J": 0.95,
+    "note": "REF: PRB 73, 115403 (2006)"
+  },
+  {
+    "species": "U",
+    "LDAU": true,
+    "type": 2,
+    "l": 3,
+    "U": 4.0,
+    "J": 0.0,
+    "note": "http://cms.mpi.univie.ac.at/vasp-forum/forum_viewtopic.php?3.789; 10.1103/PhysRevB.84.014116"
+  },
+  {
+    "species": "Th",
+    "LDAU": true,
+    "type": 2,
+    "l": 3,
+    "U": 5.0,
+    "J": 0.0,
+    "note": "10.1103/PhysRevB.80.014108"
+  },
+  {
+    "species": "Sc",
+    "LDAU": true,
+    "type": 2,
+    "l": 2,
+    "U": 2.9,
+    "J": 0.0,
+    "note": ""
+  },
+  {
+    "species": "Ti",
+    "LDAU": true,
+    "type": 2,
+    "l": 2,
+    "U": 4.4,
+    "J": 0.0,
+    "note": "SrTiO3, PRL 98, 115503 (2007); #Ti-d orbital,U eff CEDER SAYS 0.0"
+  },
+  {
+    "species": "V",
+    "LDAU": true,
+    "type": 2,
+    "l": 2,
+    "U": 2.7,
+    "J": 0.0,
+    "note": "REF Pickett PRB 58, 1201 (1998)  (Anisimov Zaanem Anderson 6.7); #V-d orbital,U eff CEDER SAYS 3.1"
+  },
+  {
+    "species": "Cr",
+    "LDAU": true,
+    "type": 2,
+    "l": 2,
+    "U": 3.5,
+    "J": 0.0,
+    "note": "VO, MnO, FeO, CoO, NiO, CuO, Cr2O3, PRB 73, 195107 (2006)"
+  },
+  {
+    "species": "Mn",
+    "LDAU": true,
+    "type": 2,
+    "l": 2,
+    "U": 4.0,
+    "J": 0.0,
+    "note": "VO, MnO, FeO, CoO, NiO, CuO, Cr2O3, PRB 73, 195107 (2006); #Mn-d orbital,U eff  CEDER SAYS 3.9"
+  },
+  {
+    "species": "Fe",
+    "LDAU": true,
+    "type": 2,
+    "l": 2,
+    "U": 4.6,
+    "J": 0.0,
+    "note": "FeO, Fe2SiO4, PRB 71, 035105"
+  },
+  {
+    "species": "Co",
+    "LDAU": true,
+    "type": 2,
+    "l": 2,
+    "U": 5.0,
+    "J": 0.0,
+    "note": "MnO, FeO, CoO, NiO, PRB 58, 1201 (1998); #Co-d orbital,U eff  CEDER SAYS 5.7"
+  },
+  {
+    "species": "Ni",
+    "LDAU": true,
+    "type": 2,
+    "l": 2,
+    "U": 5.1,
+    "J": 0.0,
+    "note": "REF Pickett PRB 58, 1201 (1998)  (Anisimov Zaanem Anderson 8.0) (Cococcioni PRB71 035105 4.6); #Ni-d orbital,U eff CEDER SAYS 6.0"
+  },
+  {
+    "species": "Cu",
+    "LDAU": true,
+    "type": 2,
+    "l": 2,
+    "U": 4.0,
+    "J": 0.0,
+    "note": "VO, MnO, FeO, CoO, NiO, CuO, Cr2O3, PRB 73, 195107 (2006)"
+  },
+  {
+    "species": "Zn",
+    "LDAU": true,
+    "type": 2,
+    "l": 2,
+    "U": 7.5,
+    "J": 0.0,
+    "note": "REF Erhart, PRB 73 205203 (2006)"
+  },
+  {
+    "species": "Nb",
+    "LDAU": true,
+    "type": 2,
+    "l": 2,
+    "U": 2.1,
+    "J": 0.0,
+    "note": "d-impurities in Rb, PRB 50, 16861 (1994); #Nb-d orbital,U eff CEDER SAYS 1.5"
+  },
+  {
+    "species": "Mo",
+    "LDAU": true,
+    "type": 2,
+    "l": 2,
+    "U": 2.4,
+    "J": 0.0,
+    "note": "d-impurities in Rb, PRB 50, 16861 (1994); #Mo-d orbital,U eff CEDER SAYS 3.5"
+  },
+  {
+    "species": "Tc",
+    "LDAU": true,
+    "type": 2,
+    "l": 2,
+    "U": 2.7,
+    "J": 0.0,
+    "note": "d-impurities in Rb, PRB 50, 16861 (1994)"
+  },
+  {
+    "species": "Ru",
+    "LDAU": true,
+    "type": 2,
+    "l": 2,
+    "U": 3.0,
+    "J": 0.0,
+    "note": "d-impurities in Rb, PRB 50, 16861 (1994)"
+  },
+  {
+    "species": "Rh",
+    "LDAU": true,
+    "type": 2,
+    "l": 2,
+    "U": 3.3,
+    "J": 0.0,
+    "note": "d-impurities in Rb, PRB 50, 16861 (1994)"
+  },
+  {
+    "species": "Pd",
+    "LDAU": true,
+    "type": 2,
+    "l": 2,
+    "U": 3.6,
+    "J": 0.0,
+    "note": "d-impurities in Rb, PRB 50, 16861 (1994)"
+  },
+  {
+    "species": "Ag",
+    "LDAU": true,
+    "type": 2,
+    "l": 2,
+    "U": 5.8,
+    "J": 0.0,
+    "note": "L. Wang, T. Maxisch, G. Ceder PRB 73 2006 19 WRONG; 10.1103/PhysRevB.83.035202"
+  },
+  {
+    "species": "Cd",
+    "LDAU": true,
+    "type": 2,
+    "l": 2,
+    "U": 2.1,
+    "J": 0.0,
+    "note": "ZnO, CdO, GaN, InN, PRB 74, 045202 (2006)"
+  },
+  {
+    "species": "Ta",
+    "LDAU": true,
+    "type": 2,
+    "l": 2,
+    "U": 2.0,
+    "J": 0.0,
+    "note": "d-impurities in Rb, PRB 50, 16861 (1994)"
+  },
+  {
+    "species": "W",
+    "LDAU": true,
+    "type": 2,
+    "l": 2,
+    "U": 2.2,
+    "J": 0.0,
+    "note": "d-impurities in Rb, PRB 50, 16861 (1994)"
+  },
+  {
+    "species": "Re",
+    "LDAU": true,
+    "type": 2,
+    "l": 2,
+    "U": 2.4,
+    "J": 0.0,
+    "note": "d-impurities in Rb, PRB 50, 16861 (1994"
+  },
+  {
+    "species": "Os",
+    "LDAU": true,
+    "type": 2,
+    "l": 2,
+    "U": 2.6,
+    "J": 0.0,
+    "note": "d-impurities in Rb, PRB 50, 16861 (1994)"
+  },
+  {
+    "species": "Ir",
+    "LDAU": true,
+    "type": 2,
+    "l": 2,
+    "U": 2.8,
+    "J": 0.0,
+    "note": "d-impurities in Rb, PRB 50, 16861 (1994)"
+  },
+  {
+    "species": "Pt",
+    "LDAU": true,
+    "type": 2,
+    "l": 2,
+    "U": 3.0,
+    "J": 0.0,
+    "note": "d-impurities in Rb, PRB 50, 16861 (1994)"
+  },
+  {
+    "species": "Au",
+    "LDAU": true,
+    "type": 2,
+    "l": 2,
+    "U": 4.0,
+    "J": 0.0,
+    "note": ""
+  },
+  {
+    "species": "Ga",
+    "LDAU": true,
+    "type": 2,
+    "l": 2,
+    "U": 3.9,
+    "J": 0.0,
+    "note": "ZnO, CdO, GaN, InN, PRB 74, 045202 (2006)"
+  },
+  {
+    "species": "In",
+    "LDAU": true,
+    "type": 2,
+    "l": 2,
+    "U": 1.9,
+    "J": 0.0,
+    "note": "ZnO, CdO, GaN, InN, PRB 74, 045202 (2006)"
+  },
+  {
+    "species": "Bi",
+    "LDAU": true,
+    "type": 2,
+    "l": 1,
+    "U": 0.0,
+    "J": 0.0,
+    "note": "ceder"
+  },
+  {
+    "species": "Pb",
+    "LDAU": true,
+    "type": 2,
+    "l": 1,
+    "U": 0.0,
+    "J": 0.0,
+    "note": "ceder"
+  },
+  {
+    "species": "Sn",
+    "LDAU": true,
+    "type": 2,
+    "l": 2,
+    "U": 3.5,
+    "J": 0.0,
+    "note": "10.1103/PhysRevLett.101.055502"
+  }
+]

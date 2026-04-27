@@ -7,11 +7,15 @@
 // harmonic force constants using the direct method or gamma-point density
 // functional perturbation theory.
 
+#include "config.h"
+
 #include <cmath>
 #include <cstddef>
+#include <fstream>
 #include <iomanip>
 #include <ios>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -37,10 +41,16 @@
 #define _DEBUG_APL_HARM_IFCS_ false
 
 using std::cerr;
+using std::ofstream;
+using std::ostream;
 using std::setprecision;
 using std::setw;
 using std::string;
+using std::stringstream;
 using std::vector;
+
+using aurostd::xmatrix;
+using aurostd::xvector;
 
 //////////////////////////////////////////////////////////////////////////////
 //                                                                          //
@@ -50,78 +60,11 @@ using std::vector;
 
 namespace apl {
 
-  ForceConstantCalculator::ForceConstantCalculator(ostream& oss) : xStream(oss) {
-    free();
-    _directory = "./";
-  }
-
-  ForceConstantCalculator::ForceConstantCalculator(Supercell& sc, ofstream& mf, ostream& oss) : xStream(mf, oss) {
-    free();
-    _supercell = &sc;
-    _sc_set = true;
-    xStream::initialize(mf, oss);
-    _directory = _supercell->_directory;
-  }
-
-  ForceConstantCalculator::ForceConstantCalculator(Supercell& sc, const aurostd::xoption& opts, ofstream& mf, ostream& oss) : xStream(mf, oss) {
-    free();
-    _supercell = &sc;
-    _sc_set = true;
-    xStream::initialize(mf, oss);
-    _directory = _supercell->_directory;
+  ForceConstantCalculator::ForceConstantCalculator(Supercell& sc, const aurostd::xoption& opts, ofstream& mf, ostream& oss) : xStream(mf, oss), _supercell(&sc), _sc_set(true), _directory(sc._directory) {
     initialize(opts);
   }
 
-  ForceConstantCalculator::ForceConstantCalculator(const ForceConstantCalculator& that) : xStream(*that.getOFStream(), *that.getOSS()) {
-    if (this != &that) {
-      free();
-    }
-    copy(that);
-  }
-
-  ForceConstantCalculator& ForceConstantCalculator::operator=(const ForceConstantCalculator& that) {
-    if (this != &that) {
-      free();
-    }
-    copy(that);
-    return *this;
-  }
-
-  ForceConstantCalculator::~ForceConstantCalculator() {
-    free();
-  }
-
-  void ForceConstantCalculator::clear(Supercell& sc) {
-    free();
-    _supercell = &sc;
-    _directory = _supercell->_directory;
-  }
-
-  void ForceConstantCalculator::copy(const ForceConstantCalculator& that) {
-    if (this == &that) {
-      return;
-    }
-    xStream::copy(that);
-    _bornEffectiveChargeTensor = that._bornEffectiveChargeTensor;
-    _dielectricTensor = that._dielectricTensor;
-    _directory = that._directory;
-    _forceConstantMatrices = that._forceConstantMatrices;
-    _initialized = that._initialized;
-    _isPolarMaterial = that._isPolarMaterial;
-    _method = that._method;
-    _sc_set = that._sc_set;
-    _supercell = that._supercell;
-    xInputs = that.xInputs;
-    _calculateZeroStateForces = that._calculateZeroStateForces;
-    AUTO_GENERATE_PLUS_MINUS = that.AUTO_GENERATE_PLUS_MINUS;
-    DISTORTION_MAGNITUDE = that.DISTORTION_MAGNITUDE;
-    DISTORTION_INEQUIVONLY = that.DISTORTION_INEQUIVONLY;
-    DISTORTION_SYMMETRIZE = that.DISTORTION_SYMMETRIZE;
-    GENERATE_ONLY_XYZ = that.GENERATE_ONLY_XYZ;
-    USER_GENERATE_PLUS_MINUS = that.USER_GENERATE_PLUS_MINUS;
-  }
-
-  void ForceConstantCalculator::free() {
+  void ForceConstantCalculator::clear() {
     xInputs.clear();
     _bornEffectiveChargeTensor.clear();
     _dielectricTensor.clear();
@@ -139,6 +82,12 @@ namespace apl {
     DISTORTION_SYMMETRIZE = true;   // CO20190116
     GENERATE_ONLY_XYZ = false;
     USER_GENERATE_PLUS_MINUS = false;  // CO
+  }
+
+  void ForceConstantCalculator::clear(Supercell& sc) {
+    clear();
+    _supercell = &sc;
+    _directory = _supercell->_directory;
   }
 
   void ForceConstantCalculator::initialize(const aurostd::xoption& opts, ofstream& mf, ostream& oss) {
@@ -169,15 +118,6 @@ namespace apl {
       throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, message, _VALUE_ILLEGAL_);
     }
     _initialized = true;
-  }
-
-  // xStream initializers
-  void ForceConstantCalculator::initialize(ostream& oss) {
-    xStream::initialize(oss);
-  }
-
-  void ForceConstantCalculator::initialize(ofstream& mf, ostream& oss) {
-    xStream::initialize(mf, oss);
   }
 
 }  // namespace apl
@@ -551,7 +491,7 @@ namespace apl {
     }
 
     // Get it
-    const xmatrix<double> m(3, 3);
+    xmatrix<double> m(3, 3);
     vector<string> tokens;
     // CO START
     for (size_t i = 0; i < _supercell->getInputStructure().atoms.size(); i++) {
@@ -1038,7 +978,7 @@ namespace apl {
           }
           DISTORTION_INEQUIVONLY = aurostd::string2utype<bool>(tokens[1]);
         } else if (aurostd::substring2bool(vlines[iline], "DISTORTIONS=START")) {
-          const xvector<double> distortion(3);
+          xvector<double> distortion(3);
           uint idist = 0;
           while ((iline++ < nlines) && !aurostd::substring2bool(vlines[iline], "DISTORTIONS=STOP")) {
             tokens.clear();
@@ -1382,7 +1322,7 @@ namespace apl {
     if (xstr.agroup_calculated) {
       // Test directions for distortion (in cartesian coordinates)
       vector<xvector<double>> testDistortions;
-      const xvector<double> testVec(3);
+      xvector<double> testVec(3);
 
       if (GENERATE_ONLY_XYZ) {
         // Test distortion (in cartesian coordinates) along x, y, and z
@@ -1669,7 +1609,7 @@ namespace apl {
         vector<xvector<double>> forcefield;
         xvector<double> drift(3);
         for (uint k = 0; k < _supercell->getNumberOfAtoms(); k++) {
-          const xvector<double> force(3);
+          xvector<double> force(3);
           force(1) = xInputs[idxRun].getXStr().qm_forces[k](1);
           force(2) = xInputs[idxRun].getXStr().qm_forces[k](2);
           force(3) = xInputs[idxRun].getXStr().qm_forces[k](3);
@@ -1838,7 +1778,7 @@ namespace apl {
       } // CO20190218
       // Construct transformation matrix A
       xmatrix<double> A(3, 3);
-      const xmatrix<double> U(3, 3);
+      xmatrix<double> U(3, 3);
       for (uint j = 0; j < 3; j++) {
         // Ensure it is unit length
         _uniqueDistortions[i][j] = _uniqueDistortions[i][j] / aurostd::modulus(_uniqueDistortions[i][j]);

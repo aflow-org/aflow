@@ -7,9 +7,6 @@
 // Written by Stefano Curtarolo - 2016
 // Written by David Hicks (DX) - 2016-2021 (generic prototype generator)
 
-#ifndef _AFLOW_ANRL_CPP
-#define _AFLOW_ANRL_CPP
-
 #include "aflow_anrl.h"
 
 #include <algorithm>
@@ -18,6 +15,12 @@
 #include <cstddef>
 #include <cstdio>
 #include <deque>
+#include <fstream>
+#include <iostream>
+#include <istream>
+#include <ostream>
+#include <sstream>
+#include <string>
 #include <vector>
 
 #include "AUROSTD/aurostd.h"
@@ -47,6 +50,24 @@
 #include "structure/aflow_xstructure.h"
 
 #define _DEBUG_ANRL_ false // DX20200625
+
+using std::cerr;
+using std::cout;
+using std::deque;
+using std::endl;
+using std::ifstream;
+using std::iostream;
+using std::istream;
+using std::istringstream;
+using std::ofstream;
+using std::ostream;
+using std::ostringstream;
+using std::string;
+using std::stringstream;
+using std::vector;
+
+using aurostd::xmatrix;
+using aurostd::xvector;
 
 // ***************************************************************************
 // anrl::PrototypeANRL_Consistency()
@@ -140,15 +161,15 @@ namespace anrl {
 
     hex_str.atoms.clear();
 
-    const xvector<double> xn(3);
+    xvector<double> xn(3);
     xn(1) = 1.0;
     xn(2) = 0.0;
     xn(3) = 0.0;
-    const xvector<double> yn(3);
+    xvector<double> yn(3);
     yn(1) = 0.0;
     yn(2) = 1.0;
     yn(3) = 0.0;
-    const xvector<double> zn(3);
+    xvector<double> zn(3);
     zn(1) = 0.0;
     zn(2) = 0.0;
     zn(3) = 1.0;
@@ -158,8 +179,8 @@ namespace anrl {
 
     const xmatrix<double> rhl_lattice;
     const xmatrix<double> hex_lattice;
-    const xmatrix<double> rtransf;
-    const xmatrix<double> htransf;
+    xmatrix<double> rtransf;
+    xmatrix<double> htransf;
 
     // HEX lattice
     a1 = (1.0 / 2.0) * a * xn - (sqrt(3.0) / 2.0) * a * yn;
@@ -199,11 +220,11 @@ namespace anrl {
     htransf(3, 2) = 0.0;
     htransf(3, 3) = 1.0;
 
-    const xvector<double> c1(3);
+    xvector<double> c1(3);
     c1(1) = (2.0 / 3.0);
     c1(2) = (1.0 / 3.0);
     c1(3) = (1.0 / 3.0); // centering translation
-    const xvector<double> c2(3);
+    xvector<double> c2(3);
     c2(1) = (1.0 / 3.0);
     c2(2) = (2.0 / 3.0);
     c2(3) = (2.0 / 3.0); // centering translation
@@ -699,7 +720,7 @@ namespace anrl {
     vector<uint> atomic_numbers;
     if (print_atomic_numbers && pflow::hasRealElements(xstr)) {
       for (size_t i = 0; i < xstr.species.size(); i++) {
-        atomic_numbers.push_back(xelement::symbol2Z(KBIN::VASP_PseudoPotential_CleanName(xstr.species[i])));
+        atomic_numbers.push_back(xelement::symbol2Z(aurostd::VASP_PseudoPotential_CleanName(xstr.species[i])));
       }
     }
 
@@ -832,16 +853,16 @@ namespace anrl {
 
     // ---------------------------------------------------------------------------
     // main variables
-    const xmatrix<double> lattice;
-    const xvector<double> xn(3);
+    xmatrix<double> lattice;
+    xvector<double> xn(3);
     xn(1) = 1.0;
     xn(2) = 0.0;
     xn(3) = 0.0;
-    const xvector<double> yn(3);
+    xvector<double> yn(3);
     yn(1) = 0.0;
     yn(2) = 1.0;
     yn(3) = 0.0;
-    const xvector<double> zn(3);
+    xvector<double> zn(3);
     zn(1) = 0.0;
     zn(2) = 0.0;
     zn(3) = 1.0;
@@ -932,16 +953,16 @@ namespace anrl {
 
     // ---------------------------------------------------------------------------
     // main variables
-    const xmatrix<double> lattice;
-    const xvector<double> xn(3);
+    xmatrix<double> lattice;
+    xvector<double> xn(3);
     xn(1) = 1.0;
     xn(2) = 0.0;
     xn(3) = 0.0;
-    const xvector<double> yn(3);
+    xvector<double> yn(3);
     yn(1) = 0.0;
     yn(2) = 1.0;
     yn(3) = 0.0;
-    const xvector<double> zn(3);
+    xvector<double> zn(3);
     zn(1) = 0.0;
     zn(2) = 0.0;
     zn(3) = 1.0;
@@ -1040,16 +1061,16 @@ namespace anrl {
 
     // ---------------------------------------------------------------------------
     // main variables
-    const xmatrix<double> lattice;
-    const xvector<double> xn(3);
+    xmatrix<double> lattice;
+    xvector<double> xn(3);
     xn(1) = 1.0;
     xn(2) = 0.0;
     xn(3) = 0.0;
-    const xvector<double> yn(3);
+    xvector<double> yn(3);
     yn(1) = 0.0;
     yn(2) = 1.0;
     yn(3) = 0.0;
-    const xvector<double> zn(3);
+    xvector<double> zn(3);
     zn(1) = 0.0;
     zn(2) = 0.0;
     zn(3) = 1.0;
@@ -1168,16 +1189,16 @@ namespace anrl {
 
     // ---------------------------------------------------------------------------
     // main variables
-    const xmatrix<double> lattice;
-    const xvector<double> xn(3);
+    xmatrix<double> lattice;
+    xvector<double> xn(3);
     xn(1) = 1.0;
     xn(2) = 0.0;
     xn(3) = 0.0;
-    const xvector<double> yn(3);
+    xvector<double> yn(3);
     yn(1) = 0.0;
     yn(2) = 1.0;
     yn(3) = 0.0;
-    const xvector<double> zn(3);
+    xvector<double> zn(3);
     zn(1) = 0.0;
     zn(2) = 0.0;
     zn(3) = 1.0;
@@ -1265,16 +1286,16 @@ namespace anrl {
 
     // ---------------------------------------------------------------------------
     // main variables
-    const xmatrix<double> lattice;
-    const xvector<double> xn(3);
+    xmatrix<double> lattice;
+    xvector<double> xn(3);
     xn(1) = 1.0;
     xn(2) = 0.0;
     xn(3) = 0.0;
-    const xvector<double> yn(3);
+    xvector<double> yn(3);
     yn(1) = 0.0;
     yn(2) = 1.0;
     yn(3) = 0.0;
-    const xvector<double> zn(3);
+    xvector<double> zn(3);
     zn(1) = 0.0;
     zn(2) = 0.0;
     zn(3) = 1.0;
@@ -1362,16 +1383,16 @@ namespace anrl {
 
     // ---------------------------------------------------------------------------
     // main variables
-    const xmatrix<double> lattice;
-    const xvector<double> xn(3);
+    xmatrix<double> lattice;
+    xvector<double> xn(3);
     xn(1) = 1.0;
     xn(2) = 0.0;
     xn(3) = 0.0;
-    const xvector<double> yn(3);
+    xvector<double> yn(3);
     yn(1) = 0.0;
     yn(2) = 1.0;
     yn(3) = 0.0;
-    const xvector<double> zn(3);
+    xvector<double> zn(3);
     zn(1) = 0.0;
     zn(2) = 0.0;
     zn(3) = 1.0;
@@ -1471,7 +1492,7 @@ namespace anrl {
       const string z_value_string = aurostd::utype2string<double>(Wyckoff_positions[i].coord(3), AUROSTD_DEFAULT_PRECISION, FIXED_STREAM); // DX20201028 - added precision and format
       for (size_t j = 0; j < Wyckoff_positions[i].equations.size(); j++) {
         vector<string> coordinate_vstring = Wyckoff_positions[i].equations[j];
-        const xvector<double> coordinate(3);
+        xvector<double> coordinate(3);
         for (size_t k = 0; k < coordinate_vstring.size(); k++) {
           // substitute variable with value
           aurostd::StringSubstInPlace(coordinate_vstring[k], "x", x_value_string);
@@ -2206,7 +2227,8 @@ namespace anrl {
     const ProtoData pd = ProtoData::get();
     std::string clean_search_string;
     // ensure extra information is cut away
-    clean_search_string = search_string.substr(0, search_string.find(':'));
+    clean_search_string = search_string.substr(0, search_string.find(':')); // remove elements
+    clean_search_string = clean_search_string.substr(0, clean_search_string.find('.')); // remove permutation
 
     // Prototype ID
     if (pd.content.find(clean_search_string) != pd.content.end()) {
@@ -2277,13 +2299,13 @@ namespace anrl {
 // lattice variables: a, b, c, alpha, beta, gamma AND
 // Wyckoff variables: x, y, and z
 namespace anrl {
-
-  xstructure PrototypeANRL_Generator_UID(const string& uid, string& parameters, deque<string>& vatomX, deque<double>& vvolumeX) {
+  xstructure PrototypeANRL_Generator_UID(const string& uid, string& parameters, const string& permutation, deque<string>& vatomX, deque<double>& vvolumeX) {
     const anrl::ProtoData pd = anrl::ProtoData::get();
     std::string label = static_cast<string>(pd.content[uid]["label"]);
     if (parameters.empty()) {
       parameters = static_cast<string>(pd.content[uid]["parameter_values"]);
     }
+    label += permutation;
     ofstream FileMESSAGE;
     return PrototypeANRL_Generator(label, parameters, vatomX, vvolumeX, FileMESSAGE, cout, true);
   }
@@ -2932,18 +2954,16 @@ namespace anrl {
     // symmetry; it is possible that the provided parameters elevate the structure
     // to a higher symmetry
     //
-    if (!XHOST.vflag_pflow.flag("PROTO::WEBPAGE")) {
+    if (!static_cast<bool>(loaded_prototype) && !XHOST.vflag_pflow.flag("PROTO::WEBPAGE")) {
       // this section is skipped when we are generating web pages //MJM20250521 //HE20250524
-      if (static_cast<bool>(loaded_prototype)) {
-        string updated_label_and_params;
-        if (!structureAndLabelConsistent(str, label_anrl, updated_label_and_params)) {
-          // if changes symmetry, give the appropriate label
-          message << "The structure has a higher symmetry than indicated by the label. To ignore this error use --webpage\n";
-          message << "The correct label and parameters for this structure are:" << endl;
-          message << updated_label_and_params << endl;
-          message << "Please feed this label and set of parameters into the prototype generator.";
-          throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, message, _RUNTIME_ERROR_);
-        }
+      string updated_label_and_params;
+      if (!structureAndLabelConsistent(str, label_anrl, updated_label_and_params)) {
+        // if changes symmetry, give the appropriate label
+        message << "The structure has a higher symmetry than indicated by the label. To ignore this error use --webpage\n";
+        message << "The correct label and parameters for this structure are:" << endl;
+        message << updated_label_and_params << endl;
+        message << "Please feed this label and set of parameters into the prototype generator.";
+        throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, message, _RUNTIME_ERROR_);
       }
     }
     if (number_of_atoms_conventional != str.atoms.size() && XHOST.vflag_pflow.flag("PROTO::STRICT")) {
@@ -2954,8 +2974,6 @@ namespace anrl {
     return str;
   }
 } // namespace anrl
-
-#endif // _AFLOW_ANRL_CPP
 
 // Written by Stefano Curtarolo - 2016
 // Written by David Hicks (DX) - 2016/2020 (generic prototype generator)

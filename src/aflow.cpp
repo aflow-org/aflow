@@ -26,6 +26,8 @@
 
 #include "aflow.h"
 
+#include "config.h"
+
 #include <cstddef>
 #include <cstdio>
 #include <deque>
@@ -39,6 +41,8 @@
 
 #include <curl/curl.h>
 
+#include <modules/HULL/aflow_nhull.h>
+
 #include "AUROSTD/aurostd.h"
 #include "AUROSTD/aurostd_argv.h"
 #include "AUROSTD/aurostd_time.h"
@@ -48,6 +52,7 @@
 #include "AUROSTD/aurostd_xmatrix.h"
 #include "AUROSTD/aurostd_xoption.h"
 #include "AUROSTD/aurostd_xrandom.h"
+#include "AUROSTD/aurostd_xvector.h"
 
 #include "aflow_aflowrc.h"
 #include "aflow_defs.h"
@@ -62,21 +67,27 @@
 #include "modules/POCC/aflow_pocc.h"  //CO20200624
 #include "structure/aflow_xatom.h"
 #include "structure/aflow_xstructure.h"
-#include "test/aflow_test.cpp" // todo ST: this is bad
+#include "test/aflow_test.h"
 #include "test/aflow_unit_test.h"
 
 using std::cerr;
 using std::cout;
 using std::endl;
 using std::ifstream;
-using std::istream;
+using std::iostream;
+using std::istringstream;
 using std::ofstream;
 using std::ostream;
+using std::ostringstream;
+using std::string;
 using std::stringstream;
 using std::vector;
 
-int main(int _argc, char **_argv) {
-  ostream &oss = cout;  // CO20180419
+using aurostd::xmatrix;
+using aurostd::xvector;
+
+int main(int _argc, char** _argv) {
+  ostream& oss = cout;  // CO20180419
   try {
     const bool LDEBUG = false; // true;
     int return_code = 0;  // ME20200901
@@ -112,7 +123,6 @@ int main(int _argc, char **_argv) {
     // INIT LOOK UP TABLES
     atoms_initialize();
     xelement::Initialize();
-    xPOTCAR_Initialize();
     // spacegroup::SpaceGroupInitialize(); only if necessary
     // INFORMATION **************************************************
     AFLOW_PTHREADS::FLAG = AFLOW_PTHREADS::Check_Threads(argv, !XHOST.QUIET);
@@ -163,7 +173,7 @@ int main(int _argc, char **_argv) {
         cerr << __AFLOW_FUNC__ << " mat=" << endl;
         cerr << mat << endl;
       }
-      const xvector<double> xv;
+      xvector<double> xv;
       xv(1) = 2;
       xv(2) = 3;
       xv(3) = 4;
@@ -220,6 +230,7 @@ int main(int _argc, char **_argv) {
       }
       return 0; // CO20180419
     }
+
     // ME20220128
     if (!Arun && aurostd::args2attachedflag(argv, cmds, "--unit_test")) {
       aurostd::xoption unittest_options;
@@ -268,15 +279,15 @@ int main(int _argc, char **_argv) {
       // CO START 20170614 - some SQLITE tests
       // http://zetcode.com/db/sqlitec/ - more tests here
       // this will create test.db file
-      sqlite3 *db;
-      char *err_msg = nullptr;
+      sqlite3* db;
+      char* err_msg = nullptr;
       int rc = sqlite3_open("test.db", &db);
       if (rc != SQLITE_OK) {
         fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(db));
         sqlite3_close(db);
         return 1;
       }
-      const char *sql =
+      const char* sql =
           "DROP TABLE IF EXISTS Cars;"
           "CREATE TABLE Cars(Id INT, Name TEXT, Price INT);"
           "INSERT INTO Cars VALUES(1, 'Audi', 52642);"
@@ -596,8 +607,8 @@ int main(int _argc, char **_argv) {
       banner_message << aurostd::EmbData::get_content("README_AFLOW_SYM.TXT", "README") << endl;
     } else if (XHOST.vflag_control.flag("README_CCE")) {
       banner_message << aurostd::EmbData::get_content("README_AFLOW_CCE.TXT", "README") << endl;
-    } else if (XHOST.vflag_control.flag("README_CHULL")) {
-      banner_message << aurostd::EmbData::get_content("README_AFLOW_CHULL.TXT", "README") << endl;
+    } else if (XHOST.vflag_control.flag("README_NHULL")) {
+      banner_message << aurostd::EmbData::get_content("README_AFLOW_NHULL.TXT", "README") << endl;
     } else if (XHOST.vflag_control.flag("README_PARTIAL_OCCUPATION")) {
       banner_message << aurostd::EmbData::get_content("README_AFLOW_POCC.TXT", "README") << endl;
     } else if (XHOST.vflag_control.flag("README_SCRIPTING")) {
@@ -662,7 +673,7 @@ int main(int _argc, char **_argv) {
     // END
     curl_global_cleanup();
     return (Arun ? return_code : 1); // Arun==true is 1, so flip because return 0 is normal  //CO20190629 - more explicit return 0//ME20200901 - use return_code
-  } catch (aurostd::xerror &excpt) {
+  } catch (aurostd::xerror& excpt) {
     pflow::logger(excpt.whereFileName(), excpt.whereFunction(), excpt.buildMessageString(), oss, _LOGGER_ERROR_);
     return excpt.whatCode();
   }
@@ -671,7 +682,7 @@ int main(int _argc, char **_argv) {
 // ***************************************************************************
 // AFLOW_main
 // ***************************************************************************
-int AFLOW_main(vector<string> &argv) {
+int AFLOW_main(vector<string>& argv) {
   if (!XHOST.QUIET) {
     cout << aflow::Banner("INTRODUCTION");// << endl;
   }
@@ -750,7 +761,7 @@ namespace aflow {
     strstream << tab << " --random|-rnd" << endl;
     strstream << tab << " --force|-force" << endl;
     strstream << tab << " --mem=XX|--maxmem=XX" << endl;
-    strstream << tab << " --readme= xaflow|aflow|aconvasp|aflowrc|scripting|apl|agl|ael|anrl|compare|gfa|symmetry|chull|errors|exceptions|frozsl CHECK !!!!" << endl;
+    strstream << tab << " --readme= xaflow|aflow|aconvasp|aflowrc|scripting|apl|agl|ael|anrl|compare|gfa|symmetry|nhull|errors|exceptions|frozsl CHECK !!!!" << endl;
     strstream << tab << " --np=NUMBER|--npmax" << endl;
     strstream << tab << " --generate_aflowin_from_vasp" << endl;
     strstream << tab << " --generate_vasp_from_aflowin|--generate" << endl;
@@ -851,7 +862,7 @@ namespace aflow {
     strstream << tab << xspaces << " " << tab << "Returns the HELP information for the \"glass-forming-ability code\"." << endl;
     strstream << tab << x << " --readme=symmetry|--readme_symmetry" << endl;
     strstream << tab << xspaces << " " << tab << "Returns the HELP information for the \"symmetry library (AFLOW-SYM)\"." << endl;
-    strstream << tab << x << " --readme=chull|--readme_chull" << endl;
+    strstream << tab << x << " --readme=nhull|--readme_nhull" << endl;
     strstream << tab << xspaces << " " << tab << "Returns the HELP information for the \"convex hull library (AFLOW-hull)\"." << endl;
     strstream << tab << x << " --readme=errors|--readme=exceptions|--readme_errors|--readme_exceptions" << endl;
     strstream << tab << xspaces << " " << tab << "Returns the HELP information for exception handling in AFLOW." << endl;
@@ -944,11 +955,12 @@ namespace aflow {
       oss << "*                                                                                                  *" << endl;
       oss << "*     Use of AFLOW software and repositories welcomes references to the following publications:    *" << endl;
       oss << "*                                                                                                  *" << endl;
-      oss << "*  Eckert et al.    npj Comput. Mater. 11, 40 (2025) 10.1038/s41524-025-01529-1 (Soliquidy)        *" << endl;
+      oss << "*  Divilov et al.   High Entropy Alloys & Mater. 3, 178 (2025) 10.1007/s44210-025-00058-2 (AFLOW4) *" << endl;
+      oss << "*  Eckert et al.    npj Comput. Mater. 11, 40 (2025)   10.1038/s41524-025-01529-1      (Soliquidy) *" << endl;
       oss << "*  Eckert et al.    Comp. Mat. Sci. 240, 112988 (2024) 10.1016/j.commatsci.2024.112988 (proto4)    *" << endl;
-      oss << "*  Divilov et al.   Acta Mater. 266, 119667 (2024) 10.1016/j.actamat.2024.119667 (spinodal)        *" << endl;
-      oss << "*  Divilov et al.   Nature 625, 66-73 (2024) 10.1038/s41586-023-06786-y (DEED)                     *" << endl;
-      oss << "*  Friedrich et al. J. Chem. Phys. 160, 042501 (2024) 10.1063/5.0184917 (CCE2)                     *" << endl;
+      oss << "*  Divilov et al.   Acta Mater. 266, 119667 (2024)     10.1016/j.actamat.2024.119667   (spinodal)  *" << endl;
+      oss << "*  Divilov et al.   Nature 625, 66-73 (2024)           10.1038/s41586-023-06786-y      (DEED)      *" << endl;
+      oss << "*  Friedrich et al. J. Chem. Phys. 160, 042501 (2024)  10.1063/5.0184917               (CCE2)      *" << endl;
       oss << "*  Esters et al.    Comp. Mat. Sci. 216, 111808 (2023) 10.1016/j.commatsci.2022.111808 (AFLOW.org) *" << endl;
       oss << "*  Oses et al.      Comp. Mat. Sci. 217, 111889 (2023) 10.1016/j.commatsci.2022.111889 (aflow++)   *" << endl;
       oss << "*  Friedrich et al. npj Comput. Mater. 5, 59 (2019)  10.1038/s41524-019-0192-1       (CCE)         *" << endl;
@@ -1055,9 +1067,6 @@ namespace aflow {
 // #include "AFLOW3_AURO/aflow_auro.cpp"
 
 // ***************************************************************************
-#ifndef _AFLOW_AURO_CPP_
-
-#endif
 
 // ***************************************************************************
 // *                                                                         *

@@ -6,8 +6,6 @@
 // ***************************************************************************
 // Written by Cormac Toher
 // cormac.toher@duke.edu
-#ifndef _AFLOW_AGL_THERMAL_CPP
-#define _AFLOW_AGL_THERMAL_CPP
 
 #include <algorithm>
 #include <cmath>
@@ -575,8 +573,6 @@ namespace AGL_functions {
 // **************************************************************************
 //  End of AFLOW AGL thermal conductivity
 // **************************************************************************
-
-#endif // _AFLOW_AGL_THERMAL_CPP
 
 // ***************************************************************************
 // *                                                                         *

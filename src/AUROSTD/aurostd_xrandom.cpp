@@ -5,9 +5,6 @@
 // ***************************************************************************
 // Written by Stefano Curtarolo 1994-2012
 
-#ifndef _AUROSTD_XRANDOM_CPP_
-#define _AUROSTD_XRANDOM_CPP_
-
 #include "aurostd_xrandom.h"
 
 #include <cmath>
@@ -1546,8 +1543,6 @@ namespace aurostd {
 #endif
 
 // ----------------------------------------------------------------------------
-
-#endif  // _AUROSTD_XRANDOM_IMPLEMENTATIONS_
 
 // **************************************************************************
 // *                                                                        *

@@ -6,15 +6,13 @@
 // Stefano Curtarolo
 // contains routines to extract MPI information from _AFLOWIN_
 
-#ifndef _AFLOW_MPI_CPP
-#define _AFLOW_MPI_CPP
-
 #include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <istream>
 #include <ostream>
 #include <sstream>
+#include <string>
 #include <vector>
 
 #include "AUROSTD/aurostd.h"
@@ -28,7 +26,6 @@
 #include "flow/aflow_xclasses.h"
 
 using std::cerr;
-using std::cout;
 using std::endl;
 using std::ifstream;
 using std::istream;
@@ -36,6 +33,7 @@ using std::istringstream;
 using std::ofstream;
 using std::ostream;
 using std::ostringstream;
+using std::string;
 using std::stringstream;
 using std::vector;
 
@@ -437,8 +435,6 @@ namespace KBIN {
     return Krun;
   }
 }  // namespace KBIN
-
-#endif  // _QSUB_IMPLEMENTATIONS_
 
 // **************************************************************************
 // *                                                                        *

@@ -6,12 +6,16 @@
 // ***************************************************************************
 // Written by David Hicks (DX) - 2020
 
-#ifndef _AFLOW_SYMBOLIC_CPP
-#define _AFLOW_SYMBOLIC_CPP
-
 #include "aflow_symbolic.h"
 
 #include <cstddef>
+#include <deque>
+#include <fstream>
+#include <iostream>
+#include <istream>
+#include <sstream>
+#include <string>
+#include <vector>
 
 #include "AUROSTD/aurostd.h"
 #include "AUROSTD/aurostd_xerror.h"
@@ -23,6 +27,18 @@
 #include "modules/PROTOTYPES/aflow_anrl.h"
 #include "modules/SYM/aflow_symmetry_spacegroup.h"
 #include "structure/aflow_xatom.h"
+
+using std::cerr;
+using std::deque;
+using std::endl;
+using std::ifstream;
+using std::iostream;
+using std::istringstream;
+using std::ofstream;
+using std::ostringstream;
+using std::string;
+using std::stringstream;
+using std::vector;
 
 #define _DEBUG_SYMBOLIC_ false // DX20200625
 
@@ -694,5 +710,3 @@ namespace anrl {
   }
 } // namespace anrl
 #endif // USE_SYMBOLIC_SOURCE
-
-#endif // _AFLOW_SYMBOLIC_CPP

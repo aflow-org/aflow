@@ -1021,10 +1021,10 @@ LATTICES = (the ones with \"\")
         [--screen_only] : Prints the comparison results to the screen and does not write to any files. 
         Check aflow --readme=compare 
  
-  aflow --convex_hull=|--chull --alloy=MnPdPt[,AlCuZn,...] [chull_options] [--destination=[DIRECTORY]] 
+  aflow --convex_hull=|--nhull --alloy=MnPdPt[,AlCuZn,...] [nhull_options] [--destination=[DIRECTORY]]
         Queries the AFLOW API for relevant entries (see --load_library), calculates 
         the convex hull, and returns the information as a PDF (default, see --output). 
-        --chull : Necessary flag for entering mode for calculating convex hull. 
+        --nhull : Necessary flag for entering mode for calculating convex hull.
         --alloy : Necessary argument, specifies system. This code is not dimension specific,  
               i.e., you can calculate the convex hull for any n-ary system. 
               There are two input modes:  raw (comma-separated) and combinatorial (colon- and comma-separated). 
@@ -1111,7 +1111,7 @@ LATTICES = (the ones with \"\")
         [--plot_iso_max_latent_heat|--iso_max|--isomax] : Plot iso-max-latent-heat lines for ground state structures. 
               See dx.doi.org/10.1063/1.4902865. 
          
-        Check aflow --readme=chull 
+        Check aflow --readme=nhull
  
   aflow --corners | --corner < POSCAR 
         Add to the POSCAR the corner and face atoms so it looks 
@@ -2921,7 +2921,7 @@ LATTICES = (the ones with \"\")
  
   aflow --python_modules[=module1,module2] | --create_python_modules[=module1,module2] [-D directory] 
         Installs AFLOW python modules in the chosen directory. 
-        Available modules: aflow_cce, aflow_chull, aflow_chull_plotter, aflow_sym, aflow_xtal_finder 
+        Available modules: aflow_cce, aflow_nhull, aflow_nhull_plotter, aflow_sym, aflow_xtal_finder
         --python_modules: A comma-separated list with the desired modules. Leave blank to install all. 
         --create_python_modules: alias for --python_modules 
         -D: directory in which to install the python modules. Default: ./ 

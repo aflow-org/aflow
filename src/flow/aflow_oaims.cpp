@@ -5,9 +5,6 @@
 // ***************************************************************************
 // Stefano Curtarolo - Corey Oses
 
-#ifndef _AFLOW_OAIMS_CPP_
-#define _AFLOW_OAIMS_CPP_
-
 #include <cstddef>
 #include <fstream>
 #include <iostream>
@@ -22,6 +19,7 @@
 #include "AUROSTD/aurostd_xfile.h"
 #include "AUROSTD/aurostd_xhttp.h"
 #include "AUROSTD/aurostd_xscalar.h"
+#include "AUROSTD/aurostd_xvector.h"
 
 #include "aflow.h"
 #include "aflow_xhost.h"
@@ -38,65 +36,11 @@ using std::string;
 using std::stringstream;
 using std::vector;
 
+using aurostd::xvector;
+
 //---------------------------------------------------------------------------------
 // class xAIMSOUT
 //---------------------------------------------------------------------------------
-xAIMSOUT::xAIMSOUT() {
-  content = "";
-  filename = "";
-  natoms = 0;
-  free();
-}
-
-xAIMSOUT::~xAIMSOUT() {
-  free();
-}
-
-void xAIMSOUT::free() {
-  vcontent.clear();
-  vforces.clear();
-}
-
-void xAIMSOUT::copy(const xAIMSOUT& b) {
-  content = b.content;
-  vcontent.clear();
-  for (size_t i = 0; i < b.vcontent.size(); i++) {
-    vcontent.push_back(b.vcontent[i]);
-  }
-  filename = b.filename;
-  vforces.clear();
-  for (size_t i = 0; i < b.vforces.size(); i++) {
-    vforces.push_back(b.vforces[i]);
-  }
-  natoms = b.natoms;
-}
-
-const xAIMSOUT& xAIMSOUT::operator=(const xAIMSOUT& b) {
-  if (this != &b) {
-    free();
-    copy(b);
-  }
-  return *this;
-}
-
-xAIMSOUT::xAIMSOUT(const string& fileIN, bool QUIET) {
-  clear(); // so it does not mess up vector/deque
-  filename = fileIN;
-  GetPropertiesFile(fileIN, QUIET);
-}
-
-xAIMSOUT::xAIMSOUT(const xAIMSOUT& b) { // copy PUBLIC
-  //  free(); *this=b;
-  copy(b);
-}
-
-void xAIMSOUT::clear() {  // clear PRIVATE
-  const xAIMSOUT _temp;
-  const string filename_aus = filename;
-  copy(_temp);
-  filename = filename_aus;
-}
-
 bool xAIMSOUT::GetProperties(const string& stringIN, bool QUIET) {
   stringstream sss;
   sss.str(stringIN);
@@ -217,7 +161,7 @@ bool xAIMSOUT::GetProperties(const stringstream& stringstreamIN, bool QUIET) {
             }
             ERROR_flag = true;
           } else {
-            const xvector<double> force(3);
+            xvector<double> force(3);
             force[1] = aurostd::string2utype<double>(tokens[1]);
             force[2] = aurostd::string2utype<double>(tokens[2]);
             force[3] = aurostd::string2utype<double>(tokens[3]);
@@ -245,7 +189,6 @@ bool xAIMSOUT::GetProperties(const stringstream& stringstreamIN, bool QUIET) {
   return true;
 }
 
-#endif //  _AFLOW_OAIMS_CPP_
 // ***************************************************************************
 // *                                                                         *
 // *           Aflow STEFANO CURTAROLO - Duke University 2003-2024           *

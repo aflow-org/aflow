@@ -2298,7 +2298,7 @@ namespace voro {
   /// Aflow //HE20220912
   double voronoicell_base::pbc_distance_min(const xmatrix<double> &lattice, const xvector<double> &p1, const xvector<double> &p2) {
     xvector<double> p_select;
-    const xvector<double> distance(27, 1);
+    xvector<double> distance(27, 1);
     uint ni = 1;
     for (const int x : {-1, 0, 1}) {
       for (const int y : {-1, 0, 1}) {

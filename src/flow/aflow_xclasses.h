@@ -4,6 +4,7 @@
 #include <deque>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -35,17 +36,15 @@ struct _moduleOptions {
   std::vector<aurostd::xoption> aglflags;
 };
 
-// CO20180420
-// for stream management with objects
 class xStream {
 public:
-  // NECESSARY PUBLIC CLASS METHODS - START
-  // constructors - START
+  // constructors
   xStream(std::ostream& oss = std::cout);
   xStream(std::ofstream& ofs, std::ostream& oss = std::cout);
-  // constructors - STOP
-  ~xStream();
-  // NECESSARY PUBLIC CLASS METHODS - END
+  xStream(const xStream& xstream);
+  xStream& operator=(const xStream& other);
+
+  virtual ~xStream();
 
   // initializers
   void initialize(std::ostream& oss = std::cout); // ME20200427
@@ -55,15 +54,12 @@ public:
   [[nodiscard]] std::ostream* getOSS() const; // CO20191110
   [[nodiscard]] std::ofstream* getOFStream() const; // CO20191110
 protected:
-  // NECESSARY private CLASS METHODS - START
-  void free();
   void copy(const xStream& b);
-  // NECESSARY END CLASS METHODS - END
   // logger variables
   std::ostream* p_oss;
   std::ofstream* p_FileMESSAGE;
-  bool f_new_ofstream; // for deletion later
-  // general setters
+  bool owns_FileMESSAGE;
+  // setters
   void setOFStream(std::ofstream& FileMESSAGE);
   void setOSS(std::ostream& oss);
 };

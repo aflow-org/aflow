@@ -6,22 +6,18 @@
 // This JSON class is the evolution of different prior solutions to integrate JSON with the AFLOW source base.
 // hagen.eckert@duke.edu
 
-#ifndef _AUROSTD_XPARSER_JSON_CPP_
-#define _AUROSTD_XPARSER_JSON_CPP_
-
 #include "aurostd_xparser_json.h"
 
 #include <cmath>
-#include <codecvt>
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
 #include <iomanip>
 #include <ios>
 #include <limits>
-#include <locale>
 #include <map>
 #include <memory>
+#include <ostream>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -53,7 +49,16 @@ namespace aurostd {
   ///
   /// @authors
   /// @mod{HE,20220924,created}
-  JSON::object &JSON::object::operator[](const size_t index) const {
+  JSON::object &JSON::object::operator[](const size_t index) {
+    if (this->type == JSON::object_types::LIST) {
+      const std::shared_ptr<JSON::List> content = std::static_pointer_cast<JSON::List>(this->obj);
+      return content->operator[](index);
+    } else {
+      throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, "Not a list", _INDEX_ILLEGAL_);
+    }
+  }
+
+  const JSON::object &JSON::object::operator[](const size_t index) const {
     if (this->type == JSON::object_types::LIST) {
       const std::shared_ptr<JSON::List> content = std::static_pointer_cast<JSON::List>(this->obj);
       return content->operator[](index);
@@ -71,7 +76,16 @@ namespace aurostd {
   ///
   /// @authors
   /// @mod{HE,20220924,created}
-  JSON::object &JSON::object::operator[](const std::string &key) const {
+  JSON::object &JSON::object::operator[](const std::string &key) {
+    if (this->type == JSON::object_types::DICTIONARY) {
+      const std::shared_ptr<JSON::Dictionary> content = std::static_pointer_cast<JSON::Dictionary>(this->obj);
+      return content->operator[](key);
+    } else {
+      throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, "Not a dictionary", _INDEX_ILLEGAL_);
+    }
+  }
+
+  const JSON::object &JSON::object::operator[](const std::string &key) const {
     if (this->type == JSON::object_types::DICTIONARY) {
       const std::shared_ptr<JSON::Dictionary> content = std::static_pointer_cast<JSON::Dictionary>(this->obj);
       return content->operator[](key);
@@ -82,13 +96,22 @@ namespace aurostd {
 
   /// @brief insertion operator: for creating toString
   /// @note does not work externally - the implicit conversion of jo would interfere with the rest of the code
-  ostream &operator<<(ostream &os, const JSON::object &jo) {
+  std::ostream& operator<<(std::ostream& os, const JSON::object& jo) {
     os << jo.toString();
     return os;
   }
 
   /// @brief direct key access to JSON::object_types::DICTIONARY objects
-  JSON::object &JSON::object::operator[](const char *key) const {
+  JSON::object &JSON::object::operator[](const char *key) {
+    if (this->type == JSON::object_types::DICTIONARY) {
+      const std::shared_ptr<JSON::Dictionary> content = std::static_pointer_cast<JSON::Dictionary>(this->obj);
+      return content->operator[](key);
+    } else {
+      throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, "Not a dictionary", _INDEX_ILLEGAL_);
+    }
+  }
+
+  const JSON::object &JSON::object::operator[](const char *key) const {
     if (this->type == JSON::object_types::DICTIONARY) {
       const std::shared_ptr<JSON::Dictionary> content = std::static_pointer_cast<JSON::Dictionary>(this->obj);
       return content->operator[](key);
@@ -106,7 +129,7 @@ namespace aurostd {
   /// @mod{HE,20220924,created}
   std::string JSON::object::toString(const bool json_format, const bool escape_unicode) const {
     bool first = true;
-    stringstream result;
+    std::stringstream result;
     switch (type) {
       case object_types::DICTIONARY: {
         result << "{";
@@ -705,8 +728,10 @@ namespace aurostd {
     }
 
     std::string result;
+    // generated string should always be smaller than the content between the borders, so we can reserve space accordingly
+    result.reserve(border.second - border.first + 1);
     while (current_escape_pos <= border.second) {
-      result += raw_content.substr(last_escape_pos, current_escape_pos - last_escape_pos);
+      result.append(raw_content, last_escape_pos, current_escape_pos - last_escape_pos);
       switch (raw_content[current_escape_pos + 1]) {
         case '"': {
           result += '"';
@@ -736,11 +761,11 @@ namespace aurostd {
           if (current_escape_pos + 6 > raw_content.size()) {
             throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, "JSON parsing failed: undefined unicode character", _FILE_WRONG_FORMAT_);
           }
-          result += unescape_unicode(raw_content, current_escape_pos);
+          result.append(unescape_unicode(raw_content, current_escape_pos));
           current_escape_pos += 2;
         } break;
         default: {
-          stringstream message;
+          std::stringstream message;
           message << "JSON parsing failed: string contains undefined escape '\\" << raw_content[current_escape_pos + 1] << "'";
           throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, message.str(), _FILE_WRONG_FORMAT_);
         }
@@ -748,12 +773,12 @@ namespace aurostd {
       last_escape_pos = current_escape_pos + 2;
       current_escape_pos = range_find(raw_content.c_str(), {last_escape_pos, border.second}, '\\');
     }
-    result += raw_content.substr(last_escape_pos, border.second - last_escape_pos + 1);
+    result.append(raw_content, last_escape_pos, border.second - last_escape_pos + 1);
     return result;
   }
 
   ///@brief escape characters to JSON
-  std::string JSON::char_escape(const char16_t c) {
+  std::string JSON::char_escape(const char32_t c) {
     switch (c) {
       default: return "";
       case ('"'): return "\\\"";
@@ -773,27 +798,69 @@ namespace aurostd {
   /// @return JSON string
   /// @authors
   /// @mod{HE,20221109,created}
-  std::string JSON::escape(const std::string &raw, const bool unicode) {
+  /// @mod{HE,20260217,removed deprecated function usage}
+  ///
+  /// @xlink{https://unicode.org/versions/Unicode5.2.0/ch03.pdf} page 93 - table 3-6
+  /// In UTF-8, the first bits show if the UTF-8 sequence is composed of multiple parts.
+  /// After insulating the first bits by using bitmasks we can compare them based on the following table:
+  /// Bytes  | UTF-8 Pattern                       | Codepoint range  | bitmask
+  /// 1-byte | 0xxxxxxx                            | U+0000 to U+007F | smaller than 0x80 (10000000)
+  /// 2-byte | 110xxxxx 10xxxxxx                   | U+0080 to U+07FF | 0xE0 (11100000)
+  /// 3-byte | 1110xxxx 10xxxxxx 10xxxxxx          | U+0800 to U+FFFF | 0xF0 (11110000)
+  /// 4-byte | 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx | U+10000+         | 0xF8 (11111000)
+  /// When we know how many bytes we need, we can combine them with each of their relevant bits to get a full 4 byte
+  /// char32_t codepoint we can then escape for use in a JSON
+  std::string JSON::escape(const std::string& raw, const bool unicode) {
     std::stringstream out;
     if (unicode) {
-      const std::u16string utf16 = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>{}.from_bytes(raw.data());
-      for (const char16_t c : utf16) {
+      size_t i = 0;
+      while (i < raw.size()) {
+        const unsigned char c = raw[i]; // current char to process
+        char32_t code_point = 0; // is always overwritten below
         if (c < 0x80) {
-          if (char_escape(c).empty()) {
-            out << static_cast<char>(c);
-          } else {
-            out << char_escape(c);
-          }
+          // 1-byte
+          code_point = c;
+          i += 1;
+        } else if ((c & 0xE0) == 0xC0 && i + 1 < raw.size()) {
+          // 2-byte
+          code_point = ((c & 0x1F) << 6) | (raw[i + 1] & 0x3F);
+          i += 2;
+        } else if ((c & 0xF0) == 0xE0 && i + 2 < raw.size()) {
+          // 3-byte
+          code_point = ((c & 0x0F) << 12) | ((raw[i + 1] & 0x3F) << 6) | (raw[i + 2] & 0x3F);
+          i += 3;
+        } else if ((c & 0xF8) == 0xF0 && i + 3 < raw.size()) {
+          //4-byte
+          code_point = ((c & 0x07) << 18) | ((raw[i + 1] & 0x3F) << 12) | ((raw[i + 2] & 0x3F) << 6) | (raw[i + 3] & 0x3F);
+          i += 4;
         } else {
-          out << "\\u" << std::hex << std::setw(4) << std::setfill('0') << c;
+          // something strange - ignore and use the char c as is
+          code_point = c;
+          i += 1;
+        }
+
+        if (code_point < 0x80) {
+          if (const std::string escaped = char_escape(code_point); escaped.empty()) {
+            out << static_cast<char>(code_point);
+          } else {
+            out << escaped;
+          }
+        } else if (code_point >= 0x10000) {
+          // JSON just supports 2 bytes per \u escape - so we need to split it in pairs
+          const char16_t high = ((code_point - 0x10000) / 0x400) + 0xD800;
+          const char16_t low = ((code_point - 0x10000) % 0x400) + 0xDC00;
+          out << "\\u" << std::hex << std::setw(4) << std::setfill('0') << high;
+          out << "\\u" << std::hex << std::setw(4) << std::setfill('0') << low;
+        } else {
+          out << "\\u" << std::hex << std::setw(4) << std::setfill('0') << code_point;
         }
       }
     } else {
-      for (const char16_t c : raw) {
-        if (char_escape(c).empty()) {
+      for (const char32_t c : raw) {
+        if (const std::string escaped = char_escape(c); escaped.empty()) {
           out << static_cast<char>(c);
         } else {
-          out << char_escape(c);
+          out << escaped;
         }
       }
     }
@@ -806,7 +873,7 @@ namespace aurostd {
   /// @authors
   /// @mod{HE,20221109,created}
   std::string JSON::char32_to_string(const char32_t cp) {
-    string out;
+    std::string out;
     if (cp < 0x80) {
       out += static_cast<char>(cp);
       return out;
@@ -837,27 +904,26 @@ namespace aurostd {
   /// @note this function supports pairs
   /// @authors
   /// @mod{HE,20221109,created}
-  std::string JSON::unescape_unicode(const std::string &raw, size_t &pos) {
+  std::string JSON::unescape_unicode(const std::string& raw, size_t& pos) {
     pos += 2;
-    const char32_t cp = (char32_t) aurostd::string2utype<uint>(raw.substr(pos, 4), 16);
-
-    if (cp < 0xd800 || cp > 0xdfff) {
-      return char32_to_string(cp);
-    } else if (cp > 0xdbff) {
+    const char32_t codepoint = static_cast<char32_t>(aurostd::string2utype<uint>(raw.substr(pos, 4), 16));
+    const size_t available_characters = raw.size() - pos;
+    if (codepoint < 0xd800 || codepoint > 0xdfff) {
+      return char32_to_string(codepoint);
+    }
+    if (codepoint > 0xdbff) {
       throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, "JSON parsing failed: undefined unicode character", _FILE_WRONG_FORMAT_);
-    } else {
-      if (raw[pos + 4] == '\\' and raw[pos + 5] == 'u') {
-        pos += 6;
-        const char32_t trailing_cp = static_cast<char32_t>(aurostd::string2utype<uint>(raw.substr(pos, 4), 16));
-        if (trailing_cp < 0xdc00 || trailing_cp > 0xdfff) {
-          throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, "JSON parsing failed: undefined unicode character", _FILE_WRONG_FORMAT_);
-        }
-        const char32_t combo_cp = ((cp - 0xd800) << 10) + (trailing_cp - 0xdc00) + 0x10000;
-        return char32_to_string(combo_cp);
-      } else {
+    }
+    if (available_characters >= 10 && raw[pos + 4] == '\\' and raw[pos + 5] == 'u') {
+      pos += 6;
+      const char32_t trailing_cp = static_cast<char32_t>(aurostd::string2utype<uint>(raw.substr(pos, 4), 16));
+      if (trailing_cp < 0xdc00 || trailing_cp > 0xdfff) {
         throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, "JSON parsing failed: undefined unicode character", _FILE_WRONG_FORMAT_);
       }
+      const char32_t combo_cp = ((codepoint - 0xd800) << 10) + (trailing_cp - 0xdc00) + 0x10000;
+      return char32_to_string(combo_cp);
     }
+    throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, "JSON parsing failed: undefined unicode character", _FILE_WRONG_FORMAT_);
   }
 
   /// @brief strip whitespaces
@@ -932,11 +998,10 @@ namespace aurostd {
     }
     size_t next_open = 0;
     size_t next_close = 0;
-    std::pair<size_t, size_t> string_section;
     size_t open_count = 1;
     do {
       // cerr <<"end: " << end << " | "  << "open: " << open_count << " | current selection: " << raw_content.substr(start, end-start+1) << endl; // detailed debug
-      string_section = find_string(raw_content, {end + 1, border.second});
+      const std::pair<size_t, size_t> string_section = find_string(raw_content, {end + 1, border.second});
       next_close = range_find(raw_content.c_str(), {end + 1, border.second}, kind_close);
       next_open = range_find(raw_content.c_str(), {end + 1, border.second}, kind_open);
       if (next_close > string_section.first && next_open > string_section.first) {
@@ -1132,5 +1197,3 @@ namespace aurostd {
   }
 
 } // namespace aurostd
-
-#endif // _AUROSTD_XPARSER_JSON_CPP_

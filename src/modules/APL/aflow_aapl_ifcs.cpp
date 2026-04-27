@@ -17,9 +17,12 @@
 // See aflow_apl.h for descriptions of the classes and their members, and for
 // the struct _linearCombinations.
 
+#include "config.h"
+
 #include <cmath>
 #include <cstddef>
 #include <cstdlib>
+#include <fstream>
 #include <iomanip>
 #include <ios>
 #include <ostream>
@@ -34,8 +37,8 @@
 #include "AUROSTD/aurostd_xerror.h"
 #include "AUROSTD/aurostd_xfile.h"
 #include "AUROSTD/aurostd_xoption.h"
+#include "AUROSTD/aurostd_xvector.h"
 
-#include "aflow.h"
 #include "aflow_aflowrc.h"
 #include "aflow_apl.h"
 #include "aflow_defs.h"
@@ -46,10 +49,15 @@
 
 #define _DEBUG_AAPL_IFCS_ false
 
+using std::ofstream;
+using std::ostream;
+using std::string;
+using std::stringstream;
+using std::vector;
+
 using aurostd::xcombos;
 using aurostd::xerror;
-using std::string;
-using std::vector;
+using aurostd::xvector;
 
 static const string _CLUSTER_SET_FILE_[2] = {"clusterSet_3rd.xml", "clusterSet_4th.xml"};
 
@@ -70,66 +78,9 @@ static const double C3[5] = {-0.5, 1.0, 0.0, -1.0, 0.5};
 /************************ CONSTRUCTORS/DESTRUCTOR ***************************/
 
 namespace apl {
-
-  // Constructors//////////////////////////////////////////////////////////////
-  //  Default constructor
-  AnharmonicIFCs::AnharmonicIFCs(ostream& oss) : xStream(oss) {
-    free();
-    clst = ClusterSet(oss);
-    directory = "./";
-  }
-
-  AnharmonicIFCs::AnharmonicIFCs(ofstream& mf, ostream& oss) : xStream(mf, oss) {
-    free();
-    clst = ClusterSet(mf, oss);
-    directory = "./";
-  }
-
-  // Copy constructors
-  AnharmonicIFCs::AnharmonicIFCs(const AnharmonicIFCs& that) : xStream(*that.getOFStream(), *that.getOSS()) {
-    if (this != &that) {
-      free();
-    }
-    copy(that);
-  }
-
-  const AnharmonicIFCs& AnharmonicIFCs::operator=(const AnharmonicIFCs& that) {
-    if (this != &that) {
-      free();
-    }
-    copy(that);
-    return *this;
-  }
-
-  // copy//////////////////////////////////////////////////////////////////////
-  void AnharmonicIFCs::copy(const AnharmonicIFCs& that) {
-    if (this == &that) {
-      return;
-    }
-    xStream::copy(that);
-    cart_indices = that.cart_indices;
-    clst = that.clst;
-    directory = that.directory;
-    distortion_magnitude = that.distortion_magnitude;
-    force_constants = that.force_constants;
-    initialized = that.initialized;
-    max_iter = that.max_iter;
-    mixing_coefficient = that.mixing_coefficient;
-    order = that.order;
-    sumrule_threshold = that.sumrule_threshold;
-    _useZeroStateForces = that._useZeroStateForces;
-    xInputs = that.xInputs;
-  }
-
-  // Destructor////////////////////////////////////////////////////////////////
-  AnharmonicIFCs::~AnharmonicIFCs() {
-    xStream::free();
-    free();
-  }
-
   // free//////////////////////////////////////////////////////////////////////
   //  Clears all vectors and resets all values.
-  void AnharmonicIFCs::free() {
+  void AnharmonicIFCs::clear() {
     cart_indices.clear();
     clst.clear();
     directory = "";
@@ -142,11 +93,6 @@ namespace apl {
     sumrule_threshold = 0.0;
     _useZeroStateForces = false;
     xInputs.clear();
-  }
-
-  // clear/////////////////////////////////////////////////////////////////////
-  void AnharmonicIFCs::clear() {
-    free();
   }
 
   // setOptions////////////////////////////////////////////////////////////////
@@ -216,15 +162,6 @@ namespace apl {
       clst.writeClusterSetToFile(clust_hib_file);
     }
     initialized = true;
-  }
-
-  // xStream initializers
-  void AnharmonicIFCs::initialize(ostream& oss) {
-    xStream::initialize(oss);
-  }
-
-  void AnharmonicIFCs::initialize(ofstream& mf, ostream& oss) {
-    xStream::initialize(mf, oss);
   }
 
   // getOrder//////////////////////////////////////////////////////////////////

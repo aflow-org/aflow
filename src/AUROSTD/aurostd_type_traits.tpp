@@ -86,6 +86,15 @@ namespace aurostd {
 
   template <typename T> inline constexpr bool is_dict_like_v = is_dict_like<T>::value;
 
+  // useful aliases
+
+  /// Enable if `This` does not appear in any of `Args`. Useful to guard against matching copy constructions in variadic templated constructors.
+  /// For example: @code template <typename...Args, enable_if_none_of<Foo, Args...> = true> Foo(Args&&...args); @endcode
+  /// will protect against matching variants of @c Foo(Foo) constructors.
+  /// @tparam This type to prevent from matching to Args
+  /// @tparam Args arguments
+  template <typename This, typename... Args> using enable_if_none_of = std::enable_if_t<(!std::is_same_v<std::decay_t<Args>, This> && ...), bool>;
+
 } // namespace aurostd
 
 #endif // AUROSTD_TYPE_TRAITS_TPP

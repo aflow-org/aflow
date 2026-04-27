@@ -1,8 +1,10 @@
 
 #include "aflow_aflowrc.h"
 
+#include "config.h"
+
 #include <cstddef>
-#include <deque>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <istream>
@@ -20,7 +22,9 @@
 
 using std::endl;
 using std::ifstream;
+using std::iostream;
 using std::istream;
+using std::istringstream;
 using std::ofstream;
 using std::ostream;
 using std::ostringstream;
@@ -83,6 +87,16 @@ namespace aflowrc {
     if (LDEBUG) {
       oss << __AFLOW_FUNC__ << " XHOST.home=" << XHOST.home << endl;
     }
+
+    // If a user installs AFLOW using snap https://snapcraft.io/aflow, it cannot access hidden files in the home folder.
+    // Therefore, we need to verify if we are running in a snap container and modify the location of the configuration file accordingly.
+    // The configuration file should be located under `~/snap/aflow/common/aflow.rc`.
+    // Note that it is not a hidden file because it is a specific folder dedicated to the aflow snap.
+    if (const char* snap_p = std::getenv("SNAP_USER_COMMON")) {
+      XHOST.aflowrc_filename = std::string(snap_p) + "/aflow.rc";
+      return aurostd::FileExist(XHOST.aflowrc_filename);
+    }
+
     // TESTING LOCAL OR USER BASED
     if (XHOST.aflowrc_filename.empty()) {
       XHOST.aflowrc_filename = AFLOWRC_FILENAME_LOCAL;
@@ -269,7 +283,7 @@ namespace aflowrc {
     aflowrc::load_default("DEFAULT_AFLOW_FROZSL_MODES_OUT", AFLOWRC_DEFAULT_AFLOW_FROZSL_MODES_OUT);
     aflowrc::load_default("DEFAULT_AFLOW_FROZSL_EIGEN_OUT", AFLOWRC_DEFAULT_AFLOW_FROZSL_EIGEN_OUT);
     aflowrc::load_default("DEFAULT_AFLOW_END_OUT", AFLOWRC_DEFAULT_AFLOW_END_OUT);
-    aflowrc::load_default("DEFAULT_AFLOW_PLASMONICS_FILE", AFLOWRC_DEFAULT_AFLOW_PLASMONICS_FILE);
+    aflowrc::load_default("DEFAULT_AFLOW_DIELECTRIC_FILE", AFLOWRC_DEFAULT_AFLOW_DIELECTRIC_FILE);
 
     // DEFAULT GENERIC MPI
     aflowrc::load_default("MPI_START_DEFAULT", AFLOWRC_MPI_START_DEFAULT);
@@ -400,39 +414,14 @@ namespace aflowrc {
     aflowrc::load_default("DEFAULT_GNUPLOT_GREEK_FONT_ITALICS", AFLOWRC_DEFAULT_GNUPLOT_GREEK_FONT_ITALICS);
     aflowrc::load_default("DEFAULT_GNUPLOT_GREEK_FONT_BOLD_ITALICS", AFLOWRC_DEFAULT_GNUPLOT_GREEK_FONT_BOLD_ITALICS);
 
-    // DEFAULT CHULL
-    aflowrc::load_default("DEFAULT_CHULL_ALLOWED_DFT_TYPES", AFLOWRC_DEFAULT_CHULL_ALLOWED_DFT_TYPES);
-    aflowrc::load_default("DEFAULT_CHULL_ALLOW_ALL_FORMATION_ENERGIES", AFLOWRC_DEFAULT_CHULL_ALLOW_ALL_FORMATION_ENERGIES);
-    aflowrc::load_default("DEFAULT_CHULL_COUNT_THRESHOLD_BINARIES", AFLOWRC_DEFAULT_CHULL_COUNT_THRESHOLD_BINARIES);
-    aflowrc::load_default("DEFAULT_CHULL_PERFORM_OUTLIER_ANALYSIS", AFLOWRC_DEFAULT_CHULL_PERFORM_OUTLIER_ANALYSIS);
-    aflowrc::load_default("DEFAULT_CHULL_OUTLIER_ANALYSIS_COUNT_THRESHOLD_BINARIES", AFLOWRC_DEFAULT_CHULL_OUTLIER_ANALYSIS_COUNT_THRESHOLD_BINARIES);
-    aflowrc::load_default("DEFAULT_CHULL_OUTLIER_MULTIPLIER", AFLOWRC_DEFAULT_CHULL_OUTLIER_MULTIPLIER);
-    aflowrc::load_default("DEFAULT_CHULL_IGNORE_KNOWN_ILL_CONVERGED", AFLOWRC_DEFAULT_CHULL_IGNORE_KNOWN_ILL_CONVERGED);
-    aflowrc::load_default("DEFAULT_CHULL_LATEX_BANNER", AFLOWRC_DEFAULT_CHULL_LATEX_BANNER);
-    aflowrc::load_default("DEFAULT_CHULL_LATEX_COMPOUNDS_COLUMN", AFLOWRC_DEFAULT_CHULL_LATEX_COMPOUNDS_COLUMN);
-    aflowrc::load_default("DEFAULT_CHULL_LATEX_STOICH_HEADER", AFLOWRC_DEFAULT_CHULL_LATEX_STOICH_HEADER);
-    aflowrc::load_default("DEFAULT_CHULL_LATEX_PLOT_UNARIES", AFLOWRC_DEFAULT_CHULL_LATEX_PLOT_UNARIES);
-    aflowrc::load_default("DEFAULT_CHULL_LATEX_PLOT_OFF_HULL", AFLOWRC_DEFAULT_CHULL_LATEX_PLOT_OFF_HULL);
-    aflowrc::load_default("DEFAULT_CHULL_LATEX_PLOT_UNSTABLE", AFLOWRC_DEFAULT_CHULL_LATEX_PLOT_UNSTABLE);
-    aflowrc::load_default("DEFAULT_CHULL_LATEX_FILTER_SCHEME", AFLOWRC_DEFAULT_CHULL_LATEX_FILTER_SCHEME);
-    aflowrc::load_default("DEFAULT_CHULL_LATEX_FILTER_VALUE", AFLOWRC_DEFAULT_CHULL_LATEX_FILTER_VALUE);
-    aflowrc::load_default("DEFAULT_CHULL_LATEX_COLOR_BAR", AFLOWRC_DEFAULT_CHULL_LATEX_COLOR_BAR);
-    aflowrc::load_default("DEFAULT_CHULL_LATEX_HEAT_MAP", AFLOWRC_DEFAULT_CHULL_LATEX_HEAT_MAP);
-    aflowrc::load_default("DEFAULT_CHULL_LATEX_COLOR_GRADIENT", AFLOWRC_DEFAULT_CHULL_LATEX_COLOR_GRADIENT);
-    aflowrc::load_default("DEFAULT_CHULL_LATEX_COLOR_MAP", AFLOWRC_DEFAULT_CHULL_LATEX_COLOR_MAP);
-    aflowrc::load_default("DEFAULT_CHULL_LATEX_TERNARY_LABEL_COLOR", AFLOWRC_DEFAULT_CHULL_LATEX_TERNARY_LABEL_COLOR);
-    aflowrc::load_default("DEFAULT_CHULL_LATEX_REVERSE_AXIS", AFLOWRC_DEFAULT_CHULL_LATEX_REVERSE_AXIS);
-    aflowrc::load_default("DEFAULT_CHULL_LATEX_FACET_LINE_DROP_SHADOW", AFLOWRC_DEFAULT_CHULL_LATEX_FACET_LINE_DROP_SHADOW);
-    aflowrc::load_default("DEFAULT_CHULL_LATEX_LINKS", AFLOWRC_DEFAULT_CHULL_LATEX_LINKS);
-    aflowrc::load_default("DEFAULT_CHULL_LATEX_LABEL_NAME", AFLOWRC_DEFAULT_CHULL_LATEX_LABEL_NAME);
-    aflowrc::load_default("DEFAULT_CHULL_LATEX_META_LABELS", AFLOWRC_DEFAULT_CHULL_LATEX_META_LABELS);
-    aflowrc::load_default("DEFAULT_CHULL_LATEX_LABELS_OFF_HULL", AFLOWRC_DEFAULT_CHULL_LATEX_LABELS_OFF_HULL);
-    aflowrc::load_default("DEFAULT_CHULL_LATEX_PLOT_REDUCED_COMPOSITION", AFLOWRC_DEFAULT_CHULL_LATEX_PLOT_REDUCED_COMPOSITION);
-    aflowrc::load_default("DEFAULT_CHULL_LATEX_HELVETICA_FONT", AFLOWRC_DEFAULT_CHULL_LATEX_HELVETICA_FONT);
-    aflowrc::load_default("DEFAULT_CHULL_LATEX_FONT_SIZE", AFLOWRC_DEFAULT_CHULL_LATEX_FONT_SIZE);
-    aflowrc::load_default("DEFAULT_CHULL_LATEX_ROTATE_LABELS", AFLOWRC_DEFAULT_CHULL_LATEX_ROTATE_LABELS);
-    aflowrc::load_default("DEFAULT_CHULL_LATEX_BOLD_LABELS", AFLOWRC_DEFAULT_CHULL_LATEX_BOLD_LABELS);
-    aflowrc::load_default("DEFAULT_CHULL_PNG_RESOLUTION", AFLOWRC_DEFAULT_CHULL_PNG_RESOLUTION);
+    // DEFAULT NHULL
+    aflowrc::load_default("DEFAULT_NHULL_ALLOWED_DFT_TYPES", AFLOWRC_DEFAULT_NHULL_ALLOWED_DFT_TYPES);
+    aflowrc::load_default("DEFAULT_NHULL_ALLOW_ALL_FORMATION_ENERGIES", AFLOWRC_DEFAULT_NHULL_ALLOW_ALL_FORMATION_ENERGIES);
+    aflowrc::load_default("DEFAULT_NHULL_COUNT_THRESHOLD_BINARIES", AFLOWRC_DEFAULT_NHULL_COUNT_THRESHOLD_BINARIES);
+    aflowrc::load_default("DEFAULT_NHULL_PERFORM_OUTLIER_ANALYSIS", AFLOWRC_DEFAULT_NHULL_PERFORM_OUTLIER_ANALYSIS);
+    aflowrc::load_default("DEFAULT_NHULL_OUTLIER_ANALYSIS_COUNT_THRESHOLD_BINARIES", AFLOWRC_DEFAULT_NHULL_OUTLIER_ANALYSIS_COUNT_THRESHOLD_BINARIES);
+    aflowrc::load_default("DEFAULT_NHULL_OUTLIER_MULTIPLIER", AFLOWRC_DEFAULT_NHULL_OUTLIER_MULTIPLIER);
+    aflowrc::load_default("DEFAULT_NHULL_IGNORE_KNOWN_ILL_CONVERGED", AFLOWRC_DEFAULT_NHULL_IGNORE_KNOWN_ILL_CONVERGED);
 
     // DEFAULT GFA  //CO20190628
     aflowrc::load_default("DEFAULT_GFA_FORMATION_ENTHALPY_CUTOFF", AFLOWRC_DEFAULT_GFA_FORMATION_ENTHALPY_CUTOFF); // CO20190628
@@ -454,7 +443,7 @@ namespace aflowrc {
     aflowrc::load_default("DEFAULT_POCC_PERFORM_ROBUST_STRUCTURE_COMPARISON", AFLOWRC_DEFAULT_POCC_PERFORM_ROBUST_STRUCTURE_COMPARISON);
     aflowrc::load_default("DEFAULT_POCC_WRITE_OUT_ALL_SUPERCELLS", AFLOWRC_DEFAULT_POCC_WRITE_OUT_ALL_SUPERCELLS);
     aflowrc::load_default("POCC_FILE_PREFIX", AFLOWRC_POCC_FILE_PREFIX);
-    aflowrc::load_default("POCC_OUT_FILE", AFLOWRC_POCC_OUT_FILE);
+    aflowrc::load_default("DEFAULT_POCC_JSON", AFLOWRC_DEFAULT_POCC_JSON);
     aflowrc::load_default("POCC_APL_OUT_FILE", AFLOWRC_POCC_APL_OUT_FILE); // ME20210927
     aflowrc::load_default("POCC_ALL_SUPERCELLS_FILE", AFLOWRC_POCC_ALL_SUPERCELLS_FILE);
     aflowrc::load_default("POCC_UNIQUE_SUPERCELLS_FILE", AFLOWRC_POCC_UNIQUE_SUPERCELLS_FILE);
@@ -950,7 +939,7 @@ namespace aflowrc {
     aflowrc << "DEFAULT_AFLOW_FROZSL_MODES_OUT=\"" << AFLOWRC_DEFAULT_AFLOW_FROZSL_MODES_OUT << "\"" << endl;
     aflowrc << "DEFAULT_AFLOW_FROZSL_EIGEN_OUT=\"" << AFLOWRC_DEFAULT_AFLOW_FROZSL_EIGEN_OUT << "\"" << endl;
     aflowrc << "DEFAULT_AFLOW_END_OUT=\"" << AFLOWRC_DEFAULT_AFLOW_END_OUT << "\"" << endl;
-    aflowrc << "DEFAULT_AFLOW_PLASMONICS_FILE=\"" << AFLOWRC_DEFAULT_AFLOW_PLASMONICS_FILE << "\"" << endl;
+    aflowrc << "DEFAULT_AFLOW_DIELECTRIC_FILE=\"" << AFLOWRC_DEFAULT_AFLOW_DIELECTRIC_FILE << "\"" << endl;
 
     aflowrc << " " << endl;
     aflowrc << "// DEFAULT GENERIC MPI " << endl;
@@ -1091,42 +1080,14 @@ namespace aflowrc {
     aflowrc << "DEFAULT_GNUPLOT_GREEK_FONT_BOLD_ITALICS=\"" << AFLOWRC_DEFAULT_GNUPLOT_GREEK_FONT_BOLD_ITALICS << "\"" << endl;
 
     aflowrc << " " << endl;
-    aflowrc << "// DEFAULTS CHULL" << endl;
-    aflowrc << "DEFAULT_CHULL_ALLOWED_DFT_TYPES=\"" << AFLOWRC_DEFAULT_CHULL_ALLOWED_DFT_TYPES << "\"  // comma-separated list of dft_types to include (string match)" << endl;
-    aflowrc << "DEFAULT_CHULL_ALLOW_ALL_FORMATION_ENERGIES=" << AFLOWRC_DEFAULT_CHULL_ALLOW_ALL_FORMATION_ENERGIES << " // 0 - false, 1 - true" << endl;
-    aflowrc << "DEFAULT_CHULL_COUNT_THRESHOLD_BINARIES=" << AFLOWRC_DEFAULT_CHULL_COUNT_THRESHOLD_BINARIES << " // INT" << endl;
-    aflowrc << "DEFAULT_CHULL_PERFORM_OUTLIER_ANALYSIS=" << AFLOWRC_DEFAULT_CHULL_PERFORM_OUTLIER_ANALYSIS << " // 0 - false, 1 - true" << endl;
-    aflowrc << "DEFAULT_CHULL_OUTLIER_ANALYSIS_COUNT_THRESHOLD_BINARIES=" << AFLOWRC_DEFAULT_CHULL_OUTLIER_ANALYSIS_COUNT_THRESHOLD_BINARIES << " // INT" << endl;
-    aflowrc << "DEFAULT_CHULL_OUTLIER_MULTIPLIER=" << AFLOWRC_DEFAULT_CHULL_OUTLIER_MULTIPLIER << " // DOUBLE" << endl;
-    aflowrc << "DEFAULT_CHULL_IGNORE_KNOWN_ILL_CONVERGED=" << AFLOWRC_DEFAULT_CHULL_IGNORE_KNOWN_ILL_CONVERGED << " // 0 - false (NOT recommended), 1 - true" << endl;
-    aflowrc << "DEFAULT_CHULL_LATEX_BANNER=" << AFLOWRC_DEFAULT_CHULL_LATEX_BANNER << " // 0 - no banner, 1 - full banner, 2 - small banner" << endl;
-    aflowrc << "DEFAULT_CHULL_LATEX_COMPOUNDS_COLUMN=" << AFLOWRC_DEFAULT_CHULL_LATEX_COMPOUNDS_COLUMN << " // 0 - false, 1 - true" << endl;
-    aflowrc << "DEFAULT_CHULL_LATEX_STOICH_HEADER=" << AFLOWRC_DEFAULT_CHULL_LATEX_STOICH_HEADER << " // 0 - false, 1 - true" << endl;
-    aflowrc << "DEFAULT_CHULL_LATEX_PLOT_UNARIES=" << AFLOWRC_DEFAULT_CHULL_LATEX_PLOT_UNARIES << " // 0 - false, 1 - true" << endl;
-    aflowrc << "DEFAULT_CHULL_LATEX_PLOT_OFF_HULL=" << AFLOWRC_DEFAULT_CHULL_LATEX_PLOT_OFF_HULL << " // -1 - default based on dimension/filter_by settings, 0 - false, 1 - true" << endl;
-    aflowrc << "DEFAULT_CHULL_LATEX_PLOT_UNSTABLE=" << AFLOWRC_DEFAULT_CHULL_LATEX_PLOT_UNSTABLE << " // 0 - false, 1 - true" << endl;
-    aflowrc << "DEFAULT_CHULL_LATEX_FILTER_SCHEME=\"" << AFLOWRC_DEFAULT_CHULL_LATEX_FILTER_SCHEME << "\"" << "  // Z-axis (also Energy-axis) or Distance; only reads first letter (case-insensitive)" << endl;
-    aflowrc << "DEFAULT_CHULL_LATEX_FILTER_VALUE=" << AFLOWRC_DEFAULT_CHULL_LATEX_FILTER_VALUE << " // DOUBLE (filter scheme must be set)" << endl;
-    aflowrc << "DEFAULT_CHULL_LATEX_COLOR_BAR=" << AFLOWRC_DEFAULT_CHULL_LATEX_COLOR_BAR << " // 0 - false, 1 - true" << endl;
-    aflowrc << "DEFAULT_CHULL_LATEX_HEAT_MAP=" << AFLOWRC_DEFAULT_CHULL_LATEX_HEAT_MAP << " // 0 - false, 1 - true" << endl;
-    aflowrc << "DEFAULT_CHULL_LATEX_COLOR_GRADIENT=" << AFLOWRC_DEFAULT_CHULL_LATEX_COLOR_GRADIENT << " // 0 - false, 1 - true" << endl;
-    aflowrc << "DEFAULT_CHULL_LATEX_COLOR_MAP=\"" << AFLOWRC_DEFAULT_CHULL_LATEX_COLOR_MAP << "\"" << "  // default - rgb(0pt)=(0,0,1); rgb(63pt)=(1,0.644,0) (latex pgfplots color maps)"
-            << endl; //: http://www.phy.ntnu.edu.tw/demolab/doc/texlive-pictures-doc/latex/pgfplots/pgfplots.pdf page 58)" << endl;  //the url confuses RemoveComment(), perhaps we recursive remove comments? (might be dangerous)
-    aflowrc << "DEFAULT_CHULL_LATEX_TERNARY_LABEL_COLOR=\"" << AFLOWRC_DEFAULT_CHULL_LATEX_TERNARY_LABEL_COLOR << "\"" << "  // white, black, red, green, blue, cyan, magenta, or yellow" << endl;
-    aflowrc << "DEFAULT_CHULL_LATEX_REVERSE_AXIS=" << AFLOWRC_DEFAULT_CHULL_LATEX_REVERSE_AXIS << " // 0 - false, 1 - true" << endl;
-    aflowrc << "DEFAULT_CHULL_LATEX_FACET_LINE_DROP_SHADOW=" << AFLOWRC_DEFAULT_CHULL_LATEX_FACET_LINE_DROP_SHADOW << " // 0 - false, 1 - true" << endl;
-    aflowrc << "DEFAULT_CHULL_LATEX_LINKS=" << AFLOWRC_DEFAULT_CHULL_LATEX_LINKS << " // 0 - no links whatsoever, 1 - internal and external links, 2 - external links only, 3 - internal links only" << endl;
-    aflowrc << "DEFAULT_CHULL_LATEX_LABEL_NAME=\"" << AFLOWRC_DEFAULT_CHULL_LATEX_LABEL_NAME << "\""
-            << "  // Compound, Prototype, Both (Compound and Prototype), ICSD, or None; only reads first letter (case-insensitive)" << endl;
-    aflowrc << "DEFAULT_CHULL_LATEX_META_LABELS=" << AFLOWRC_DEFAULT_CHULL_LATEX_META_LABELS << " // 0 - false, 1 - true" << endl;
-    aflowrc << "DEFAULT_CHULL_LATEX_LABELS_OFF_HULL=" << AFLOWRC_DEFAULT_CHULL_LATEX_LABELS_OFF_HULL << " // 0 - false, 1 - true" << endl;
-    aflowrc << "DEFAULT_CHULL_LATEX_PLOT_REDUCED_COMPOSITION=" << AFLOWRC_DEFAULT_CHULL_LATEX_PLOT_REDUCED_COMPOSITION << " // -1 - default based on dimension/label settings, 0 - false, 1 - true" << endl;
-    aflowrc << "DEFAULT_CHULL_LATEX_HELVETICA_FONT=" << AFLOWRC_DEFAULT_CHULL_LATEX_HELVETICA_FONT << " // 0 - false, 1 - true" << endl;
-    aflowrc << "DEFAULT_CHULL_LATEX_FONT_SIZE=\"" << AFLOWRC_DEFAULT_CHULL_LATEX_FONT_SIZE << "\""
-            << "// tiny, scriptsize, footnotesize, small, normalsize, large (default), Large (default large), LARGE, huge (default large Helvetica), or Huge; fontsize{5}{7}\\\\selectfont also works" << endl;
-    aflowrc << "DEFAULT_CHULL_LATEX_ROTATE_LABELS=" << AFLOWRC_DEFAULT_CHULL_LATEX_ROTATE_LABELS << " // 0 - false, 1 - true" << endl;
-    aflowrc << "DEFAULT_CHULL_LATEX_BOLD_LABELS=" << AFLOWRC_DEFAULT_CHULL_LATEX_BOLD_LABELS << " // -1 - default: no bold unless the compound is a ternary, 0 - false, 1 - true" << endl;
-    aflowrc << "DEFAULT_CHULL_PNG_RESOLUTION=" << AFLOWRC_DEFAULT_CHULL_PNG_RESOLUTION << " // INT" << endl;
+    aflowrc << "// DEFAULTS NHULL" << endl;
+    aflowrc << "DEFAULT_NHULL_ALLOWED_DFT_TYPES=\"" << AFLOWRC_DEFAULT_NHULL_ALLOWED_DFT_TYPES << "\"  // comma-separated list of dft_types to include (string match)" << endl;
+    aflowrc << "DEFAULT_NHULL_ALLOW_ALL_FORMATION_ENERGIES=" << AFLOWRC_DEFAULT_NHULL_ALLOW_ALL_FORMATION_ENERGIES << " // 0 - false, 1 - true" << endl;
+    aflowrc << "DEFAULT_NHULL_COUNT_THRESHOLD_BINARIES=" << AFLOWRC_DEFAULT_NHULL_COUNT_THRESHOLD_BINARIES << " // INT" << endl;
+    aflowrc << "DEFAULT_NHULL_PERFORM_OUTLIER_ANALYSIS=" << AFLOWRC_DEFAULT_NHULL_PERFORM_OUTLIER_ANALYSIS << " // 0 - false, 1 - true" << endl;
+    aflowrc << "DEFAULT_NHULL_OUTLIER_ANALYSIS_COUNT_THRESHOLD_BINARIES=" << AFLOWRC_DEFAULT_NHULL_OUTLIER_ANALYSIS_COUNT_THRESHOLD_BINARIES << " // INT" << endl;
+    aflowrc << "DEFAULT_NHULL_OUTLIER_MULTIPLIER=" << AFLOWRC_DEFAULT_NHULL_OUTLIER_MULTIPLIER << " // DOUBLE" << endl;
+    aflowrc << "DEFAULT_NHULL_IGNORE_KNOWN_ILL_CONVERGED=" << AFLOWRC_DEFAULT_NHULL_IGNORE_KNOWN_ILL_CONVERGED << " // 0 - false (NOT recommended), 1 - true" << endl;
 
     aflowrc << " " << endl; // CO20190628
     aflowrc << "// DEFAULTS GFA" << endl; // CO20190628
@@ -1151,7 +1112,7 @@ namespace aflowrc {
     aflowrc << "DEFAULT_POCC_PERFORM_ROBUST_STRUCTURE_COMPARISON=" << AFLOWRC_DEFAULT_POCC_PERFORM_ROBUST_STRUCTURE_COMPARISON << endl;
     aflowrc << "DEFAULT_POCC_WRITE_OUT_ALL_SUPERCELLS=" << AFLOWRC_DEFAULT_POCC_WRITE_OUT_ALL_SUPERCELLS << endl;
     aflowrc << "POCC_FILE_PREFIX=\"" << AFLOWRC_POCC_FILE_PREFIX << "\"" << endl;
-    aflowrc << "POCC_OUT_FILE=\"" << AFLOWRC_POCC_OUT_FILE << "\"" << endl;
+    aflowrc << "DEFAULT_POCC_JSON=\"" << AFLOWRC_DEFAULT_POCC_JSON << "\"" << endl;
     aflowrc << "POCC_APL_OUT_FILE=\"" << AFLOWRC_POCC_APL_OUT_FILE << "\"" << endl; // ME20210927
     aflowrc << "POCC_ALL_SUPERCELLS_FILE=\"" << AFLOWRC_POCC_ALL_SUPERCELLS_FILE << "\"" << endl;
     aflowrc << "POCC_UNIQUE_SUPERCELLS_FILE=\"" << AFLOWRC_POCC_UNIQUE_SUPERCELLS_FILE << "\"" << endl;
@@ -1771,7 +1732,7 @@ namespace aflowrc {
       oss << R"(XHOST.adefault.getattachedscheme("DEFAULT_AFLOW_END_OUT")=")" << DEFAULT_AFLOW_END_OUT << "\"" << endl;
     }
     if (LDEBUG) {
-      oss << R"(XHOST.adefault.getattachedscheme("DEFAULT_AFLOW_PLASMONICS_FILE")=")" << DEFAULT_AFLOW_PLASMONICS_FILE << "\"" << endl;
+      oss << R"(XHOST.adefault.getattachedscheme("DEFAULT_AFLOW_DIELECTRIC_FILE")=")" << DEFAULT_AFLOW_DIELECTRIC_FILE << "\"" << endl;
     }
 
     if (LDEBUG) {
@@ -2141,105 +2102,29 @@ namespace aflowrc {
     }
 
     if (LDEBUG) {
-      oss << "// DEFAULT CHULL" << endl;
+      oss << "// DEFAULT NHULL" << endl;
     }
     if (LDEBUG) {
-      oss << "XHOST.adefault.getattachedscheme(\"DEFAULT_CHULL_ALLOWED_DFT_TYPES\")=" << DEFAULT_CHULL_ALLOWED_DFT_TYPES << endl;
+      oss << "XHOST.adefault.getattachedscheme(\"DEFAULT_NHULL_ALLOWED_DFT_TYPES\")=" << DEFAULT_NHULL_ALLOWED_DFT_TYPES << endl;
     }
     if (LDEBUG) {
-      oss << "XHOST.adefault.getattachedutype<bool>(\"DEFAULT_CHULL_ALLOW_ALL_FORMATION_ENERGIES\")=" << DEFAULT_CHULL_ALLOW_ALL_FORMATION_ENERGIES << endl;
+      oss << "XHOST.adefault.getattachedutype<bool>(\"DEFAULT_NHULL_ALLOW_ALL_FORMATION_ENERGIES\")=" << DEFAULT_NHULL_ALLOW_ALL_FORMATION_ENERGIES << endl;
     }
     if (LDEBUG) {
-      oss << "XHOST.adefault.getattachedutype<int>(\"DEFAULT_CHULL_COUNT_THRESHOLD_BINARIES\")=" << DEFAULT_CHULL_COUNT_THRESHOLD_BINARIES << endl;
+      oss << "XHOST.adefault.getattachedutype<int>(\"DEFAULT_NHULL_COUNT_THRESHOLD_BINARIES\")=" << DEFAULT_NHULL_COUNT_THRESHOLD_BINARIES << endl;
     }
     if (LDEBUG) {
-      oss << "XHOST.adefault.getattachedutype<bool>(\"DEFAULT_CHULL_PERFORM_OUTLIER_ANALYSIS\")=" << DEFAULT_CHULL_PERFORM_OUTLIER_ANALYSIS << endl;
+      oss << "XHOST.adefault.getattachedutype<bool>(\"DEFAULT_NHULL_PERFORM_OUTLIER_ANALYSIS\")=" << DEFAULT_NHULL_PERFORM_OUTLIER_ANALYSIS << endl;
     }
     if (LDEBUG) {
-      oss << "XHOST.adefault.getattachedutype<int>(\"DEFAULT_CHULL_OUTLIER_ANALYSIS_COUNT_THRESHOLD_BINARIES\")=" << DEFAULT_CHULL_OUTLIER_ANALYSIS_COUNT_THRESHOLD_BINARIES << endl;
+      oss << "XHOST.adefault.getattachedutype<int>(\"DEFAULT_NHULL_OUTLIER_ANALYSIS_COUNT_THRESHOLD_BINARIES\")=" << DEFAULT_NHULL_OUTLIER_ANALYSIS_COUNT_THRESHOLD_BINARIES << endl;
     }
     if (LDEBUG) {
-      oss << "XHOST.adefault.getattachedutype<double>(\"DEFAULT_CHULL_OUTLIER_MULTIPLIER\")=" << DEFAULT_CHULL_OUTLIER_MULTIPLIER << endl;
+      oss << "XHOST.adefault.getattachedutype<double>(\"DEFAULT_NHULL_OUTLIER_MULTIPLIER\")=" << DEFAULT_NHULL_OUTLIER_MULTIPLIER << endl;
     }
     if (LDEBUG) {
-      oss << "XHOST.adefault.getattachedutype<double>(\"DEFAULT_CHULL_IGNORE_KNOWN_ILL_CONVERGED\")=" << DEFAULT_CHULL_IGNORE_KNOWN_ILL_CONVERGED << endl;
+      oss << "XHOST.adefault.getattachedutype<double>(\"DEFAULT_NHULL_IGNORE_KNOWN_ILL_CONVERGED\")=" << DEFAULT_NHULL_IGNORE_KNOWN_ILL_CONVERGED << endl;
     }
-    if (LDEBUG) {
-      oss << "XHOST.adefault.getattachedutype<int>(\"DEFAULT_CHULL_LATEX_BANNER\")=" << DEFAULT_CHULL_LATEX_BANNER << endl;
-    }
-    if (LDEBUG) {
-      oss << "XHOST.adefault.getattachedutype<bool>(\"DEFAULT_CHULL_LATEX_COMPOUNDS_COLUMN\")=" << DEFAULT_CHULL_LATEX_COMPOUNDS_COLUMN << endl;
-    }
-    if (LDEBUG) {
-      oss << "XHOST.adefault.getattachedutype<bool>(\"DEFAULT_CHULL_LATEX_STOICH_HEADER\")=" << DEFAULT_CHULL_LATEX_STOICH_HEADER << endl;
-    }
-    if (LDEBUG) {
-      oss << "XHOST.adefault.getattachedutype<bool>(\"DEFAULT_CHULL_LATEX_PLOT_UNARIES\")=" << DEFAULT_CHULL_LATEX_PLOT_UNARIES << endl;
-    }
-    if (LDEBUG) {
-      oss << "XHOST.adefault.getattachedutype<int>(\"DEFAULT_CHULL_LATEX_PLOT_OFF_HULL\")=" << DEFAULT_CHULL_LATEX_PLOT_OFF_HULL << endl;
-    }
-    if (LDEBUG) {
-      oss << "XHOST.adefault.getattachedutype<bool>(\"DEFAULT_CHULL_LATEX_PLOT_UNSTABLE\")=" << DEFAULT_CHULL_LATEX_PLOT_UNSTABLE << endl;
-    }
-    if (LDEBUG) {
-      oss << R"(XHOST.adefault.getattachedscheme("DEFAULT_CHULL_LATEX_FILTER_SCHEME")=")" << DEFAULT_CHULL_LATEX_FILTER_SCHEME << "\"" << endl;
-    }
-    if (LDEBUG) {
-      oss << "XHOST.adefault.getattachedutype<double>(\"DEFAULT_CHULL_LATEX_FILTER_VALUE\")=" << DEFAULT_CHULL_LATEX_FILTER_VALUE << endl;
-    }
-    if (LDEBUG) {
-      oss << "XHOST.adefault.getattachedutype<bool>(\"DEFAULT_CHULL_LATEX_COLOR_BAR\")=" << DEFAULT_CHULL_LATEX_COLOR_BAR << endl;
-    }
-    if (LDEBUG) {
-      oss << "XHOST.adefault.getattachedutype<bool>(\"DEFAULT_CHULL_LATEX_HEAT_MAP\")=" << DEFAULT_CHULL_LATEX_HEAT_MAP << endl;
-    }
-    if (LDEBUG) {
-      oss << "XHOST.adefault.getattachedutype<bool>(\"DEFAULT_CHULL_LATEX_COLOR_GRADIENT\")=" << DEFAULT_CHULL_LATEX_COLOR_GRADIENT << endl;
-    }
-    if (LDEBUG) {
-      oss << R"(XHOST.adefault.getattachedscheme("DEFAULT_CHULL_LATEX_COLOR_MAP")=")" << DEFAULT_CHULL_LATEX_COLOR_MAP << "\"" << endl;
-    }
-    if (LDEBUG) {
-      oss << R"(XHOST.adefault.getattachedscheme("DEFAULT_CHULL_LATEX_TERNARY_LABEL_COLOR")=")" << DEFAULT_CHULL_LATEX_TERNARY_LABEL_COLOR << "\"" << endl;
-    }
-    if (LDEBUG) {
-      oss << "XHOST.adefault.getattachedutype<bool>(\"DEFAULT_CHULL_LATEX_REVERSE_AXIS\")=" << DEFAULT_CHULL_LATEX_REVERSE_AXIS << endl;
-    }
-    if (LDEBUG) {
-      oss << "XHOST.adefault.getattachedutype<bool>(\"DEFAULT_CHULL_LATEX_FACET_LINE_DROP_SHADOW\")=" << DEFAULT_CHULL_LATEX_FACET_LINE_DROP_SHADOW << endl;
-    }
-    if (LDEBUG) {
-      oss << "XHOST.adefault.getattachedutype<int>(\"DEFAULT_CHULL_LATEX_LINKS\")=" << DEFAULT_CHULL_LATEX_LINKS << endl;
-    }
-    if (LDEBUG) {
-      oss << R"(XHOST.adefault.getattachedscheme("DEFAULT_CHULL_LATEX_LABEL_NAME")=")" << DEFAULT_CHULL_LATEX_LABEL_NAME << "\"" << endl;
-    }
-    if (LDEBUG) {
-      oss << "XHOST.adefault.getattachedutype<bool>(\"DEFAULT_CHULL_LATEX_META_LABELS\")=" << DEFAULT_CHULL_LATEX_META_LABELS << endl;
-    }
-    if (LDEBUG) {
-      oss << "XHOST.adefault.getattachedutype<bool>(\"DEFAULT_CHULL_LATEX_LABELS_OFF_HULL\")=" << DEFAULT_CHULL_LATEX_LABELS_OFF_HULL << endl;
-    }
-    if (LDEBUG) {
-      oss << "XHOST.adefault.getattachedutype<int>(\"DEFAULT_CHULL_LATEX_PLOT_REDUCED_COMPOSITION\")=" << DEFAULT_CHULL_LATEX_PLOT_REDUCED_COMPOSITION << endl;
-    }
-    if (LDEBUG) {
-      oss << "XHOST.adefault.getattachedutype<bool>(\"DEFAULT_CHULL_LATEX_HELVETICA_FONT\")=" << DEFAULT_CHULL_LATEX_HELVETICA_FONT << endl;
-    }
-    if (LDEBUG) {
-      oss << R"(XHOST.adefault.getattachedscheme("DEFAULT_CHULL_LATEX_FONT_SIZE")=")" << DEFAULT_CHULL_LATEX_FONT_SIZE << "\"" << endl;
-    }
-    if (LDEBUG) {
-      oss << "XHOST.adefault.getattachedutype<bool>(\"DEFAULT_CHULL_LATEX_ROTATE_LABELS\")=" << DEFAULT_CHULL_LATEX_ROTATE_LABELS << endl;
-    }
-    if (LDEBUG) {
-      oss << "XHOST.adefault.getattachedutype<int>(\"DEFAULT_CHULL_LATEX_BOLD_LABELS\")=" << DEFAULT_CHULL_LATEX_BOLD_LABELS << endl;
-    }
-    if (LDEBUG) {
-      oss << "XHOST.adefault.getattachedutype<int>(\"DEFAULT_CHULL_PNG_RESOLUTION\")=" << DEFAULT_CHULL_PNG_RESOLUTION << endl;
-    }
-
     if (LDEBUG) {
       oss << "// DEFAULTS GFA" << endl; // CO20190628
     }
@@ -2297,7 +2182,7 @@ namespace aflowrc {
       oss << R"(XHOST.adefault.getattachedscheme("POCC_FILE_PREFIX")=")" << POCC_FILE_PREFIX << "\"" << endl;
     }
     if (LDEBUG) {
-      oss << R"(XHOST.adefault.getattachedscheme("POCC_OUT_FILE")=")" << POCC_OUT_FILE << "\"" << endl;
+      oss << R"(XHOST.adefault.getattachedscheme("DEFAULT_POCC_JSON")=")" << DEFAULT_POCC_JSON << "\"" << endl;
     }
     if (LDEBUG) {
       oss << R"(XHOST.adefault.getattachedscheme("POCC_APL_OUT_FILE")=")" << POCC_APL_OUT_FILE << "\"" << endl; // ME20210927

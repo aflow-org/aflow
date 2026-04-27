@@ -45,11 +45,11 @@ src/aflow_matlab_funcs.cpp
 src/aflow_gnuplot_funcs.cpp
 src/aflowlib_webapp_entry.cpp
 src/aflowlib_webapp_bands.cpp
-src/aflow_chull_jupyter.cpp
-src/aflow_chull_jupyter_plotter.cpp
-src/aflow_chull_python.cpp
+src/aflow_nhull_jupyter.cpp
+src/aflow_nhull_jupyter_plotter.cpp
+src/aflow_nhull_python.cpp
 src/aflow_cce_python.cpp
-src/aflow_chull_jupyter_requirements.cpp
+src/aflow_nhull_jupyter_requirements.cpp
 src/aflow_mix_nomix_table.cpp
 src/aflow_nomix.*.cpp
 src/aflow_data_htqc.cpp
@@ -62,15 +62,12 @@ src/aflow_data_extra.cpp
 src/aflow_sym_python.cpp
 src/aflow_xtalfinder_python.cpp
 
+# Python
+.venv
+
 # OS-specific
 *.swp
 .DS_Store
-
-# handing files over to Stefano
-src/FILES_CHANGED.txt
-src/zip_modified_aflow_files.sh
-src/MODIFIED_FILES_*.zip
-src/compile_output*.txt
 
 # old Makefiles
 Makefile.aflow.OLD
@@ -84,12 +81,14 @@ docs/out
 /src/DATA/FINDSYM.tar.xz
 /src/DATA/FROZSL.tar.xz
 /src/DATA/PHVASP.tar.xz
+/src/DATA/PSPOTS.tar.xz
 /src/DATA/TEST.tar.xz
 /src/DATA/SCRIPTS.tar.xz
 /src/DATA/IMAGES.tar.xz
 /src/DATA/PROTO.tar.xz
 /src/DATA/PROTO/lookup.json
 /src/DATA/PROTO/data.json
+/src/DATA/PARAM.tar.xz
 
 # build locations
 build
@@ -97,3 +96,9 @@ cmake-build*
 
 # cmake user presets
 CMakeUserPresets.json
+
+# generated headers
+config.h
+
+ # local tests
+ local_tests

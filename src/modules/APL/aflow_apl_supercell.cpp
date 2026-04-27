@@ -7,8 +7,12 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <fstream>
 #include <iostream>
 #include <ostream>
+#include <sstream>
+#include <string>
+#include <vector>
 
 #include "AUROSTD/aurostd.h"
 #include "AUROSTD/aurostd_defs.h"
@@ -39,7 +43,19 @@
 #define COPY_XSTRUCTURE_FULL false
 // CO END
 
-using namespace std;
+using std::cerr;
+using std::ifstream;
+using std::istream;
+using std::ofstream;
+using std::ostream;
+using std::ostringstream;
+using std::string;
+using std::stringstream;
+using std::vector;
+
+using aurostd::xcomplex;
+using aurostd::xmatrix;
+using aurostd::xvector;
 
 static const xcomplex<double> iONE(0.0, 1.0);  // ME20200116
 
@@ -47,80 +63,19 @@ namespace apl {
 
   // ///////////////////////////////////////////////////////////////////////////
 
-  Supercell::Supercell(ostream& oss) : xStream(oss) {
-    free();
-  }
-
-  Supercell::Supercell(ofstream& mf, ostream& oss) : xStream(mf, oss) {
-    free();
-  }
-
   // ME20200102 - Refactored
   Supercell::Supercell(const xstructure& _xstr, ofstream& mf, const string& directory, ostream& oss) : xStream(mf, oss) {  // CO20181226
-    free();
     _directory = directory;
     initialize(_xstr);
   }
 
   // ME20200212 - read from a state file
   Supercell::Supercell(const string& filename, ofstream& mf, const string& directory, ostream& oss) : xStream(mf, oss) {
-    free();
     _directory = directory;
     initialize(filename);
   }
 
-  Supercell::Supercell(const Supercell& that) : xStream(*that.getOFStream(), *that.getOSS()) {
-    if (this != &that) {
-      free();
-    }
-    copy(that);
-  }
-
-  Supercell& Supercell::operator=(const Supercell& that) {
-    if (this != &that) {
-      free();
-    }
-    copy(that);
-    return *this;
-  }
-
-  void Supercell::copy(const Supercell& that) {
-    if (this == &that) {
-      return;
-    }
-    xStream::copy(that);
-    _directory = that._directory;
-    _inStructure = that._inStructure;
-    _inStructure_original = that._inStructure_original;  // CO
-    _inStructure_light = that._inStructure_light;        // CO
-    _pcStructure = that._pcStructure;                    // CO
-    _scStructure = that._scStructure;                    // CO
-    _scStructure_original = that._scStructure_original;  // CO
-    _scStructure_light = that._scStructure_light;        // CO
-    _pc2scMap.clear();
-    _pc2scMap = that._pc2scMap;
-    _sc2pcMap.clear();
-    _sc2pcMap = that._sc2pcMap;
-    // CO START
-    _skew = that._skew;
-    _derivative_structure = that._derivative_structure;
-    _sym_eps = that._sym_eps;
-    // CO END
-    _isShellRestricted = that._isShellRestricted;
-    _maxShellRadius.clear();
-    _maxShellRadius = that._maxShellRadius;
-    _isConstructed = that._isConstructed;  // CO
-    _initialized = that._initialized;
-    phase_vectors = that.phase_vectors;  // ME20200116
-  }
-
-  // Destructor
-  Supercell::~Supercell() {
-    xStream::free();
-    free();
-  }
-
-  void Supercell::free() {
+  void Supercell::clear() {
     _directory = "";
     _inStructure.clear();
     _inStructure_original.clear();
@@ -140,10 +95,6 @@ namespace apl {
     _initialized = false;
     phase_vectors.clear();
     _scStructure.clear();
-  }
-
-  void Supercell::clear() {
-    free();
   }
 
   // ///////////////////////////////////////////////////////////////////////////
@@ -270,15 +221,6 @@ namespace apl {
 
     clearSupercell();
     _initialized = true;
-  }
-
-  // xStream initializers
-  void Supercell::initialize(ostream& oss) {
-    xStream::initialize(oss);
-  }
-
-  void Supercell::initialize(ofstream& mf, ostream& oss) {
-    xStream::initialize(mf, oss);
   }
 
   // ///////////////////////////////////////////////////////////////////////////
@@ -435,7 +377,7 @@ namespace apl {
   }
 
   void Supercell::build(int nx, int ny, int nz, bool VERBOSE) {
-    const xvector<int> dims(3);
+    xvector<int> dims(3);
     dims[1] = nx;
     dims[2] = ny;
     dims[3] = nz;
@@ -943,7 +885,7 @@ namespace apl {
     xvector<double> a_component;
     xvector<double> ab_component;
     xmatrix<double> scell_lattice = _inStructure.lattice;
-    const xmatrix<double> scell_matrix = aurostd::identity((double) 0, 3);
+    xmatrix<double> scell_matrix = aurostd::identity((double) 0, 3);
     vector<xvector<double>> l1;
     vector<xvector<double>> l2;
     vector<xvector<double>> l3;
@@ -1646,7 +1588,7 @@ namespace apl {
     xvector<double> rf(3);
     xvector<double> rc(3);
     xvector<double> delta(3);
-    const xvector<double> pf(3);
+    xvector<double> pf(3);
     xvector<double> pc(3);
     double rshell = 0.0;
     int at1pc = -1;

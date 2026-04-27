@@ -23,6 +23,7 @@
 #include <ostream>
 #include <set>
 #include <sstream>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -33,6 +34,7 @@
 #include "AUROSTD/aurostd_xfile.h"
 #include "AUROSTD/aurostd_xmatrix.h"
 #include "AUROSTD/aurostd_xoption.h"
+#include "AUROSTD/aurostd_xparser.h"
 #include "AUROSTD/aurostd_xparser_json.h"
 #include "AUROSTD/aurostd_xscalar.h"
 #include "AUROSTD/aurostd_xvector.h"
@@ -43,7 +45,6 @@
 #include "aflow_xhost.h"
 #include "aflow_xthread.h"
 #include "aflowlib/aflowlib_web_interface.h"
-#include "flow/aflow_ivasp.h"
 #include "flow/aflow_pflow.h"
 #include "flow/aflow_support_types.h"
 #include "flow/aflow_xclasses.h"
@@ -56,18 +57,25 @@
 #include "structure/aflow_xstructure.h"
 
 using std::cerr;
-using std::cout;
 using std::deque;
 using std::endl;
+using std::function;
 using std::ifstream;
+using std::iostream;
 using std::istream;
 using std::istringstream;
 using std::ofstream;
 using std::ostream;
 using std::ostringstream;
+using std::pair;
+using std::set;
 using std::setw;
+using std::string;
 using std::stringstream;
 using std::vector;
+
+using aurostd::xmatrix;
+using aurostd::xvector;
 
 // ME20220207 - Changed all functions to use xThread
 
@@ -191,11 +199,12 @@ vector<StructurePrototype> XtalFinderCalculator::compareMultipleStructures(uint 
 
   // ---------------------------------------------------------------------------
   // group structures based on stoichiometry and symmetry (unless ignoring symmetry/Wyckoff)
-  vector<StructurePrototype> comparison_schemes = groupStructurePrototypes(same_species, comparison_options.flag("COMPARISON_OPTIONS::IGNORE_SYMMETRY"),
-                                                                           comparison_options.flag("COMPARISON_OPTIONS::IGNORE_WYCKOFF"), comparison_options.flag("COMPARISON_OPTIONS::IGNORE_ENVIRONMENT_ANALYSIS"),
-                                                                           comparison_options.flag("COMPARISON_OPTIONS::IGNORE_ENVIRONMENT_ANGLES"), // DX20200320 - added environment angles
-                                                                           false,
-                                                                           quiet); // DX20200103 - condensed booleans to xoptions
+  vector<StructurePrototype> comparison_schemes =
+      groupStructurePrototypes(same_species, comparison_options.flag("COMPARISON_OPTIONS::IGNORE_SYMMETRY"), comparison_options.flag("COMPARISON_OPTIONS::IGNORE_WYCKOFF"),
+                               comparison_options.flag("COMPARISON_OPTIONS::IGNORE_ENVIRONMENT_ANALYSIS"),
+                               comparison_options.flag("COMPARISON_OPTIONS::IGNORE_ENVIRONMENT_ANGLES"), // DX20200320 - added environment angles
+                               false,
+                               quiet); // DX20200103 - condensed booleans to xoptions
 
   // ---------------------------------------------------------------------------
   // if ICSD comparison, make structure with minimum ICSD number the representative structure
@@ -488,7 +497,7 @@ namespace compare {
     // clean species
     else {
       for (size_t s = 0; s < str_rep.structure.species.size(); s++) {
-        str_rep.structure.species[s] = KBIN::VASP_PseudoPotential_CleanName(str_rep.structure.species[s]);
+        str_rep.structure.species[s] = aurostd::VASP_PseudoPotential_CleanName(str_rep.structure.species[s]);
       } // DX20190711
       str_rep.structure.SetSpecies(str_rep.structure.species);
     }
@@ -512,16 +521,9 @@ namespace compare {
 // ***************************************************************************
 
 // ***************************************************************************
-// StructurePrototype::StructurePrototype() (constructor)
+// StructurePrototype::clear() (clear)
 // ***************************************************************************
-StructurePrototype::StructurePrototype() {
-  free();
-}
-
-// ***************************************************************************
-// StructurePrototype::free()
-// ***************************************************************************
-void StructurePrototype::free() {
+void StructurePrototype::clear() {
   iomode = JSON_MODE;
   natoms = 0;
   ntypes = 0;
@@ -546,70 +548,6 @@ void StructurePrototype::free() {
   mapping_info_family.clear(); // DX20191217
   property_names.clear();
   property_units.clear();
-}
-
-// ***************************************************************************
-// StructurePrototype::~StructurePrototype() (destructor)
-// ***************************************************************************
-StructurePrototype::~StructurePrototype() {
-  free();
-}
-
-// ***************************************************************************
-// StructurePrototype::clear() (clear)
-// ***************************************************************************
-void StructurePrototype::clear() {
-  free();
-}
-
-// ***************************************************************************
-// StructurePrototype::StructurePrototype(...) (copy constructor)
-// ***************************************************************************
-StructurePrototype::StructurePrototype(const StructurePrototype& b) {
-  if (this != &b) {
-    copy(b);
-  }
-}
-
-// ***************************************************************************
-// StructurePrototype::copy()
-// ***************************************************************************
-void StructurePrototype::copy(const StructurePrototype& b) {
-  iomode = b.iomode;
-  ntypes = b.ntypes;
-  elements = b.elements;
-  stoichiometry = b.stoichiometry;
-  natoms = b.natoms;
-  atom_decorations_equivalent = b.atom_decorations_equivalent;
-  Pearson = b.Pearson;
-  space_group = b.space_group;
-  grouped_Wyckoff_positions = b.grouped_Wyckoff_positions;
-  wyckoff_site_symmetry = b.wyckoff_site_symmetry;
-  wyckoff_multiplicity = b.wyckoff_multiplicity;
-  wyckoff_letter = b.wyckoff_letter;
-  aflow_label = b.aflow_label; // DX20190724
-  aflow_parameter_list = b.aflow_parameter_list; // DX20190724
-  aflow_parameter_values = b.aflow_parameter_values; // DX20190724
-  matching_aflow_prototypes = b.matching_aflow_prototypes; // DX20190724
-  environments_LFA = b.environments_LFA; // DX20190711
-  structure_representative = b.structure_representative; // DX20201204
-  structures_duplicate = b.structures_duplicate; // DX20201207
-  structures_family = b.structures_family; // DX20201207
-  mapping_info_duplicate = b.mapping_info_duplicate; // DX20191217
-  mapping_info_family = b.mapping_info_family; // DX20191217
-  property_names = b.property_names;
-  property_units = b.property_units;
-}
-
-// ***************************************************************************
-// StructurePrototype::operator= (assignment)
-// ***************************************************************************
-const StructurePrototype& StructurePrototype::operator=(const StructurePrototype& b) {
-  if (this != &b) {
-    free();
-    copy(b);
-  }
-  return *this;
 }
 
 // ***************************************************************************
@@ -771,7 +709,7 @@ string StructurePrototype::printPropertiesOfStructure(structure_container* str_p
   // Print the properties of the structure (JSON format)
 
   vector<string> tokens;
-  const aurostd::JSON::object json(aurostd::JSON::object_types::DICTIONARY);
+  aurostd::JSON::object json(aurostd::JSON::object_types::DICTIONARY);
 
   if (!str_pointer->properties.empty()) {
     for (uint i = 0; i < str_pointer->properties.size(); i++) {
@@ -797,7 +735,7 @@ string StructurePrototype::printStructureTransformationInformation(const structu
   // between this structure and the representative structure (JSON format)
 
   const vector<string> tokens;
-  const aurostd::JSON::object json(aurostd::JSON::object_types::DICTIONARY);
+  aurostd::JSON::object json(aurostd::JSON::object_types::DICTIONARY);
 
   const bool roff = true;
   // basis transformation
@@ -1295,88 +1233,13 @@ void StructurePrototype::removeNonDuplicate(uint index) {
 // ***************************************************************************
 
 // ***************************************************************************
-// XtalFinderCalculator::XtalFinderCalculator() (Constructors)
+// XtalFinderCalculator::clear() (clear)
 // ***************************************************************************
-XtalFinderCalculator::XtalFinderCalculator(uint num_proc_input, ostream& oss) : xStream(oss) {
-  free();
-  num_proc = num_proc_input;
-}
-
-XtalFinderCalculator::XtalFinderCalculator(ofstream& FileMESSAGE, uint num_proc_input, ostream& oss) : xStream(FileMESSAGE, oss) {
-  free();
-  num_proc = num_proc_input;
-}
-
-XtalFinderCalculator::XtalFinderCalculator(double misfit_match_input, double misfit_family_input, uint num_proc_input, ostream& oss) : xStream(oss) {
-  free();
-  num_proc = num_proc_input;
-  misfit_match = misfit_match_input;
-  misfit_family = misfit_family_input;
-}
-
-XtalFinderCalculator::XtalFinderCalculator(double misfit_match_input, double misfit_family_input, ofstream& FileMESSAGE, uint num_proc_input, ostream& oss) : xStream(FileMESSAGE, oss) {
-  free();
-  num_proc = num_proc_input;
-  misfit_match = misfit_match_input;
-  misfit_family = misfit_family_input;
-}
-
-// ***************************************************************************
-// XtalFinderCalculator::free()
-// ***************************************************************************
-void XtalFinderCalculator::free() {
+void XtalFinderCalculator::clear() {
   misfit_match = DEFAULT_XTALFINDER_MISFIT_MATCH;
   misfit_family = DEFAULT_XTALFINDER_MISFIT_FAMILY;
   num_proc = 1;
   structure_containers.clear();
-}
-
-// ***************************************************************************
-// XtalFinderCalculator::~XtalFinderCalculator() (Destructor)
-// ***************************************************************************
-XtalFinderCalculator::~XtalFinderCalculator() {
-  xStream::free();
-  free();
-}
-
-// ***************************************************************************
-// XtalFinderCalculator::clear() (clear)
-// ***************************************************************************
-void XtalFinderCalculator::clear() {
-  free();
-}
-
-// ***************************************************************************
-// XtalFinderCalculator::XtalFinderCalculator(...) (copy)
-// ***************************************************************************
-XtalFinderCalculator::XtalFinderCalculator(const XtalFinderCalculator& b) : xStream(*b.getOFStream(), *b.getOSS()) {
-  if (this != &b) {
-    copy(b);
-  }
-}
-
-// ***************************************************************************
-// XtalFinderCalculator::copy()
-// ***************************************************************************
-void XtalFinderCalculator::copy(const XtalFinderCalculator& b) {
-  if (this == &b) {
-    return;
-  }
-  xStream::copy(b);
-  misfit_match = b.misfit_match;
-  misfit_family = b.misfit_family;
-  num_proc = b.num_proc;
-  structure_containers = b.structure_containers;
-}
-
-// ***************************************************************************
-// XtalFinderCalculator::operator= (assignment)
-// ***************************************************************************
-const XtalFinderCalculator& XtalFinderCalculator::operator=(const XtalFinderCalculator& b) {
-  if (this != &b) {
-    copy(b);
-  }
-  return *this;
 }
 
 // ***************************************************************************
@@ -2514,6 +2377,11 @@ void XtalFinderCalculator::addAFLOWPrototypes2container(const std::set<string>& 
     // anrl prototypes
     structure_container structure_tmp;
     structure_tmp.name = static_cast<string>(pd.content[uid]["label"]);
+    if (pd.content[uid]["legacy"]) {
+        structure_tmp.link = "Legacy Prototype " + uid;
+      } else {
+        structure_tmp.link = "https://aflow.org/p/" + uid;
+      }
     structure_tmp.stoichiometry = structure_containers[0].stoichiometry;
     structure_tmp.space_group = structure_containers[0].space_group; // same as representative structure (either will be the same, or we are forcing it to be for the ignore_symmetry/ignore_Wyckoff run)
     structure_tmp.grouped_Wyckoff_positions = structure_containers[0].grouped_Wyckoff_positions;
@@ -3125,7 +2993,7 @@ namespace compare {
       bool element_found = false;
       uint element_index = 0;
       for (size_t j = 0; j < grouped_positions.size(); j++) {
-        if (KBIN::VASP_PseudoPotential_CleanName(wyckoff_sites_ITC[i].type) == KBIN::VASP_PseudoPotential_CleanName(grouped_positions[j].element)) { // DX20190329 - remove pseudopotential info
+        if (aurostd::VASP_PseudoPotential_CleanName(wyckoff_sites_ITC[i].type) == aurostd::VASP_PseudoPotential_CleanName(grouped_positions[j].element)) { // DX20190329 - remove pseudopotential info
           element_found = true;
           element_index = j;
           break;
@@ -3134,7 +3002,7 @@ namespace compare {
       if (element_found == false) {
         GroupedWyckoffPosition tmp;
         tmp.type = type_count; // DX20190425 - added type
-        tmp.element = KBIN::VASP_PseudoPotential_CleanName(wyckoff_sites_ITC[i].type); // DX20190329 - remove pseudopotential info
+        tmp.element = aurostd::VASP_PseudoPotential_CleanName(wyckoff_sites_ITC[i].type); // DX20190329 - remove pseudopotential info
         tmp.site_symmetries.push_back(site_symmetry);
         tmp.multiplicities.push_back(multiplicity);
         tmp.letters.push_back(letter); // DX20190208 - add Wyckoff letters
@@ -3320,7 +3188,8 @@ namespace compare {
           // if any match, all need to match; otherwise the Wyckoff positions are not matchable
           // Note: last two if-statements determine if all of the Wyckoff subsets in str2
           // have been matched
-          if (match_count == grouped_Wyckoffs_str1_sorted[i].multiplicities.size() && std::equal(Wyckoff_subset_matches.begin(), Wyckoff_subset_matches.end(), Wyckoff_subset_matches.begin()) && Wyckoff_subset_matches[0]) {
+          if (match_count == grouped_Wyckoffs_str1_sorted[i].multiplicities.size() && std::equal(Wyckoff_subset_matches.begin(), Wyckoff_subset_matches.end(), Wyckoff_subset_matches.begin()) &&
+              Wyckoff_subset_matches[0]) {
             match_set_str1 = true;
             matched_species_str2[j] = true;
           }
@@ -3934,8 +3803,13 @@ void XtalFinderCalculator::representativePrototypeForICSDRunsNEW(vector<Structur
 // ***************************************************************************
 // XtalFinderCalculator::runComparisonThreads()
 // ***************************************************************************
-void XtalFinderCalculator::runComparisonThreads(
-    uint index, vector<StructurePrototype>& comparison_schemes, const vector<std::pair<uint, uint>>& vstart_indices, const vector<std::pair<uint, uint>>& vend_indices, bool same_species, bool scale_volume, bool optimize_match) {
+void XtalFinderCalculator::runComparisonThreads(uint index,
+                                                vector<StructurePrototype>& comparison_schemes,
+                                                const vector<std::pair<uint, uint>>& vstart_indices,
+                                                const vector<std::pair<uint, uint>>& vend_indices,
+                                                bool same_species,
+                                                bool scale_volume,
+                                                bool optimize_match) {
   // Run comparisons on a paricular thread
   // If the xstructure is not generated, it will generate a local copy for
   // the single comparison only (prevents threads from accessing on the same
@@ -4368,7 +4242,8 @@ void XtalFinderCalculator::makeRepresentativeEvenPermutation(vector<StructurePro
     // if representative permutation is already even, only swap representative
     // and duplicate proto if proto permutation is less and even
     // else replace automatically if proto permutation is not AUROSTD_MAX_DOUBLE
-    if ((representative_permutation_num % 2 == 0 && min_even_duplicate_permutation_num < representative_permutation_num) || (representative_permutation_num % 2 != 0 && min_even_duplicate_permutation_num != AUROSTD_MAX_UINT)) {
+    if ((representative_permutation_num % 2 == 0 && min_even_duplicate_permutation_num < representative_permutation_num) ||
+        (representative_permutation_num % 2 != 0 && min_even_duplicate_permutation_num != AUROSTD_MAX_UINT)) {
       structure_container* str_container_tmp;
       str_container_tmp = comparison_schemes[i].structure_representative;
       setStructureAsRepresentative(comparison_schemes[i], comparison_schemes[i].structures_duplicate[min_duplicate_index]);
@@ -4410,9 +4285,10 @@ void XtalFinderCalculator::appendStructurePrototypes(vector<StructurePrototype>&
   const bool LDEBUG = (false || XHOST.DEBUG || _DEBUG_COMPARE_);
   stringstream message;
 
-  const uint DUPLICATE_NAME_WIDTH = 100;
-  const uint MISFIT_WIDTH = 15;
-  const string dash_line_separator = std::string(DUPLICATE_NAME_WIDTH + MISFIT_WIDTH, '-');
+  constexpr uint DUPLICATE_NAME_WIDTH = 75;
+  constexpr uint DUPLICATE_LINK_WIDTH = 26;
+  constexpr uint MISFIT_WIDTH = 15;
+  const string dash_line_separator = std::string(DUPLICATE_NAME_WIDTH + DUPLICATE_LINK_WIDTH + MISFIT_WIDTH, '-');
 
   if (LDEBUG) {
     cerr << printResults(comparison_schemes, true, txt_ft) << endl;
@@ -4460,11 +4336,16 @@ void XtalFinderCalculator::appendStructurePrototypes(vector<StructurePrototype>&
       if (comparison_schemes[i].structures_duplicate.empty()) {
         message << "   No duplicates. " << endl;
       } else {
-        message << "   " << setw(DUPLICATE_NAME_WIDTH) << std::left << "List of duplicates" << setw(MISFIT_WIDTH) << std::left << "misfit value" << endl;
+        message << "   " << setw(DUPLICATE_NAME_WIDTH) << std::left << "List of duplicates" << setw(DUPLICATE_LINK_WIDTH) << std::left << "Link" << setw(MISFIT_WIDTH) << std::left << "Misfit value" << endl;
         message << "   " << setw(DUPLICATE_NAME_WIDTH) << std::left << dash_line_separator << endl;
         for (size_t d = 0; d < comparison_schemes[i].structures_duplicate.size(); d++) {
-          message << "   " << setw(DUPLICATE_NAME_WIDTH) << std::left << comparison_schemes[i].structures_duplicate[d]->name << setw(MISFIT_WIDTH) << std::left
-                  << comparison_schemes[i].mapping_info_duplicate[d].misfit << endl;
+          if (comparison_schemes[i].structures_duplicate[d]->link.empty()) {
+            message << "   " << setw(DUPLICATE_NAME_WIDTH+DUPLICATE_LINK_WIDTH) << std::left << comparison_schemes[i].structures_duplicate[d]->name << setw(MISFIT_WIDTH) << std::left
+                    << comparison_schemes[i].mapping_info_duplicate[d].misfit << endl;
+          } else {
+            message << "   " << setw(DUPLICATE_NAME_WIDTH) << std::left << comparison_schemes[i].structures_duplicate[d]->name << setw(DUPLICATE_LINK_WIDTH) << std::left << comparison_schemes[i].structures_duplicate[d]->link << setw(MISFIT_WIDTH) << std::left
+                    << comparison_schemes[i].mapping_info_duplicate[d].misfit << endl;
+          }
         }
       }
       pflow::logger(__AFLOW_FILE__, __AFLOW_FUNC__, message, *p_FileMESSAGE, *p_oss, _LOGGER_RAW_); // DX+CO20201119
@@ -4512,7 +4393,8 @@ void XtalFinderCalculator::combinePrototypesOfDifferentSymmetry(vector<Structure
         structure_mapping_info final_misfit_info = compare::initialize_misfit_struct(); // DX20191218
         const bool scale_volume = true; // default is true
         const bool optimize_match = false; // default is false
-        compare::aflowCompareStructure(prototypes_final[i].structure_representative->structure, prototypes_final[j].structure_representative->structure, same_species, scale_volume, optimize_match, final_misfit, final_misfit_info,
+        compare::aflowCompareStructure(prototypes_final[i].structure_representative->structure, prototypes_final[j].structure_representative->structure, same_species, scale_volume, optimize_match, final_misfit,
+                                       final_misfit_info,
                                        num_proc); // DX20191122 - move ostream to end  //DX20191218 - added misfit_info
         if (final_misfit < min_misfit) {
           min_misfit_info = final_misfit_info; // DX20191218
@@ -4577,10 +4459,13 @@ string XtalFinderCalculator::printResults(const vector<StructurePrototype>& prot
   // ---------------------------------------------------------------------------
   // text format
   else if (format == txt_ft) {
-    const int indent_spacing = 2;
-    const int structure_spacing = 100; // structure name spacing
-    const int misfit_spacing = 15;
-    const int property_spacing = 35;
+    constexpr int indent_spacing = 2;
+    constexpr int structure_spacing = 75; // structure name spacing
+    constexpr int link_spacing = 26; // structure link spacing
+    constexpr int misfit_spacing = 15;
+    constexpr int property_spacing = 35;
+
+
     int num_properties = 0;
     for (size_t j = 0; j < prototypes_final.size(); j++) {
       num_properties = aurostd::max((int) prototypes_final[j].property_names.size(), num_properties);
@@ -4588,8 +4473,8 @@ string XtalFinderCalculator::printResults(const vector<StructurePrototype>& prot
 
     // ---------------------------------------------------------------------------
     // set length of separators based on table width
-    const string equal_line_separator = std::string(indent_spacing + structure_spacing + misfit_spacing + (num_properties * property_spacing), '=');
-    const string dash_line_separator = std::string(indent_spacing + structure_spacing + misfit_spacing + (num_properties * property_spacing), '-');
+    const string equal_line_separator = std::string(indent_spacing + structure_spacing + link_spacing + misfit_spacing + (num_properties * property_spacing), '=');
+    const string dash_line_separator = std::string(indent_spacing + structure_spacing + link_spacing + misfit_spacing + (num_properties * property_spacing), '-');
 
     for (size_t j = 0; j < prototypes_final.size(); j++) {
       // ---------------------------------------------------------------------------
@@ -4685,8 +4570,9 @@ string XtalFinderCalculator::printResults(const vector<StructurePrototype>& prot
       // ---------------------------------------------------------------------------
       // print duplicate structures [header]
       if (!prototypes_final[j].structures_duplicate.empty() && prototypes_final[j].structure_representative->properties.empty()) {
-        ss_out << "  " << setw(structure_spacing) << std::left << "list of duplicates";
-        ss_out << setw(misfit_spacing) << std::right << "misfit";
+        ss_out << "  " << setw(structure_spacing) << std::left << "List of duplicates";
+        ss_out << setw(link_spacing) << std::left << "Link";
+        ss_out << setw(misfit_spacing) << std::right << "Misfit value";
       } else if (prototypes_final[j].structures_duplicate.empty()) {
         ss_out << "  " << setw(structure_spacing) << std::left << "no duplicates";
       }
@@ -4706,7 +4592,12 @@ string XtalFinderCalculator::printResults(const vector<StructurePrototype>& prot
       // print duplicate structures [content]
       if (!prototypes_final[j].structures_duplicate.empty()) {
         for (size_t k = 0; k < prototypes_final[j].structures_duplicate.size(); k++) {
-          ss_out << "  " << setw(structure_spacing) << std::left << prototypes_final[j].structures_duplicate[k]->name << setw(misfit_spacing) << std::right << prototypes_final[j].mapping_info_duplicate[k].misfit;
+          if (prototypes_final[j].structures_duplicate[k]->link.empty()) {
+            ss_out << "  " << setw(structure_spacing+link_spacing) << std::left << prototypes_final[j].structures_duplicate[k]->name << setw(misfit_spacing) << std::right << prototypes_final[j].mapping_info_duplicate[k].misfit;
+          } else {
+            ss_out << "  " << setw(structure_spacing) << std::left << prototypes_final[j].structures_duplicate[k]->name << setw(link_spacing) << std::left << prototypes_final[j].structures_duplicate[k]->link << setw(misfit_spacing) << std::right << prototypes_final[j].mapping_info_duplicate[k].misfit;
+
+          }
           if (!prototypes_final[j].property_names.empty()) {
             for (size_t l = 0; l < prototypes_final[j].structures_duplicate[k]->properties.size(); l++) {
               ss_out << setw(property_spacing) << std::right << prototypes_final[j].structures_duplicate[k]->properties[l];
@@ -4841,7 +4732,7 @@ namespace compare {
         bool commensurate = false;
         for (size_t i = 0; i < stoich1.size(); i++) {
           for (size_t j = 0; j < stoich2.size(); j++) {
-            if (stoich1[i] == stoich2[j] && KBIN::VASP_PseudoPotential_CleanName(xstr1.species[i]) == KBIN::VASP_PseudoPotential_CleanName(xstr2.species[j])) { // DX20190329 - remove pseudopotential information
+            if (stoich1[i] == stoich2[j] && aurostd::VASP_PseudoPotential_CleanName(xstr1.species[i]) == aurostd::VASP_PseudoPotential_CleanName(xstr2.species[j])) { // DX20190329 - remove pseudopotential information
               // cerr << "matching: " << stoich1[i] << "==" << stoich2[j] << " && " << xstr1.species[i] << "==" << xstr2.species[j] << endl;
               commensurate = true;
               break;
@@ -6205,12 +6096,12 @@ void XtalFinderCalculator::latticeSearch(structure_container& xstr_rep,
 
   xvector<double> shift_xstr1; // DX20201215
 
-  const xvector<double> abc_angles_q1 = Getabc_angles(xstr1.lattice, DEGREES); // lattice parameters
+  xvector<double> abc_angles_q1 = Getabc_angles(xstr1.lattice, DEGREES); // lattice parameters
 
   // ---------------------------------------------------------------------------
   // determine supercell size via search radius/dims
   const double search_radius = aurostd::max(abc_angles_q1(1), abc_angles_q1(2), abc_angles_q1(3));
-  const xvector<int> dims = LatticeDimensionSphere(xstr2.lattice, search_radius);
+  xvector<int> dims = LatticeDimensionSphere(xstr2.lattice, search_radius);
 
   if (LDEBUG) {
     cerr << __AFLOW_FUNC__ << " lattice search radius: " << search_radius << endl;
@@ -6868,7 +6759,7 @@ bool XtalFinderCalculator::buildSimilarLattices(const vector<xvector<double>>& t
   double tol_a = 1e9;
   double tol_b = 1e9;
   double tol_c = 1e9;
-  const xvector<double> abc_angles_q1 = Getabc_angles(q1, DEGREES); // lattice parameters //DX20201130
+  xvector<double> abc_angles_q1 = Getabc_angles(q1, DEGREES); // lattice parameters //DX20201130
   if (relative_tolerance) {
     tol_a = abc_angles_q1[1] * 0.3;
     tol_b = abc_angles_q1[2] * 0.3;
@@ -7024,7 +6915,7 @@ bool XtalFinderCalculator::buildSimilarLattices(const vector<xvector<double>>& t
 // ***************************************************************************
 namespace compare {
   void getLatticeTransformations(const xmatrix<double>& lattice_original,
-                                 const xmatrix<double>& lattice_ideal,
+                                 xmatrix<double>& lattice_ideal,
                                  const vector<xmatrix<double>>& candidate_lattices,
                                  vector<xmatrix<double>>& basis_transformations,
                                  vector<xmatrix<double>>& rotations) {

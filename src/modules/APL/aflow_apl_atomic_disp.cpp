@@ -9,10 +9,14 @@
 
 #include <cmath>
 #include <cstddef>
+#include <fstream>
 #include <functional>
 #include <iomanip>
 #include <ios>
 #include <ostream>
+#include <sstream>
+#include <string>
+#include <vector>
 
 #include "AUROSTD/aurostd.h"
 #include "AUROSTD/aurostd_defs.h"
@@ -31,6 +35,16 @@
 #include "flow/aflow_pflow.h"
 #include "structure/aflow_xatom.h"
 
+using std::ofstream;
+using std::ostream;
+using std::string;
+using std::stringstream;
+using std::vector;
+
+using aurostd::xcomplex;
+using aurostd::xmatrix;
+using aurostd::xvector;
+
 static const xcomplex<double> iONE(0.0, 1.0);
 
 //////////////////////////////////////////////////////////////////////////////
@@ -41,50 +55,7 @@ static const xcomplex<double> iONE(0.0, 1.0);
 
 namespace apl {
 
-  AtomicDisplacements::AtomicDisplacements() {
-    free();
-  }
-
-  AtomicDisplacements::AtomicDisplacements(PhononCalculator& pc) {
-    free();
-    _pc = &pc;
-    _pc_set = true;
-  }
-
-  AtomicDisplacements::AtomicDisplacements(const AtomicDisplacements& that) {
-    if (this != &that) {
-      free();
-    }
-    copy(that);
-  }
-
-  AtomicDisplacements& AtomicDisplacements::operator=(const AtomicDisplacements& that) {
-    if (this != &that) {
-      free();
-    }
-    copy(that);
-    return *this;
-  }
-
-  AtomicDisplacements::~AtomicDisplacements() {
-    free();
-  }
-
-  void AtomicDisplacements::copy(const AtomicDisplacements& that) {
-    if (this == &that) {
-      return;
-    }
-    _eigenvectors = that._eigenvectors;
-    _frequencies = that._frequencies;
-    _displacement_matrices = that._displacement_matrices;
-    _displacement_modes = that._displacement_modes;
-    _pc = that._pc;
-    _pc_set = that._pc_set;
-    _qpoints = that._qpoints;
-    _temperatures = that._temperatures;
-  }
-
-  void AtomicDisplacements::free() {
+  void AtomicDisplacements::clear() {
     _eigenvectors.clear();
     _frequencies.clear();
     _displacement_matrices.clear();
@@ -96,7 +67,7 @@ namespace apl {
   }
 
   void AtomicDisplacements::clear(PhononCalculator& pc) {
-    free();
+    clear();
     _pc = &pc;
     _pc_set = true;
   }
@@ -618,7 +589,7 @@ namespace apl {
     } else {
       vector<string> tokens;
       aurostd::string2tokens(qpoints_str, tokens, ",");
-      const xvector<double> q(3);
+      xvector<double> q(3);
       if (tokens.size() % 3 == 0) {
         for (size_t i = 0; i < tokens.size(); i += 3) {
           for (int j = 0; j < 3; j++) {
@@ -757,8 +728,8 @@ namespace apl {
     xstr_oriented.clear();
 
     // Project lattice
-    const xvector<double> params = Getabc_angles(xstr_orig.lattice, RADIANS);
-    const xmatrix<double> lattice(3, 3);
+    xvector<double> params = Getabc_angles(xstr_orig.lattice, RADIANS);
+    xmatrix<double> lattice(3, 3);
     const double cosalpha = cos(params[4]);
     const double cosbeta = cos(params[5]);
     const double cosgamma = cos(params[6]);

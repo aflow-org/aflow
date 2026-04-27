@@ -8,9 +8,6 @@
 // frozsl and frozsl_init must be present as binaries
 // written by Stefano Curtarolo and Kesong Yang
 
-#ifndef _AFLOW_IFROZSL_CPP
-#define _AFLOW_IFROZSL_CPP
-
 #include <cstddef>
 #include <cstdlib>
 #include <deque>
@@ -122,7 +119,7 @@ namespace KBIN {
         throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, message, _RUNTIME_ERROR_);
       }
       species_pp.push_back(tokens.at(3));
-      species.push_back(KBIN::VASP_PseudoPotential_CleanName(tokens.at(3)));
+      species.push_back(aurostd::VASP_PseudoPotential_CleanName(tokens.at(3)));
     }
 
     vector<_xvasp> vaspRuns;
@@ -147,7 +144,7 @@ namespace KBIN {
           l++;
         }
       }
-      // xvasp.str.species_pp.at(isp)=AVASP_Get_PseudoPotential_PAW_PBE(KBIN::VASP_PseudoPotential_CleanName(xvasp.str.species.at(isp)));
+      // xvasp.str.species_pp.at(isp)=AVASP_Get_PseudoPotential_PAW_PBE(aurostd::VASP_PseudoPotential_CleanName(xvasp.str.species.at(isp)));
       xvasp_aus.AVASP_flag_RUN_RELAX = false;
       xvasp_aus.AVASP_flag_RUN_RELAX_STATIC = false;
       xvasp_aus.AVASP_flag_RUN_STATIC = true;
@@ -780,8 +777,6 @@ namespace FROZSL {
     return false;
   }
 } // namespace FROZSL
-
-#endif     // _AFLOW_IFROZSL_CPP
 
 // ***************************************************************************
 // *                                                                         *

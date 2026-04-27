@@ -4,7 +4,9 @@
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
+#include <fstream>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -17,7 +19,13 @@
 
 using std::cerr;
 using std::endl;
+using std::ifstream;
+using std::iostream;
+using std::istringstream;
+using std::ofstream;
+using std::ostringstream;
 using std::string;
+using std::stringstream;
 using std::vector;
 
 // ***************************************************************************
@@ -238,6 +246,11 @@ namespace aurostd {
     struct tm* ptr_now = localtime(&t);
     return get_datetime_formatted(*ptr_now, date_delim, include_time, date_time_sep, time_delim);
   }  // CO20171215  //CO20200624
+  string get_datetime_utc_formatted(const string& date_delim, bool include_time, const string& date_time_sep, const string& time_delim) {
+    time_t t = time(nullptr);
+    struct tm* ptr_now = std::gmtime(&t);
+    return get_datetime_formatted(*ptr_now, date_delim, include_time, date_time_sep, time_delim);
+  }  //HE20230216
   string get_datetime_formatted(const tm& tstruct, const string& date_delim, bool include_time, const string& date_time_sep, const string& time_delim) {  // CO20171215 //CO20200624
     stringstream misc_ss;
     const int y = aurostd::get_year(tstruct);

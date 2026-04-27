@@ -5,10 +5,9 @@
 // ***************************************************************************
 // Stefano Curtarolo
 
-#ifndef _AFLOWLIB_LIBRARIES_CPP_
-#define _AFLOWLIB_LIBRARIES_CPP_
-
 #include "aflowlib/aflowlib_libraries.h"
+
+#include "config.h"
 
 #include <algorithm>
 #include <cmath>
@@ -23,10 +22,12 @@
 #include <iostream>
 #include <istream>
 #include <iterator>
+#include <map>
 #include <ostream>
 #include <regex>
 #include <set>
 #include <sstream>
+#include <string>
 #include <tuple>
 #include <unordered_map>
 #include <utility>
@@ -40,6 +41,9 @@
 #include "AUROSTD/aurostd_xerror.h"
 #include "AUROSTD/aurostd_xfile.h"
 #include "AUROSTD/aurostd_xmatrix.h"
+#include "AUROSTD/aurostd_xoption.h"
+#include "AUROSTD/aurostd_xparser.h"
+#include "AUROSTD/aurostd_xparser_json.h"
 #include "AUROSTD/aurostd_xscalar.h"
 #include "AUROSTD/aurostd_xvector.h"
 
@@ -71,15 +75,27 @@ using std::cerr;
 using std::cout;
 using std::deque;
 using std::endl;
+using std::function;
 using std::ifstream;
+using std::iostream;
 using std::istream;
+using std::istringstream;
 using std::ofstream;
 using std::ostream;
 using std::ostringstream;
+using std::pair;
+using std::set;
 using std::setprecision;
 using std::setw;
+using std::string;
 using std::stringstream;
+using std::tuple;
+using std::unordered_map;
 using std::vector;
+
+using aurostd::xmatrix;
+using aurostd::xoption;
+using aurostd::xvector;
 
 vector<string> vLibrary_ALL;
 vector<vector<string>> vLibrary_ALL_tokens;
@@ -120,32 +136,7 @@ bool AFLOWLIB_VERBOSE = true; // false;
 
 // ***************************************************************************
 // XPLUG/XUPDATE STUFF
-namespace aflowlib {  // CO20210302
-  //--------------------------------------------------------------------------------
-  // constructor
-  //--------------------------------------------------------------------------------
-  ARun::ARun(const string& dir, ostream& oss) : xStream(oss), m_initialized(false) {
-    initialize(dir);
-  }
-  ARun::ARun(const string& dir, ofstream& FileMESSAGE, ostream& oss) : xStream(FileMESSAGE, oss), m_initialized(false) {
-    initialize(dir);
-  }
-  ARun::ARun(const ARun& b) : xStream(*b.getOFStream(), *b.getOSS()) {
-    copy(b);
-  } // copy PUBLIC
-
-  ARun::~ARun() {
-    xStream::free();
-    free();
-  }
-
-  const ARun& ARun::operator=(const ARun& other) {
-    if (this != &other) {
-      copy(other);
-    }
-    return *this;
-  }
-
+namespace aflowlib {
   void ARun::clear() {
     free();
   }  // clear PUBLIC
@@ -156,24 +147,6 @@ namespace aflowlib {  // CO20210302
     m_aflowin.clear();
     m_LOCK.clear();
     m_completed = false;
-  }
-
-  void ARun::copy(const ARun& b) {  // copy PRIVATE
-    xStream::copy(b);
-    m_initialized = b.m_initialized;
-    m_dir = b.m_dir;
-    m_aflowin = b.m_aflowin;
-    m_LOCK = b.m_LOCK;
-    m_completed = b.m_completed;
-  }
-
-  bool ARun::initialize(const string& dir) {
-    m_dir = dir;
-    m_initialized = (!m_dir.empty());
-
-    const vector<string> vLOCKs;
-    const vector<string> vaflowins = {"aflow.in", _AFLOWIN_AGL_DEFAULT_, ""};
-    return true;
   }
 
 } // namespace aflowlib
@@ -332,10 +305,17 @@ namespace aflowlib {
     cerr << XPID << "multi_sh_value=" << multi_sh_value << endl;
     deque<string> dcmds;
 
-    if (PROJECT_LIBRARY == init::AFLOW_Projects_Directories("ICSD") || PROJECT_LIBRARY == init::AFLOW_Projects_Directories("LIB0") || PROJECT_LIBRARY == init::AFLOW_Projects_Directories("LIB1") ||
-        PROJECT_LIBRARY == init::AFLOW_Projects_Directories("LIB2") || PROJECT_LIBRARY == init::AFLOW_Projects_Directories("LIB3") || PROJECT_LIBRARY == init::AFLOW_Projects_Directories("LIB4") ||
-        PROJECT_LIBRARY == init::AFLOW_Projects_Directories("LIB5") || PROJECT_LIBRARY == init::AFLOW_Projects_Directories("LIB6") || PROJECT_LIBRARY == init::AFLOW_Projects_Directories("LIB7") ||
-        PROJECT_LIBRARY == init::AFLOW_Projects_Directories("LIB8") || PROJECT_LIBRARY == init::AFLOW_Projects_Directories("LIB9")) {
+    if (PROJECT_LIBRARY == init::AFLOW_Projects_Directories("ICSD")
+        || PROJECT_LIBRARY == init::AFLOW_Projects_Directories("LIB0")
+        || PROJECT_LIBRARY == init::AFLOW_Projects_Directories("LIB1")
+        || PROJECT_LIBRARY == init::AFLOW_Projects_Directories("LIB2")
+        || PROJECT_LIBRARY == init::AFLOW_Projects_Directories("LIB3")
+        || PROJECT_LIBRARY == init::AFLOW_Projects_Directories("LIB4")
+        || PROJECT_LIBRARY == init::AFLOW_Projects_Directories("LIB5")
+        || PROJECT_LIBRARY == init::AFLOW_Projects_Directories("LIB6")
+        || PROJECT_LIBRARY == init::AFLOW_Projects_Directories("LIB7")
+        || PROJECT_LIBRARY == init::AFLOW_Projects_Directories("LIB8")
+        || PROJECT_LIBRARY == init::AFLOW_Projects_Directories("LIB9")) {
       vector<string> file_list;
       for (const auto& dir_entry : std::filesystem::recursive_directory_iterator(PROJECT_LIBRARY + "/LIB/")) {
         if (aurostd::substring2bool(dir_entry.path().filename().string(), _AFLOWIN_)) {
@@ -349,10 +329,6 @@ namespace aflowlib {
         aurostd::StringSubstInPlace(tokens[i], "/" + _AFLOWIN_, "");
         aurostd::StringSubstInPlace(tokens[i], "/" + _AFLOWLOCK_, "");
         tokens_i_size = tokens[i].size();
-        if (tokens_i_size >= 5 && tokens[i][tokens_i_size - 5] == '/' && tokens[i][tokens_i_size - 4] == 'c' && tokens[i][tokens_i_size - 3] == 'o' && tokens[i][tokens_i_size - 2] == 'r' &&
-            tokens[i][tokens_i_size - 1] == 'e') {
-          tokens[i] = tokens[i].substr(0, tokens_i_size - 5);
-        } // aurostd::StringSubst(tokens[i],"/core",""); //CO20200624 - prevent /home/corey -> /homey
         string cmd = "aflow";
         if (XHOST.vflag_control.flag("BEEP")) {
           cmd += " --beep";
@@ -372,18 +348,30 @@ namespace aflowlib {
           if (delta_seconds > 1.0) {
             vdelta_seconds.push_back(delta_seconds);
             const long double eta_seconds = aurostd::mean(vdelta_seconds) * (dcmds.size() - vdelta_seconds.size());
-            cout << __AFLOW_FUNC__ << " [STEP]"
-                 << "  DONE= " << vdelta_seconds.size() << " / " << dcmds.size() - vdelta_seconds.size() << " (" << 100 * vdelta_seconds.size() / dcmds.size() << ")"
-                 << "  iSEC=" << vdelta_seconds.at(vdelta_seconds.size() - 1) << "  aSEC=" << aurostd::mean(vdelta_seconds) << "  TO_DO="
-                 << dcmds.size() - vdelta_seconds.size()
+            cout
+                << __AFLOW_FUNC__
+                << " [STEP]"
+                << "  DONE= "
+                << vdelta_seconds.size()
+                << " / "
+                << dcmds.size() - vdelta_seconds.size()
+                << " ("
+                << 100 * vdelta_seconds.size() / dcmds.size()
+                << ")"
+                << "  iSEC="
+                << vdelta_seconds.at(vdelta_seconds.size() - 1)
+                << "  aSEC="
+                << aurostd::mean(vdelta_seconds)
+                << "  TO_DO="
+                << dcmds.size() - vdelta_seconds.size()
               //       << "  ETA(secs)=" << eta_seconds
               //       << "  ETA(mins)=" << eta_seconds/(60.0)
               //       << "  ETA(hours)=" << eta_seconds/(60*60)
-                 << "  ETA(days)="
-                 << eta_seconds / (60 * 60 * 24)
+                << "  ETA(days)="
+                << eta_seconds / (60 * 60 * 24)
               //       << "  ETA(weeks)=" << eta_seconds/(60*60*24*7)
               //       << "  ETA(years)=" << eta_seconds/(60*60*24*365)
-                 << endl;
+                << endl;
           }
         }
       } else {
@@ -441,7 +429,7 @@ namespace aflowlib {
           cerr << __AFLOW_FUNC__ << " vspecies=" << aurostd::joinWDelimiter(vspecies, ",") << endl;  // CO20210315
         }
         for (auto& vspecie : vspecies) {
-          vspecie = KBIN::VASP_PseudoPotential_CleanName(vspecie); // CO20210315
+          vspecie = aurostd::VASP_PseudoPotential_CleanName(vspecie); // CO20210315
         }
         if (LDEBUG) {
           cerr << __AFLOW_FUNC__ << " vspecies=" << aurostd::joinWDelimiter(vspecies, ",") << endl;  // CO20210315
@@ -482,7 +470,7 @@ namespace aflowlib {
           vspecies.reserve(vs.size());
           for (const auto& v : vs) {
             aurostd::string2tokens(v, tokens, " ");
-            vspecies.emplace_back(KBIN::VASP_PseudoPotential_CleanName(tokens.at(3)));
+            vspecies.emplace_back(aurostd::VASP_PseudoPotential_CleanName(tokens.at(3)));
           }
           break;
         }
@@ -939,17 +927,18 @@ namespace aflowlib {
       cout << __AFLOW_FUNC__ << " AGL LOOP ---------------------------------------------------------------------------------" << endl;
       aflowlib::LIB2RAW_Loop_AGL(directory_LIB, directory_RAW, vfile, aflowlib_data, __AFLOW_FUNC__ + " (agl):");
       if (flag_WEB) {
-        const vector<string> agl_file_list{"aflow.agl.out",
-                                           "AGL.out",
-                                           "AGL_energies_temperature.out",
-                                           "AGL_thermal_properties_temperature.out",
-                                           "AGL_edos_gap_pressure.out",
-                                           "AGL_edos_gap_pressure.json",
-                                           "AGL_energy.json",
-                                           "AGL_energy_structures.json",
-                                           "AGL_energy_volume.out",
-                                           "AGL_gibbs_energy_pT.out",
-                                           "AGL_Hugoniot.out"};
+        const vector<string> agl_file_list{
+            "aflow.agl.out",
+            "AGL.out",
+            "AGL_energies_temperature.out",
+            "AGL_thermal_properties_temperature.out",
+            "AGL_edos_gap_pressure.out",
+            "AGL_edos_gap_pressure.json",
+            "AGL_energy.json",
+            "AGL_energy_structures.json",
+            "AGL_energy_volume.out",
+            "AGL_gibbs_energy_pT.out",
+            "AGL_Hugoniot.out"};
         for (const auto& file : agl_file_list) {
           const string path = string(directory_RAW).append("/").append(file);
           if (aurostd::FileExist(path)) {  // LINK  //CO20200624 - adding FileExist() check
@@ -979,14 +968,15 @@ namespace aflowlib {
       cout << __AFLOW_FUNC__ << " APL LOOP ---------------------------------------------------------------------------------" << endl;
       aflowlib::LIB2RAW_Loop_APL(directory_LIB, directory_RAW, vfile, aflowlib_data, __AFLOW_FUNC__ + " (apl):");
       if (flag_WEB) {
-        const vector<string> apl_file_list{DEFAULT_APL_PHDOSCAR_FILE,
-                                           DEFAULT_APL_PHKPOINTS_FILE,
-                                           DEFAULT_APL_PHEIGENVAL_FILE,
-                                           DEFAULT_APL_FILE_PREFIX + DEFAULT_APL_THERMO_FILE,
-                                           DEFAULT_APL_FILE_PREFIX + DEFAULT_APL_THERMO_JSON,
-                                           DEFAULT_APL_FILE_PREFIX + DEFAULT_APL_MSQRDISP_FILE,
-                                           DEFAULT_APL_FILE_PREFIX + DEFAULT_AAPL_GVEL_FILE,
-                                           aflowlib_data.system_name + "_phdosdata.json"};
+        const vector<string> apl_file_list{
+            DEFAULT_APL_PHDOSCAR_FILE,
+            DEFAULT_APL_PHKPOINTS_FILE,
+            DEFAULT_APL_PHEIGENVAL_FILE,
+            DEFAULT_APL_FILE_PREFIX + DEFAULT_APL_THERMO_FILE,
+            DEFAULT_APL_FILE_PREFIX + DEFAULT_APL_THERMO_JSON,
+            DEFAULT_APL_FILE_PREFIX + DEFAULT_APL_MSQRDISP_FILE,
+            DEFAULT_APL_FILE_PREFIX + DEFAULT_AAPL_GVEL_FILE,
+            aflowlib_data.system_name + "_phdosdata.json"};
         for (const auto& file : apl_file_list) {
           const string path = string(directory_RAW).append("/").append(file);
           if (aurostd::FileExist(path)) {
@@ -1049,8 +1039,8 @@ namespace aflowlib {
     }
     // ---------------------------------------------------------------------------------------------------------------------------------
     // write DOS + BANDS JSON //CO20171025
-    if ((aurostd::FileExist(directory_LIB + "/DOSCAR.static") || aurostd::CompressFileExist(directory_LIB + "/DOSCAR.static")) &&
-        (aurostd::FileExist(directory_LIB + "/POSCAR.static") || aurostd::CompressFileExist(directory_LIB + "/POSCAR.static"))) {
+    if ((aurostd::FileExist(directory_LIB + "/DOSCAR.static") || aurostd::CompressFileExist(directory_LIB + "/DOSCAR.static"))
+        && (aurostd::FileExist(directory_LIB + "/POSCAR.static") || aurostd::CompressFileExist(directory_LIB + "/POSCAR.static"))) {
       cout << __AFLOW_FUNC__ << " DOS + BANDS JSON  ---------------------------------------------------------------------------------" << endl;
       stringstream _json_file;
       stringstream json_file;
@@ -1121,8 +1111,8 @@ namespace aflowlib {
       } // FILES to compress
     } // icompress
     // FILES to compress
-    deque<string> vfile2compress1 = {"aflow.pgroup", "aflow.pgroup_xtal", "aflow.pgroupk", "aflow.pgroupk_xtal", "aflow.pgroupk_Patterson",
-                                     "aflow.fgroup", "aflow.iatoms",      "aflow.agroup"}; // DX20200520 - added Patterson
+    deque<string> vfile2compress1 = {
+        "aflow.pgroup", "aflow.pgroup_xtal", "aflow.pgroupk", "aflow.pgroupk_xtal", "aflow.pgroupk_Patterson", "aflow.fgroup", "aflow.iatoms", "aflow.agroup"}; // DX20200520 - added Patterson
     for (size_t ilink = 0; ilink < vfile2compress1.size(); ilink++) {
       for (size_t iout = 0; iout < vout.size(); iout++) {
         for (size_t itype = 0; itype < vtype.size(); itype++) {
@@ -1169,7 +1159,9 @@ namespace aflowlib {
 
     if (flag_WEB) {
       cout << __AFLOW_FUNC__ << " linking SYSTEM=" << aflowlib_data.system_name << endl;
-      if (aurostd::FileExist(directory_RAW + "/" + aflowlib_data.system_name + ".png") || aurostd::FileExist(directory_RAW + "/" + aflowlib_data.system_name + "_banddos.png") || // ME20190621 - new file name convention
+      if (aurostd::FileExist(directory_RAW + "/" + aflowlib_data.system_name + ".png")
+          || aurostd::FileExist(directory_RAW + "/" + aflowlib_data.system_name + "_banddos.png")
+          || // ME20190621 - new file name convention
           false) {
         aurostd::LinkFile(directory_RAW + "/*png", directory_WEB); // LINK
       }
@@ -1272,9 +1264,9 @@ namespace aflowlib {
           } // FileExist
         } // iext
       } // iout
-      deque<string> vfile2link2 = {"EIGENVAL.bands",   "DOSCAR.static",        "OUTCAR.static",      "CONTCAR.relax",      "CONTCAR.relax1",   "POSCAR.bands",     "CONTCAR.relax.vasp",
-                                   "CONTCAR.relax.qe", "CONTCAR.relax.abinit", "CONTCAR.relax.aims", "KPOINTS.relax",      "KPOINTS.static",   "KPOINTS.bands",    "INCAR.bands",
-                                   "AECCAR0.static",   "AECCAR2.static",       "CHGCAR.static",      "KPOINTS.dielectric", "INCAR.dielectric", "OUTCAR.dielectric"};
+      deque<string> vfile2link2 = {
+          "EIGENVAL.bands", "DOSCAR.static",  "OUTCAR.static", "CONTCAR.relax", "CONTCAR.relax1", "POSCAR.bands",   "CONTCAR.relax.vasp", "CONTCAR.relax.qe",   "CONTCAR.relax.abinit", "CONTCAR.relax.aims",
+          "KPOINTS.relax",  "KPOINTS.static", "KPOINTS.bands", "INCAR.bands",   "AECCAR0.static", "AECCAR2.static", "CHGCAR.static",      "KPOINTS.dielectric", "INCAR.dielectric",     "OUTCAR.dielectric"};
       for (size_t ilink = 0; ilink < vfile2link2.size(); ilink++) {
         if (aurostd::FileExist(directory_RAW + "/" + vfile2link2[ilink])) { // NO EXTENSION
           if (LDEBUG) {
@@ -1486,8 +1478,18 @@ namespace aflowlib {
       }
 
       // DONE
-      cout << __AFLOW_FUNC__ << " dir=" << directory_LIB << "   END_DATE - [v=" << string(AFLOW_VERSION) << "] -" << Message(__AFLOW_FILE__, aflags, "time")
-           << " [time=" << aurostd::utype2string(aurostd::get_seconds(seconds_begin), 2, FIXED_STREAM) << "] " << endl; // CO20200624 - added FIXED_STREAM
+      cout
+          << __AFLOW_FUNC__
+          << " dir="
+          << directory_LIB
+          << "   END_DATE - [v="
+          << string(AFLOW_VERSION)
+          << "] -"
+          << Message(__AFLOW_FILE__, aflags, "time")
+          << " [time="
+          << aurostd::utype2string(aurostd::get_seconds(seconds_begin), 2, FIXED_STREAM)
+          << "] "
+          << endl; // CO20200624 - added FIXED_STREAM
       if (XHOST.vflag_control.flag("BEEP")) {
         aurostd::beep(aurostd::min(6000, aurostd::abs(int(1 * aflowlib_data.aflowlib2string().length() - 2000))), 50);
       }
@@ -1504,8 +1506,8 @@ namespace aflowlib {
       cerr << __AFLOW_FUNC__ << " pwd=" << aurostd::getPWD() << endl;
     }
 
-    const std::filesystem::perms dir_perms =
-        (std::filesystem::perms::owner_all | std::filesystem::perms::group_read | std::filesystem::perms::group_exec | std::filesystem::perms::others_read | std::filesystem::perms::others_exec);
+    const std::filesystem::perms dir_perms
+        = (std::filesystem::perms::owner_all | std::filesystem::perms::group_read | std::filesystem::perms::group_exec | std::filesystem::perms::others_read | std::filesystem::perms::others_exec);
     const std::filesystem::perms file_perms = (std::filesystem::perms::owner_read | std::filesystem::perms::owner_write | std::filesystem::perms::group_read | std::filesystem::perms::others_read);
     for (const auto& dir_entry : std::filesystem::directory_iterator(aurostd::CleanFileName(directory_RAW))) {
       if (dir_entry.is_directory()) {
@@ -1727,11 +1729,12 @@ namespace aflowlib {
     const bool flag_use_GNUPLOT = !flag_use_MATLAB; // KY
 
     // copy _AFLOWIN_ LOCK DOSCAR.static.EXT EIGENVAL.bands.EXT KPOINTS.bands.EXT POSCAR.bands.EXT
-    const vector<string> files{_AFLOWIN_, _AFLOWLOCK_, "DOSCAR.static", "OUTCAR.static", "OSZICAR.static", "OSZICAR.bands", "EIGENVAL.bands", "KPOINTS.static", "KPOINTS.bands",
-                               // "INCAR.static",  // not needed but good for show off SC 0914
-                               "INCAR.bands",
-                               // "POSCAR.relax1",
-                               "POSCAR.bands"};
+    const vector<string> files{
+        _AFLOWIN_, _AFLOWLOCK_, "DOSCAR.static", "OUTCAR.static", "OSZICAR.static", "OSZICAR.bands", "EIGENVAL.bands", "KPOINTS.static", "KPOINTS.bands",
+        // "INCAR.static",  // not needed but good for show off SC 0914
+        "INCAR.bands",
+        // "POSCAR.relax1",
+        "POSCAR.bands"};
     for (const auto& file : files) {
       aflowlib::LIB2RAW_FileNeeded(directory_LIB, file, directory_RAW, file, vfiles, MESSAGE);
     }
@@ -1889,8 +1892,24 @@ namespace aflowlib {
 
     xOUTCAR xOUT;
     xOUT.GetPropertiesFile(directory_RAW + "/OUTCAR.dielectric");
+    xOUT.GetOptical();
     data.freq_plasma = xOUT.freq_plasma;
     data.dielectric_static = xOUT.dielectric_static;
+
+    aurostd::JSON::object json_dielectric(aurostd::JSON::object_types::DICTIONARY);
+    json_dielectric["frequency_grid"] = xOUT.freq_grid;
+    json_dielectric["energy_loss_function_iso"] = xOUT.energy_loss_function_iso;
+    json_dielectric["dielectric_full_iso_real"] = xOUT.dielectric_full_iso_real;
+    json_dielectric["dielectric_full_iso_imag"] = xOUT.dielectric_full_iso_imag;
+
+    const string ofilestrjson = directory_LIB + "/" + "DIELECTRIC" + ".json";
+    json_dielectric.saveFile(ofilestrjson);
+    cout << MESSAGE << " " << __AFLOW_FUNC__ << " Writing out DIELECTRIC.json! " << directory_LIB << endl;
+
+    if (aurostd::FileExist(ofilestrjson)) {
+      string path_to = directory_RAW + "/" + "DIELECTRIC" + ".json";
+      aurostd::LinkFile(ofilestrjson, path_to); // link the file, no need to de-compress
+    }
 
     cout << MESSAGE << " " << __AFLOW_FUNC__ << " end " << directory_LIB << endl;
   }
@@ -2007,8 +2026,15 @@ namespace aflowlib {
         if (!xPOTCAR_EnthalpyReference_AUID(data.vspecies_pp_AUID.at(i), data.METAGGA)) {
           FORMATION_CALC = false; // WORKS WITH SCANN TOO
           if (AFLOWLIB_VERBOSE) {
-            cout << MESSAGE << " REFERENCE NOT AVAILABLE species_pp=" << xstr.species_pp_version.at(i) << "  species_pp_AUID=" << data.vspecies_pp_AUID.at(i)
-                 << (data.METAGGA.empty() ? string("") : string("  METAGGA=[" + data.METAGGA + "]")) << "   Href=nothing" << endl;
+            cout
+                << MESSAGE
+                << " REFERENCE NOT AVAILABLE species_pp="
+                << xstr.species_pp_version.at(i)
+                << "  species_pp_AUID="
+                << data.vspecies_pp_AUID.at(i)
+                << (data.METAGGA.empty() ? string("") : string("  METAGGA=[" + data.METAGGA + "]"))
+                << "   Href=nothing"
+                << endl;
           }
         }
       }
@@ -2035,8 +2061,7 @@ namespace aflowlib {
         xPOTCAR_EnthalpyReference_AUID(data.vspecies_pp_AUID.at(i), data.METAGGA, aus_gs_structure, aus_gs_atom, aus_volume_atom, aus_spin_atom);
         enthalpy_atom_ref = aus_gs_atom;
         if (AFLOWLIB_VERBOSE) {
-          cout << MESSAGE << " REFERENCE species=" << xstr.species.at(i) << " species_pp_AUID=" << data.vspecies_pp_AUID.at(i) << (data.METAGGA.empty() ? string("") : string("  METAGGA=[" + data.METAGGA + "]"))
-               << "   Href=" << enthalpy_atom_ref << endl;
+          cout << MESSAGE << " REFERENCE species=" << xstr.species.at(i) << " species_pp_AUID=" << data.vspecies_pp_AUID.at(i) << (data.METAGGA.empty() ? string("") : string("  METAGGA=[" + data.METAGGA + "]")) << "   Href=" << enthalpy_atom_ref << endl;
         }
         venthalpy_atom_ref.push_back(enthalpy_atom_ref);
       }
@@ -2370,8 +2395,12 @@ namespace aflowlib {
           }
         }
         for (size_t iext = 1; iext < XHOST.vext.size(); iext++) { // SKIP uncompressed
-          if (!aurostd::FileExist(directory_RAW + "/CONTCAR.relax") && aurostd::FileExist(directory_LIB + "/CONTCAR.static" + XHOST.vext[iext]) && !aurostd::FileExist(directory_RAW + "/OUTCAR.relax") &&
-              aurostd::FileExist(directory_LIB + "/OUTCAR.static" + XHOST.vext[iext]) && !aurostd::FileExist(directory_RAW + "/KPOINTS.relax") && aurostd::FileExist(directory_LIB + "/KPOINTS.static" + XHOST.vext[iext])) {
+          if (!aurostd::FileExist(directory_RAW + "/CONTCAR.relax")
+              && aurostd::FileExist(directory_LIB + "/CONTCAR.static" + XHOST.vext[iext])
+              && !aurostd::FileExist(directory_RAW + "/OUTCAR.relax")
+              && aurostd::FileExist(directory_LIB + "/OUTCAR.static" + XHOST.vext[iext])
+              && !aurostd::FileExist(directory_RAW + "/KPOINTS.relax")
+              && aurostd::FileExist(directory_LIB + "/KPOINTS.static" + XHOST.vext[iext])) {
             const vector<string> vcarkeys{"CONTCAR", "OUTCAR", "KPOINTS"};
             for (const auto& key : vcarkeys) {
               filecar_map[key].lib = aurostd::CleanFileName(string(directory_LIB).append("/").append(key).append(".static").append(XHOST.vext[iext]));
@@ -2441,8 +2470,10 @@ namespace aflowlib {
             aflowlib::LIB2RAW_FileNeeded(directory_LIB, key + ".relax1", directory_RAW, key + ".relax1", vfiles, MESSAGE);
           }
         }
-        if (!aurostd::FileExist(directory_RAW + "/CONTCAR.relax1") && aurostd::FileExist(directory_LIB + "/CONTCAR.static" + XHOST.vext[iext]) && !aurostd::FileExist(directory_RAW + "/OUTCAR.relax1") &&
-            aurostd::FileExist(directory_LIB + "/OUTCAR.static" + XHOST.vext[iext])) {
+        if (!aurostd::FileExist(directory_RAW + "/CONTCAR.relax1")
+            && aurostd::FileExist(directory_LIB + "/CONTCAR.static" + XHOST.vext[iext])
+            && !aurostd::FileExist(directory_RAW + "/OUTCAR.relax1")
+            && aurostd::FileExist(directory_LIB + "/OUTCAR.static" + XHOST.vext[iext])) {
           // loop cars again because the && in above if-check, combining into single loop would be equivalent to using || for the two cars
           for (const auto& key : vcarkeys) {
             filecar_map[key].lib = aurostd::CleanFileName(string(directory_LIB).append("/").append(key).append(".static").append(XHOST.vext[iext]));
@@ -2811,8 +2842,25 @@ namespace aflowlib {
 
     // LOAD SPECIES
     if (LDEBUG) {
-      cerr << __AFLOW_FUNC__ << " " << data.nspecies << " " << str_relax.species.size() << " " << str_relax.species_pp.size() << " " << str_relax.species_pp_type.size() << " "
-           << str_relax.species_pp_version.size() << " " << str_relax.species_pp_ZVAL.size() << " " << str_relax.species_volume.size() << " " << str_relax.species_mass.size() << endl;
+      cerr
+          << __AFLOW_FUNC__
+          << " "
+          << data.nspecies
+          << " "
+          << str_relax.species.size()
+          << " "
+          << str_relax.species_pp.size()
+          << " "
+          << str_relax.species_pp_type.size()
+          << " "
+          << str_relax.species_pp_version.size()
+          << " "
+          << str_relax.species_pp_ZVAL.size()
+          << " "
+          << str_relax.species_volume.size()
+          << " "
+          << str_relax.species_mass.size()
+          << endl;
     }
 
     str_relax.species.clear();
@@ -2905,8 +2953,27 @@ namespace aflowlib {
     }
 
     if (LDEBUG) {
-      cerr << __AFLOW_FUNC__ << " " << data.nspecies << " " << str_relax.species.size() << " " << str_relax.species_pp.size() << " " << str_relax.species_pp_type.size() << " " << str_relax.species_pp_version.size()
-           << " " << str_relax.species_pp_ZVAL.size() << " " << str_relax.species_pp_vLDAU.size() << " " << str_relax.species_volume.size() << " " << str_relax.species_mass.size() << endl;
+      cerr
+          << __AFLOW_FUNC__
+          << " "
+          << data.nspecies
+          << " "
+          << str_relax.species.size()
+          << " "
+          << str_relax.species_pp.size()
+          << " "
+          << str_relax.species_pp_type.size()
+          << " "
+          << str_relax.species_pp_version.size()
+          << " "
+          << str_relax.species_pp_ZVAL.size()
+          << " "
+          << str_relax.species_pp_vLDAU.size()
+          << " "
+          << str_relax.species_volume.size()
+          << " "
+          << str_relax.species_mass.size()
+          << endl;
     }
     vector<std::pair<size_t, string>> size_checks{
         {           str_relax.species.size(),            "str_relax.species.size()"},
@@ -3692,18 +3759,37 @@ namespace aflowlib {
       }
 
       // A1
-      if (data.aflow_prototype_label_orig == "A_cF4_225_a" && (s == "Ac" || s == "Ag" || s == "Al" || s == "Au" || s == "Ca" || s == "Ce" || s == "Cu" || s == "Ir" || s == "La" || s == "Ni" || s == "Pb" ||
-                                                               s == "Pd" || s == "Pt" || s == "Rh" || s == "Sr" || s == "Yb" || s == "Ar" || s == "Ne" || s == "Xe" || s == "Kr")) { // A1
+      if (data.aflow_prototype_label_orig == "A_cF4_225_a"
+          && (s == "Ac"
+              || s == "Ag"
+              || s == "Al"
+              || s == "Au"
+              || s == "Ca"
+              || s == "Ce"
+              || s == "Cu"
+              || s == "Ir"
+              || s == "La"
+              || s == "Ni"
+              || s == "Pb"
+              || s == "Pd"
+              || s == "Pt"
+              || s == "Rh"
+              || s == "Sr"
+              || s == "Yb"
+              || s == "Ar"
+              || s == "Ne"
+              || s == "Xe"
+              || s == "Kr")) { // A1
         cout << TXT1 << "A1" << TXT2 << endl;
       }
       // A2
-      if (data.aflow_prototype_label_orig == "A_cI2_229_a" &&
-          (s == "Ba" || s == "Cr" || s == "Fe" || s == "K" || s == "Li" || s == "Mo" || s == "Na" || s == "Nb" || s == "Ta" || s == "V" || s == "W" || s == "Cs" || s == "Eu")) { // A2
+      if (data.aflow_prototype_label_orig == "A_cI2_229_a"
+          && (s == "Ba" || s == "Cr" || s == "Fe" || s == "K" || s == "Li" || s == "Mo" || s == "Na" || s == "Nb" || s == "Ta" || s == "V" || s == "W" || s == "Cs" || s == "Eu")) { // A2
         cout << TXT1 << "A2" << TXT2 << endl;
       }
       // A3
-      if (data.aflow_prototype_label_orig == "A_hP2_194_c" && (s == "Be" || s == "Cd" || s == "Co" || s == "Dy" || s == "Hf" || s == "Hg" || s == "Ho" || s == "Mg" || s == "Os" || s == "Re" || s == "Ru" ||
-                                                               s == "Sc" || s == "Tc" || s == "Ti" || s == "Tl" || s == "Y" || s == "Zn" || s == "Zr" || s == "He")) { // A3
+      if (data.aflow_prototype_label_orig == "A_hP2_194_c"
+          && (s == "Be" || s == "Cd" || s == "Co" || s == "Dy" || s == "Hf" || s == "Hg" || s == "Ho" || s == "Mg" || s == "Os" || s == "Re" || s == "Ru" || s == "Sc" || s == "Tc" || s == "Ti" || s == "Tl" || s == "Y" || s == "Zn" || s == "Zr" || s == "He")) { // A3
         cout << TXT1 << "A3" << TXT2 << endl;
       }
       // A4
@@ -4262,7 +4348,7 @@ namespace aflowlib {
     if (vcif.empty() && aurostd::FileExist(directory_RAW + "/POSCAR.bands")) {
       vcif.emplace_back(directory_RAW + "/POSCAR.bands", IOVASP_AUTO);
     }
-    const xvector<double> nvec(3);
+    xvector<double> nvec(3);
     nvec(1) = 1;
     nvec(2) = 1;
     nvec(3) = 1;
@@ -4783,17 +4869,18 @@ namespace aflowlib {
     // AFLOW AGL
     aflow_agl_out.clear();
     if (aurostd::CompressFileExist(directory_LIB + "/" + "aflow.agl.out")) {
-      const vector<string> agl_file_list{"aflow.agl.out",
-                                         "AGL.out",
-                                         "AGL_energies_temperature.out",
-                                         "AGL_thermal_properties_temperature.out",
-                                         "AGL_edos_gap_pressure.out",
-                                         "AGL_edos_gap_pressure.json",
-                                         "AGL_energy.json",
-                                         "AGL_energy_structures.json",
-                                         "AGL_energy_volume.out",
-                                         "AGL_gibbs_energy_pT.out",
-                                         "AGL_Hugoniot.out"};
+      const vector<string> agl_file_list{
+          "aflow.agl.out",
+          "AGL.out",
+          "AGL_energies_temperature.out",
+          "AGL_thermal_properties_temperature.out",
+          "AGL_edos_gap_pressure.out",
+          "AGL_edos_gap_pressure.json",
+          "AGL_energy.json",
+          "AGL_energy_structures.json",
+          "AGL_energy_volume.out",
+          "AGL_gibbs_energy_pT.out",
+          "AGL_Hugoniot.out"};
       for (const auto& file : agl_file_list) {
         aflowlib::LIB2RAW_FileNeeded(directory_LIB, file, directory_RAW, file, vfiles, MESSAGE);
       }
@@ -4888,20 +4975,24 @@ namespace aflowlib {
       cout << MESSAGE << " agl_poisson_ratio_source = " << ((!data.agl_poisson_ratio_source.empty()) ? (data.agl_poisson_ratio_source) : "unavailable") << endl; // CT20181212
     }
     if (AFLOWLIB_VERBOSE) {
-      cout << MESSAGE << " agl_vibrational_free_energy_300K_cell (meV/cell) = "
-           << ((data.agl_vibrational_free_energy_300K_cell != AUROSTD_NAN) ? aurostd::utype2string(data.agl_vibrational_free_energy_300K_cell, 10) : "unavailable") << endl; // CT20181212
+      cout
+          << MESSAGE
+          << " agl_vibrational_free_energy_300K_cell (meV/cell) = "
+          << ((data.agl_vibrational_free_energy_300K_cell != AUROSTD_NAN) ? aurostd::utype2string(data.agl_vibrational_free_energy_300K_cell, 10) : "unavailable")
+          << endl; // CT20181212
     }
     if (AFLOWLIB_VERBOSE) {
-      cout << MESSAGE << " agl_vibrational_free_energy_300K_atom (meV/atom) = "
-           << ((data.agl_vibrational_free_energy_300K_atom != AUROSTD_NAN) ? aurostd::utype2string(data.agl_vibrational_free_energy_300K_atom, 10) : "unavailable") << endl; // CT20181212
+      cout
+          << MESSAGE
+          << " agl_vibrational_free_energy_300K_atom (meV/atom) = "
+          << ((data.agl_vibrational_free_energy_300K_atom != AUROSTD_NAN) ? aurostd::utype2string(data.agl_vibrational_free_energy_300K_atom, 10) : "unavailable")
+          << endl; // CT20181212
     }
     if (AFLOWLIB_VERBOSE) {
-      cout << MESSAGE << " agl_vibrational_entropy_300K_cell (meV/cell*K) = " << ((data.agl_vibrational_entropy_300K_cell != AUROSTD_NAN) ? aurostd::utype2string(data.agl_vibrational_entropy_300K_cell, 10) : "unavailable")
-           << endl; // CT20181212
+      cout << MESSAGE << " agl_vibrational_entropy_300K_cell (meV/cell*K) = " << ((data.agl_vibrational_entropy_300K_cell != AUROSTD_NAN) ? aurostd::utype2string(data.agl_vibrational_entropy_300K_cell, 10) : "unavailable") << endl; // CT20181212
     }
     if (AFLOWLIB_VERBOSE) {
-      cout << MESSAGE << " agl_vibrational_entropy_300K_atom (meV/atom*K) = " << ((data.agl_vibrational_entropy_300K_atom != AUROSTD_NAN) ? aurostd::utype2string(data.agl_vibrational_entropy_300K_atom, 10) : "unavailable")
-           << endl; // CT20181212
+      cout << MESSAGE << " agl_vibrational_entropy_300K_atom (meV/atom*K) = " << ((data.agl_vibrational_entropy_300K_atom != AUROSTD_NAN) ? aurostd::utype2string(data.agl_vibrational_entropy_300K_atom, 10) : "unavailable") << endl; // CT20181212
     }
     // done
     if (AFLOWLIB_VERBOSE) {
@@ -5016,16 +5107,24 @@ namespace aflowlib {
         try {
           if (vline.size() != 6) {
             stringstream message;
-            message << "Could not read stiffness tensor: wrong number of lines"
-                    << " (found " << vline.size() << ", need 6).";
+            message
+                << "Could not read stiffness tensor: wrong number of lines"
+                << " (found "
+                << vline.size()
+                << ", need 6).";
             throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, message, _FILE_CORRUPT_);
           }
           for (int i = 0; i < 6; i++) {
             aurostd::string2tokens(vline[i], row);
             if (row.size() != 6) {
               stringstream message;
-              message << "Could not read stiffness tensor."
-                      << " Wrong number of columns in line " << (i + 1) << " (found " << row.size() << ", need 6).";
+              message
+                  << "Could not read stiffness tensor."
+                  << " Wrong number of columns in line "
+                  << (i + 1)
+                  << " (found "
+                  << row.size()
+                  << ", need 6).";
               throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, message, _FILE_CORRUPT_);
             }
             for (int j = 0; j < 6; j++) {
@@ -5048,16 +5147,24 @@ namespace aflowlib {
         try {
           if (vline.size() != 6) {
             stringstream message;
-            message << "Could not read compliance tensor: wrong number of lines"
-                    << " (found " << vline.size() << ", need 6).";
+            message
+                << "Could not read compliance tensor: wrong number of lines"
+                << " (found "
+                << vline.size()
+                << ", need 6).";
             throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, message, _FILE_CORRUPT_);
           }
           for (int i = 0; i < 6; i++) {
             aurostd::string2tokens(vline[i], row);
             if (row.size() != 6) {
               stringstream message;
-              message << "Could not read compliance tensor:"
-                      << " wrong number of columns in line " << (i + 1) << " (found " << row.size() << ", need 6).";
+              message
+                  << "Could not read compliance tensor:"
+                  << " wrong number of columns in line "
+                  << (i + 1)
+                  << " (found "
+                  << row.size()
+                  << ", need 6).";
               throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, message, _FILE_CORRUPT_);
             }
             for (int j = 0; j < 6; j++) {
@@ -5217,24 +5324,32 @@ namespace aflowlib {
     }
 
     if (AFLOWLIB_VERBOSE) {
-      std::cout << MESSAGE << " energy_free_vibrational_cell_apl_300K = "
-                << ((data.energy_free_vibrational_cell_apl_300K != AUROSTD_NAN) ? aurostd::utype2string<double>(data.energy_free_vibrational_cell_apl_300K) : "unavailable") << std::endl;
-      std::cout << MESSAGE << " energy_free_vibrational_atom_apl_300K = "
-                << ((data.energy_free_vibrational_atom_apl_300K != AUROSTD_NAN) ? aurostd::utype2string<double>(data.energy_free_vibrational_atom_apl_300K) : "unavailable") << std::endl;
-      std::cout << MESSAGE << " entropy_vibrational_cell_apl_300K = " << ((data.entropy_vibrational_cell_apl_300K != AUROSTD_NAN) ? aurostd::utype2string<double>(data.entropy_vibrational_cell_apl_300K) : "unavailable")
-                << std::endl;
-      std::cout << MESSAGE << " entropy_vibrational_atom_apl_300K = " << ((data.entropy_vibrational_atom_apl_300K != AUROSTD_NAN) ? aurostd::utype2string<double>(data.entropy_vibrational_atom_apl_300K) : "unavailable")
-                << std::endl;
-      std::cout << MESSAGE << " energy_internal_vibrational_cell_apl_300K = "
-                << ((data.energy_internal_vibrational_cell_apl_300K != AUROSTD_NAN) ? aurostd::utype2string<double>(data.energy_internal_vibrational_cell_apl_300K) : "unavailable") << std::endl;
-      std::cout << MESSAGE << " energy_internal_vibrational_atom_apl_300K = "
-                << ((data.energy_internal_vibrational_atom_apl_300K != AUROSTD_NAN) ? aurostd::utype2string<double>(data.energy_internal_vibrational_atom_apl_300K) : "unavailable") << std::endl;
+      std::cout
+          << MESSAGE
+          << " energy_free_vibrational_cell_apl_300K = "
+          << ((data.energy_free_vibrational_cell_apl_300K != AUROSTD_NAN) ? aurostd::utype2string<double>(data.energy_free_vibrational_cell_apl_300K) : "unavailable")
+          << std::endl;
+      std::cout
+          << MESSAGE
+          << " energy_free_vibrational_atom_apl_300K = "
+          << ((data.energy_free_vibrational_atom_apl_300K != AUROSTD_NAN) ? aurostd::utype2string<double>(data.energy_free_vibrational_atom_apl_300K) : "unavailable")
+          << std::endl;
+      std::cout << MESSAGE << " entropy_vibrational_cell_apl_300K = " << ((data.entropy_vibrational_cell_apl_300K != AUROSTD_NAN) ? aurostd::utype2string<double>(data.entropy_vibrational_cell_apl_300K) : "unavailable") << std::endl;
+      std::cout << MESSAGE << " entropy_vibrational_atom_apl_300K = " << ((data.entropy_vibrational_atom_apl_300K != AUROSTD_NAN) ? aurostd::utype2string<double>(data.entropy_vibrational_atom_apl_300K) : "unavailable") << std::endl;
+      std::cout
+          << MESSAGE
+          << " energy_internal_vibrational_cell_apl_300K = "
+          << ((data.energy_internal_vibrational_cell_apl_300K != AUROSTD_NAN) ? aurostd::utype2string<double>(data.energy_internal_vibrational_cell_apl_300K) : "unavailable")
+          << std::endl;
+      std::cout
+          << MESSAGE
+          << " energy_internal_vibrational_atom_apl_300K = "
+          << ((data.energy_internal_vibrational_atom_apl_300K != AUROSTD_NAN) ? aurostd::utype2string<double>(data.energy_internal_vibrational_atom_apl_300K) : "unavailable")
+          << std::endl;
       std::cout << MESSAGE << " energy_zero_point_cell_apl = " << ((data.energy_zero_point_cell_apl != AUROSTD_NAN) ? aurostd::utype2string<double>(data.energy_zero_point_cell_apl) : "unavailable") << std::endl;
       std::cout << MESSAGE << " energy_zero_point_atom_apl = " << ((data.energy_zero_point_atom_apl != AUROSTD_NAN) ? aurostd::utype2string<double>(data.energy_zero_point_atom_apl) : "unavailable") << std::endl;
-      std::cout << MESSAGE << " heat_capacity_Cv_cell_apl_300K = " << ((data.heat_capacity_Cv_cell_apl_300K != AUROSTD_NAN) ? aurostd::utype2string<double>(data.heat_capacity_Cv_cell_apl_300K) : "unavailable")
-                << std::endl;
-      std::cout << MESSAGE << " heat_capacity_Cv_atom_apl_300K = " << ((data.heat_capacity_Cv_atom_apl_300K != AUROSTD_NAN) ? aurostd::utype2string<double>(data.heat_capacity_Cv_atom_apl_300K) : "unavailable")
-                << std::endl;
+      std::cout << MESSAGE << " heat_capacity_Cv_cell_apl_300K = " << ((data.heat_capacity_Cv_cell_apl_300K != AUROSTD_NAN) ? aurostd::utype2string<double>(data.heat_capacity_Cv_cell_apl_300K) : "unavailable") << std::endl;
+      std::cout << MESSAGE << " heat_capacity_Cv_atom_apl_300K = " << ((data.heat_capacity_Cv_atom_apl_300K != AUROSTD_NAN) ? aurostd::utype2string<double>(data.heat_capacity_Cv_atom_apl_300K) : "unavailable") << std::endl;
     }
 
     // Thermo json file
@@ -5335,14 +5450,15 @@ namespace aflowlib {
     string qha_raw_file = directory_RAW + "/" + DEFAULT_QHA_FILE_PREFIX + "out";
 
     if (aurostd::CompressFileExist(directory_LIB + "/" + DEFAULT_QHA_FILE_PREFIX + "out")) { //"aflow.qha.out"
-      const vector<string> qha_file_list{"aflow_qha.in",
-                                         DEFAULT_QHA_FILE_PREFIX + "out",
-                                         DEFAULT_QHA_FILE_PREFIX + DEFAULT_QHA_THERMO_FILE,
-                                         DEFAULT_QHA_FILE_PREFIX + DEFAULT_QHA_THERMO_FILE,
-                                         DEFAULT_QHA_FILE_PREFIX + DEFAULT_QHA_FVT_FILE,
-                                         DEFAULT_QHA_FILE_PREFIX + DEFAULT_QHA_PDIS_FILE + ".T300K.out",
-                                         DEFAULT_APL_PHPOSCAR_FILE,
-                                         DEFAULT_QHA_FILE_PREFIX + DEFAULT_QHA_KPOINTS_FILE};
+      const vector<string> qha_file_list{
+          "aflow_qha.in",
+          DEFAULT_QHA_FILE_PREFIX + "out",
+          DEFAULT_QHA_FILE_PREFIX + DEFAULT_QHA_THERMO_FILE,
+          DEFAULT_QHA_FILE_PREFIX + DEFAULT_QHA_THERMO_FILE,
+          DEFAULT_QHA_FILE_PREFIX + DEFAULT_QHA_FVT_FILE,
+          DEFAULT_QHA_FILE_PREFIX + DEFAULT_QHA_PDIS_FILE + ".T300K.out",
+          DEFAULT_APL_PHPOSCAR_FILE,
+          DEFAULT_QHA_FILE_PREFIX + DEFAULT_QHA_KPOINTS_FILE};
       for (const auto& file : qha_file_list) {
         aflowlib::LIB2RAW_FileNeeded(directory_LIB, file, directory_RAW, file, vfiles, MESSAGE);
       }
@@ -5414,8 +5530,9 @@ namespace aflowlib {
       }
 
       // convert T-dependent phonon dispersions to JSON file
-      if (aurostd::CompressFileExist(directory_RAW + "/" + DEFAULT_QHA_FILE_PREFIX + DEFAULT_QHA_PDIS_FILE + ".T300K.out") && aurostd::CompressFileExist(directory_RAW + "/" + DEFAULT_APL_PHPOSCAR_FILE) &&
-          aurostd::CompressFileExist(directory_RAW + "/" + DEFAULT_QHA_FILE_PREFIX + DEFAULT_QHA_KPOINTS_FILE)) {
+      if (aurostd::CompressFileExist(directory_RAW + "/" + DEFAULT_QHA_FILE_PREFIX + DEFAULT_QHA_PDIS_FILE + ".T300K.out")
+          && aurostd::CompressFileExist(directory_RAW + "/" + DEFAULT_APL_PHPOSCAR_FILE)
+          && aurostd::CompressFileExist(directory_RAW + "/" + DEFAULT_QHA_FILE_PREFIX + DEFAULT_QHA_KPOINTS_FILE)) {
         if (AFLOWLIB_VERBOSE) {
           cout << MESSAGE << " converting T-dependent phonon dispersions to JSON format " << endl;
         }
@@ -5440,8 +5557,11 @@ namespace aflowlib {
       cout << MESSAGE << " gruneisen_qha_300K = " << ((data.gruneisen_qha_300K != AUROSTD_NAN) ? aurostd::utype2string(data.gruneisen_qha_300K, 10) : "unavailable") << endl;
       cout << MESSAGE << " thermal_expansion_qha_300K (10^-5/K) = " << ((data.thermal_expansion_qha_300K != AUROSTD_NAN) ? aurostd::utype2string(data.thermal_expansion_qha_300K, 10) : "unavailable") << endl;
       cout << MESSAGE << " modulus_bulk_qha_300K (GPa) = " << ((data.modulus_bulk_qha_300K != AUROSTD_NAN) ? aurostd::utype2string(data.modulus_bulk_qha_300K, 10) : "unavailable") << endl;
-      cout << MESSAGE << " modulus_bulk_derivative_pressure_qha_300K = "
-           << ((data.modulus_bulk_derivative_pressure_qha_300K != AUROSTD_NAN) ? aurostd::utype2string(data.modulus_bulk_derivative_pressure_qha_300K, 10) : "unavailable") << endl;
+      cout
+          << MESSAGE
+          << " modulus_bulk_derivative_pressure_qha_300K = "
+          << ((data.modulus_bulk_derivative_pressure_qha_300K != AUROSTD_NAN) ? aurostd::utype2string(data.modulus_bulk_derivative_pressure_qha_300K, 10) : "unavailable")
+          << endl;
       cout << MESSAGE << " heat_capacity_Cv_atom_qha_300K = " << ((data.heat_capacity_Cv_atom_qha_300K != AUROSTD_NAN) ? aurostd::utype2string(data.heat_capacity_Cv_atom_qha_300K, 10) : "unavailable") << endl;
       cout << MESSAGE << " heat_capacity_Cv_cell_qha_300K = " << ((data.heat_capacity_Cv_cell_qha_300K != AUROSTD_NAN) ? aurostd::utype2string(data.heat_capacity_Cv_cell_qha_300K, 10) : "unavailable") << endl;
       cout << MESSAGE << " heat_capacity_Cp_atom_qha_300K = " << ((data.heat_capacity_Cp_atom_qha_300K != AUROSTD_NAN) ? aurostd::utype2string(data.heat_capacity_Cp_atom_qha_300K, 10) : "unavailable") << endl;
@@ -5503,14 +5623,13 @@ namespace aflowlib {
     vector<double> v_dgs;
     vector<double> v_energies;
     vector<string> vdirfiles;
-    string pocc_out_lib_file = directory_LIB + "/" + POCC_FILE_PREFIX + POCC_OUT_FILE;
+    string pocc_out_lib_file = directory_LIB + "/" + POCC_FILE_PREFIX + DEFAULT_POCC_JSON;
     string pocc_agl_lib_file = directory_LIB + "/" + "aflow.pocc_agl.out";
     string pocc_agl_raw_file = directory_RAW + "/" + "aflow.pocc_agl.out";
     string pocc_agl_raw_file_content;
 
     if (aurostd::CompressFileExist(pocc_out_lib_file, pocc_out_lib_file)) {
       aflowlib::LIB2RAW_FileNeeded(directory_LIB, "aflow.in", directory_RAW, "aflow.in", vfiles, MESSAGE); // aflow.in, needed for ExtractSystemName() in plotter
-      aflowlib::LIB2RAW_FileNeeded(directory_LIB, POCC_FILE_PREFIX + POCC_OUT_FILE, directory_RAW, POCC_FILE_PREFIX + POCC_OUT_FILE, vfiles, MESSAGE); // aflow.pocc.out
       aflowlib::LIB2RAW_FileNeeded(directory_LIB, POCC_FILE_PREFIX + POCC_UNIQUE_SUPERCELLS_FILE, directory_RAW, POCC_FILE_PREFIX + POCC_UNIQUE_SUPERCELLS_FILE, vfiles, MESSAGE); // aflow.pocc.structures_unique.out
       // get DOSCAR.pocc + png's
       aurostd::DirectoryLS(directory_LIB, vdirfiles);
@@ -5526,30 +5645,33 @@ namespace aflowlib {
           }
         }
       }
-      if (AFLOWLIB_VERBOSE) {
-        cout << MESSAGE << " loading " << string(directory_LIB + "/" + POCC_FILE_PREFIX + POCC_OUT_FILE) << endl;
+
+      //NHA20260216
+      //link JSON for pocc.dielectric if they exist
+      string path_from = directory_LIB + "/" + POCC_FILE_PREFIX + DEFAULT_POCC_JSON + ".xz";
+      string path_to = directory_RAW + "/" + POCC_FILE_PREFIX + DEFAULT_POCC_JSON + ".xz";
+      if (aurostd::FileExist(path_from)) {
+        aurostd::LinkFile(path_from, path_to); // link the file, no need to de-compress
       }
 
-      aflow_pocc_out.str(aurostd::substring2string(aurostd::compressfile2string(pocc_out_lib_file), "[AFLOW_POCC]START_TEMPERATURE=ALL", "[AFLOW_POCC]STOP_TEMPERATURE=ALL", 1));
-      aurostd::stream2vectorstring(aflow_pocc_out, vline);
-      for (i = 0; i < vline.size(); i++) {
-        aurostd::StringSubstInPlace(vline[i], "=", " ");
-        aurostd::string2tokens(vline[i], tokens, " ");
-        if (tokens.size() >= 2) {
-          if (tokens[0] == "enthalpy_mix_atom") {
-            data.energy_atom = aurostd::string2utype<double>(tokens[1]);
-          }
-          if (tokens[0] == "entropy_forming_ability") {
-            data.entropy_forming_ability = aurostd::string2utype<double>(tokens[1]);
-          }
-          if (tokens[0].find("degeneracy_supercell_") != string::npos) {
-            v_dgs.emplace_back(aurostd::string2utype<double>(tokens[1]));
-          }
-          if (tokens[0].find("enthalpy_atom_supercell_") != string::npos) {
-            v_energies.emplace_back(aurostd::string2utype<double>(tokens[1]));
-          }
-        }
+      if (AFLOWLIB_VERBOSE) {
+        cout << MESSAGE << " loading " << string(directory_LIB + "/" + POCC_FILE_PREFIX + DEFAULT_POCC_JSON) << endl;
       }
+
+      //NHA20260216
+      //check to make sure data was saved properly in pocc.json
+      aurostd::JSON::object pocc_json = aurostd::JSON::loadFile(pocc_out_lib_file);
+      data.energy_atom = static_cast<double>(pocc_json["temperature_independent_properties"]["enthalpy_mix_atom"]);
+      data.entropy_forming_ability = static_cast<double>(pocc_json["temperature_independent_properties"]["entropy_forming_ability"]);
+      std::map<string, double> pocc_degeneracy = static_cast<std::map<string, double>>(pocc_json["temperature_independent_properties"]["degeneracy_supercell"]);
+      std::map<string, double> pocc_supercell_enthalpies = static_cast<std::map<string, double>>(pocc_json["temperature_independent_properties"]["enthalpy_atom_supercell"]);
+      for (const auto& pair : pocc_degeneracy) {
+        v_dgs.emplace_back(static_cast<double>(pair.second));
+      }
+      for (const auto& pair : pocc_supercell_enthalpies) {
+        v_energies.emplace_back(static_cast<double>(pair.second));
+      }
+
       if (AFLOWLIB_VERBOSE && data.energy_atom != AUROSTD_NAN) {
         cout << MESSAGE << " energy_atom=" << data.energy_atom << endl;
       }
@@ -5748,24 +5870,32 @@ namespace aflowlib {
         }
       }
       if (AFLOWLIB_VERBOSE) {
-        std::cout << MESSAGE << " energy_free_vibrational_cell_apl_300K = "
-                  << ((data.energy_free_vibrational_cell_apl_300K != AUROSTD_NAN) ? aurostd::utype2string<double>(data.energy_free_vibrational_cell_apl_300K) : "unavailable") << std::endl;
-        std::cout << MESSAGE << " energy_free_vibrational_atom_apl_300K = "
-                  << ((data.energy_free_vibrational_atom_apl_300K != AUROSTD_NAN) ? aurostd::utype2string<double>(data.energy_free_vibrational_atom_apl_300K) : "unavailable") << std::endl;
-        std::cout << MESSAGE << " entropy_vibrational_cell_apl_300K = " << ((data.entropy_vibrational_cell_apl_300K != AUROSTD_NAN) ? aurostd::utype2string<double>(data.entropy_vibrational_cell_apl_300K) : "unavailable")
-                  << std::endl;
-        std::cout << MESSAGE << " entropy_vibrational_atom_apl_300K = " << ((data.entropy_vibrational_atom_apl_300K != AUROSTD_NAN) ? aurostd::utype2string<double>(data.entropy_vibrational_atom_apl_300K) : "unavailable")
-                  << std::endl;
-        std::cout << MESSAGE << " energy_internal_vibrational_cell_apl_300K = "
-                  << ((data.energy_internal_vibrational_cell_apl_300K != AUROSTD_NAN) ? aurostd::utype2string<double>(data.energy_internal_vibrational_cell_apl_300K) : "unavailable") << std::endl;
-        std::cout << MESSAGE << " energy_internal_vibrational_atom_apl_300K = "
-                  << ((data.energy_internal_vibrational_atom_apl_300K != AUROSTD_NAN) ? aurostd::utype2string<double>(data.energy_internal_vibrational_atom_apl_300K) : "unavailable") << std::endl;
+        std::cout
+            << MESSAGE
+            << " energy_free_vibrational_cell_apl_300K = "
+            << ((data.energy_free_vibrational_cell_apl_300K != AUROSTD_NAN) ? aurostd::utype2string<double>(data.energy_free_vibrational_cell_apl_300K) : "unavailable")
+            << std::endl;
+        std::cout
+            << MESSAGE
+            << " energy_free_vibrational_atom_apl_300K = "
+            << ((data.energy_free_vibrational_atom_apl_300K != AUROSTD_NAN) ? aurostd::utype2string<double>(data.energy_free_vibrational_atom_apl_300K) : "unavailable")
+            << std::endl;
+        std::cout << MESSAGE << " entropy_vibrational_cell_apl_300K = " << ((data.entropy_vibrational_cell_apl_300K != AUROSTD_NAN) ? aurostd::utype2string<double>(data.entropy_vibrational_cell_apl_300K) : "unavailable") << std::endl;
+        std::cout << MESSAGE << " entropy_vibrational_atom_apl_300K = " << ((data.entropy_vibrational_atom_apl_300K != AUROSTD_NAN) ? aurostd::utype2string<double>(data.entropy_vibrational_atom_apl_300K) : "unavailable") << std::endl;
+        std::cout
+            << MESSAGE
+            << " energy_internal_vibrational_cell_apl_300K = "
+            << ((data.energy_internal_vibrational_cell_apl_300K != AUROSTD_NAN) ? aurostd::utype2string<double>(data.energy_internal_vibrational_cell_apl_300K) : "unavailable")
+            << std::endl;
+        std::cout
+            << MESSAGE
+            << " energy_internal_vibrational_atom_apl_300K = "
+            << ((data.energy_internal_vibrational_atom_apl_300K != AUROSTD_NAN) ? aurostd::utype2string<double>(data.energy_internal_vibrational_atom_apl_300K) : "unavailable")
+            << std::endl;
         std::cout << MESSAGE << " energy_zero_point_cell_apl = " << ((data.energy_zero_point_cell_apl != AUROSTD_NAN) ? aurostd::utype2string<double>(data.energy_zero_point_cell_apl) : "unavailable") << std::endl;
         std::cout << MESSAGE << " energy_zero_point_atom_apl = " << ((data.energy_zero_point_atom_apl != AUROSTD_NAN) ? aurostd::utype2string<double>(data.energy_zero_point_atom_apl) : "unavailable") << std::endl;
-        std::cout << MESSAGE << " heat_capacity_Cv_cell_apl_300K = " << ((data.heat_capacity_Cv_cell_apl_300K != AUROSTD_NAN) ? aurostd::utype2string<double>(data.heat_capacity_Cv_cell_apl_300K) : "unavailable")
-                  << std::endl;
-        std::cout << MESSAGE << " heat_capacity_Cv_atom_apl_300K = " << ((data.heat_capacity_Cv_atom_apl_300K != AUROSTD_NAN) ? aurostd::utype2string<double>(data.heat_capacity_Cv_atom_apl_300K) : "unavailable")
-                  << std::endl;
+        std::cout << MESSAGE << " heat_capacity_Cv_cell_apl_300K = " << ((data.heat_capacity_Cv_cell_apl_300K != AUROSTD_NAN) ? aurostd::utype2string<double>(data.heat_capacity_Cv_cell_apl_300K) : "unavailable") << std::endl;
+        std::cout << MESSAGE << " heat_capacity_Cv_atom_apl_300K = " << ((data.heat_capacity_Cv_atom_apl_300K != AUROSTD_NAN) ? aurostd::utype2string<double>(data.heat_capacity_Cv_atom_apl_300K) : "unavailable") << std::endl;
       }
     }
 
@@ -6562,9 +6692,9 @@ namespace aflowlib {
       cout << MESSAGE << " XHOST.RAM_GB = " << ((aus_XHOST.RAM_GB) ? aurostd::utype2string<double>(aus_XHOST.RAM_GB) : "unavailable") << endl;
     }
     // REMOVING  ---------------------------------------------------------------
-    const vector<string> vremove = {"aflow.in~",     "WAVECAR",        "REPORT",         "POTCAR.relax1",  "POTCAR.relax2",  "POTCAR.relax3",  "POTCAR.static",
-                                    "POTCAR.bands",  "AECCAR0",        "AECCAR1",        "AECCAR2",        "AECCAR1.static", "AECCAR0.bands",  "AECCAR1.bands",
-                                    "AECCAR2.bands", "AECCAR0.relax1", "AECCAR1.relax1", "AECCAR2.relax1", "AECCAR0.relax2", "AECCAR1.relax2", "AECCAR2.relax2"};
+    const vector<string> vremove = {
+        "aflow.in~",      "WAVECAR",       "REPORT",        "POTCAR.relax1", "POTCAR.relax2",  "POTCAR.relax3",  "POTCAR.static",  "POTCAR.bands",   "AECCAR0",        "AECCAR1",       "AECCAR2",
+        "AECCAR1.static", "AECCAR0.bands", "AECCAR1.bands", "AECCAR2.bands", "AECCAR0.relax1", "AECCAR1.relax1", "AECCAR2.relax1", "AECCAR0.relax2", "AECCAR1.relax2", "AECCAR2.relax2"};
     for (const auto& dir_entry : std::filesystem::recursive_directory_iterator(directory_LIB)) {
       // iterate over directory, then try to match files
       for (const auto& remove : vremove) {
@@ -6581,13 +6711,14 @@ namespace aflowlib {
     dir_entry_iterate1:;
     }
 
-    vector<string> vremoveERROR = {"aflow.error.rotmat",      "aflow.error.nbands",       "aflow.error.symprec", "aflow.error.read_kpoints_rd_sym",
-                                   "aflow.error.ibzkpt",      "aflow.error.gamma_shift",  "aflow.error.mpich11", "aflow.error.mpich139",
-                                   "aflow.error.nkxyz_ikptd", "aflow.error.eddrmm",       "aflow.error.lreal",   "aflow.error.exccor",
-                                   "aflow.error.brmix",       "aflow.error.dav",          "aflow.error.edddav",  "aflow.error.efield_pead",
-                                   "aflow.error.zpotrf",      "aflow.error.zpotrf_potim", "aflow.error.natoms",  "aflow.error.psmaxn",
-                                   "aflow.error.npar",        "aflow.error.nparc",        "aflow.error.nparn",   "aflow.error.npar_remove",
-                                   "aflow.error.csloshing",   "aflow.error.dentet"};
+    vector<string> vremoveERROR = {
+        "aflow.error.rotmat",      "aflow.error.nbands",       "aflow.error.symprec", "aflow.error.read_kpoints_rd_sym",
+        "aflow.error.ibzkpt",      "aflow.error.gamma_shift",  "aflow.error.mpich11", "aflow.error.mpich139",
+        "aflow.error.nkxyz_ikptd", "aflow.error.eddrmm",       "aflow.error.lreal",   "aflow.error.exccor",
+        "aflow.error.brmix",       "aflow.error.dav",          "aflow.error.edddav",  "aflow.error.efield_pead",
+        "aflow.error.zpotrf",      "aflow.error.zpotrf_potim", "aflow.error.natoms",  "aflow.error.psmaxn",
+        "aflow.error.npar",        "aflow.error.nparc",        "aflow.error.nparn",   "aflow.error.npar_remove",
+        "aflow.error.csloshing",   "aflow.error.dentet"};
     for (size_t iext = 0; iext < XHOST.vext.size(); iext++) {
       for (size_t iremove = 0; iremove < vremoveERROR.size(); iremove++) {
         if (aurostd::FileExist(directory_LIB + "/" + vremoveERROR[iremove] + XHOST.vext[iext])) {
@@ -6743,17 +6874,20 @@ namespace aflowlib {
   /// @param vdir_all directories to check
   /// @param vdir_zip directories to zip
   /// @param clean invalid directories
-  /// @param last_mod_days time, in days, after which to clean incomplete runs
+  /// @param stale_threshold_days time, in days, after which to clean incomplete runs
   /// @authors
   /// @mod{SD,20240416,created function}
-  void XPLUG_Check(const vector<std::filesystem::path>& vdir_all, vector<std::filesystem::path>& vdir_zip, const bool clean, double last_mod_days) {
-    const std::set<string> required_singular = {_AFLOWLOCK_,          "aflow.agroup.out.xz", "aflow.fgroup.out.xz", "aflow.iatoms.out.xz", "aflow.in", "aflow.pgroup.out.xz", "aflow.pseudopotential_auid.out.xz",
-                                                "aflow.qmvasp.out.xz"};
-    const vector<std::regex> required_plural = {std::regex("CHGCAR.*.xz"),   std::regex("CHG.*.xz"),         std::regex("CONTCAR.*.xz"), std::regex("DOSCAR.*.xz"), std::regex("EIGENVAL.*.xz"),
-                                                std::regex("IBZKPT.*.xz"),   std::regex("INCAR.*.xz"),       std::regex("KPOINTS.*.xz"), std::regex("PCDAT.*.xz"),  std::regex("POSCAR.*.xz"),
-                                                std::regex("vasp.out.*.xz"), std::regex("vasprun.xml.*.xz"), std::regex("XDATCAR.*.xz")};
+  void XPLUG_Check(const vector<std::filesystem::path>& vdir_all, vector<std::filesystem::path>& vdir_zip, const bool clean, double stale_threshold_days) {
+    const std::set<string> required_singular = {
+        _AFLOWLOCK_, "aflow.agroup.out.xz", "aflow.fgroup.out.xz", "aflow.iatoms.out.xz", "aflow.in", "aflow.pgroup.out.xz", "aflow.pseudopotential_auid.out.xz", "aflow.qmvasp.out.xz"};
+    const vector<std::regex> required_plural = {
+        std::regex("CHGCAR.*.xz"),  std::regex("CHG.*.xz"),   std::regex("CONTCAR.*.xz"), std::regex("DOSCAR.*.xz"),   std::regex("EIGENVAL.*.xz"),    std::regex("IBZKPT.*.xz"), std::regex("INCAR.*.xz"),
+        std::regex("KPOINTS.*.xz"), std::regex("PCDAT.*.xz"), std::regex("POSCAR.*.xz"),  std::regex("vasp.out.*.xz"), std::regex("vasprun.xml.*.xz"), std::regex("XDATCAR.*.xz")};
     const std::regex regex_oszicar("OSZICAR.*.xz");
     const std::regex regex_outcar("OUTCAR.*.xz");
+
+    // "aflow.pseudopotential_auid.out.xz"
+    // std::regex("CHG.*.xz"),
 
     vector<std::filesystem::path> vfile;
     vector<string> voutcar;
@@ -6761,12 +6895,19 @@ namespace aflowlib {
     std::set<string> sfile;
     bool valid = true;
     bool found = false;
+    bool dielectric_repeat = false;
     for (const std::filesystem::path& dir : vdir_all) {
       valid = true;
+      dielectric_repeat = false;
       vfile.clear();
       voutcar.clear();
       voszicar.clear();
       sfile.clear();
+
+      bool is_stale = false;
+      if (aurostd::SecondsSinceDirectoryContentModified(dir) >= stale_threshold_days * 24.0 * 60.0 * 60.0) {
+        is_stale = true;
+      }
 
       // Collect the files as a set (for singluar) and vector (for plural)
       for (const std::filesystem::directory_entry& dir_entry : std::filesystem::directory_iterator(dir)) {
@@ -6781,8 +6922,16 @@ namespace aflowlib {
         continue;
       }
 
+      // Check if REPEAT_DIALECTRIC
+      if (sfile.count("REPEAT_DIELECTRIC.xz")) {
+        dielectric_repeat = true;
+      }
+
       // Check if all required singular files exist, otherwise directory is invalid
       for (const string& required_file : required_singular) {
+        if (dielectric_repeat && required_file == "aflow.pseudopotential_auid.out.xz") {
+          continue;
+        }
         if (!sfile.count(required_file)) {
           valid = false;
           break;
@@ -6791,21 +6940,18 @@ namespace aflowlib {
 
       // If directory is invalid, we can clean it
       if (!valid) {
-        if (!clean) {
-          continue;
-        }
-        const std::set<string>::iterator it_vasp = sfile.find("vasp.out");
-        if (it_vasp != sfile.end()) {
-          const double last_mod_vasp = (long double) aurostd::SecondsSinceFileModified(vfile[std::distance(sfile.begin(), it_vasp)]) / 3600;
-          if (last_mod_vasp > last_mod_days) {
-            KBIN::Clean(dir.string());
-          }
+        if (clean && is_stale) {
+          KBIN::Clean(dir.string());
         }
         continue;
       }
 
       // Check if all required plural files exist, otherwise directory is invalid
       for (const std::regex& required_file : required_plural) {
+        // std::regex does not store the pattern directly, so to check if it is the CHG.*.xz one we need to use regex_match
+        if (dielectric_repeat && std::regex_match("CHG.TEST.xz", required_file)) {
+          continue;
+        }
         found = false;
         for (const std::filesystem::path& file : vfile) {
           if (std::regex_match(file.filename().string(), required_file)) {
@@ -6821,15 +6967,18 @@ namespace aflowlib {
 
       // If directory is invalid, we can clean it
       if (!valid) {
-        if (!clean) {
-          continue;
+        if (clean && is_stale) {
+          KBIN::Clean(dir.string());
         }
-        KBIN::Clean(dir.string());
         continue;
       }
 
       // Check that the run has been converged, otherwise directory is invalid
       for (const std::filesystem::path& file : vfile) {
+        // OSZICAR.static is not needed for dielectric repeat and could be missing
+        if (dielectric_repeat && (file.filename() == "OUTCAR.static.xz" || file.filename() == "OSZICAR.static.xz")) {
+          continue;
+        }
         if (std::regex_match(file.filename().string(), regex_oszicar)) {
           voszicar.emplace_back(file.string());
         } else if (std::regex_match(file.filename().string(), regex_outcar)) {
@@ -6848,10 +6997,9 @@ namespace aflowlib {
 
       // If directory is invalid, we can clean it
       if (!valid) {
-        if (!clean) {
-          continue;
+        if (clean) {
+          KBIN::Clean(dir.string());
         }
-        KBIN::Clean(dir.string());
         continue;
       }
 
@@ -7226,24 +7374,25 @@ namespace aflowlib {
       AGL_functions::AGL_Get_AflowInName(AflowInName, directory_LIB, agl_aflowin_found); // CT20200713 Call function to find correct aflow.in file name  //CO20210204 - fix aflow.in.xz inside
       if (agl_aflowin_found) {
         run_directory = true;
-        const vector<string> agl_and_ael_file_list{"aflow.agl.out",
-                                                   "AGL.out",
-                                                   "AGL_edos_gap_pressure.out",
-                                                   "AGL_edos_gap_pressure.json",
-                                                   "AGL_energies_temperature.out",
-                                                   "AGL_energy.json",
-                                                   "AGL_energy_structures.json",
-                                                   "AGL_energy_volume.out",
-                                                   "AGL_gibbs_energy_pT.out",
-                                                   "AGL_Hugoniot.out",
-                                                   "AGL_thermal_properties_temperature.out",
-                                                   "AGL_THERMO",
+        const vector<string> agl_and_ael_file_list{
+            "aflow.agl.out",
+            "AGL.out",
+            "AGL_edos_gap_pressure.out",
+            "AGL_edos_gap_pressure.json",
+            "AGL_energies_temperature.out",
+            "AGL_energy.json",
+            "AGL_energy_structures.json",
+            "AGL_energy_volume.out",
+            "AGL_gibbs_energy_pT.out",
+            "AGL_Hugoniot.out",
+            "AGL_thermal_properties_temperature.out",
+            "AGL_THERMO",
 
-                                                   "aflow.ael.out",
-                                                   "AEL_Compliance_tensor.out",
-                                                   "AEL_Elastic_constants.out",
-                                                   "AEL_elastic_tensor.json",
-                                                   "AEL_energy_structures.json"};
+            "aflow.ael.out",
+            "AEL_Compliance_tensor.out",
+            "AEL_Elastic_constants.out",
+            "AEL_elastic_tensor.json",
+            "AEL_energy_structures.json"};
         for (size_t iext = 0; iext < XHOST.vext.size(); iext++) {
           for (const auto& file : agl_and_ael_file_list) {
             const string path = string(directory_LIB).append("/").append(file).append(XHOST.vext[iext]);
@@ -7297,15 +7446,16 @@ namespace aflowlib {
           throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, message, _FILE_NOT_FOUND_);
         }
         run_directory = true;
-        const vector<string> apl_file_list{DEFAULT_APL_FILE_PREFIX + DEFAULT_APL_OUT_FILE,
-                                           DEFAULT_APL_PHDOSCAR_FILE,
-                                           DEFAULT_APL_PHKPOINTS_FILE,
-                                           DEFAULT_APL_PHEIGENVAL_FILE,
-                                           DEFAULT_APL_FILE_PREFIX + DEFAULT_APL_THERMO_FILE,
-                                           DEFAULT_APL_FILE_PREFIX + DEFAULT_APL_MSQRDISP_FILE,
-                                           DEFAULT_APL_FILE_PREFIX + DEFAULT_AAPL_GVEL_FILE,
-                                           DEFAULT_APL_FILE_PREFIX + DEFAULT_APL_HARMIFC_FILE,
-                                           DEFAULT_APL_FILE_PREFIX + DEFAULT_APL_POLAR_FILE};
+        const vector<string> apl_file_list{
+            DEFAULT_APL_FILE_PREFIX + DEFAULT_APL_OUT_FILE,
+            DEFAULT_APL_PHDOSCAR_FILE,
+            DEFAULT_APL_PHKPOINTS_FILE,
+            DEFAULT_APL_PHEIGENVAL_FILE,
+            DEFAULT_APL_FILE_PREFIX + DEFAULT_APL_THERMO_FILE,
+            DEFAULT_APL_FILE_PREFIX + DEFAULT_APL_MSQRDISP_FILE,
+            DEFAULT_APL_FILE_PREFIX + DEFAULT_AAPL_GVEL_FILE,
+            DEFAULT_APL_FILE_PREFIX + DEFAULT_APL_HARMIFC_FILE,
+            DEFAULT_APL_FILE_PREFIX + DEFAULT_APL_POLAR_FILE};
         for (const auto& file : apl_file_list) {
           const string path = string(directory_LIB).append("/").append(file);
           aurostd::RemoveFile(path);
@@ -7634,10 +7784,10 @@ namespace aflowlib {
     if (nspecies == 0) {
       throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, "nspecies==0", _RUNTIME_ERROR_);
     }
-    const xvector<double> nspecies_xv(nspecies);
+    xvector<double> nspecies_xv(nspecies);
 
     // L^p norms
-    const xvector<double> stoich_xv(nspecies);
+    xvector<double> stoich_xv(nspecies);
     for (j = 0; j < nspecies; j++) {
       stoich_xv[stoich_xv.lrows + j] = vcomposition[j] / natoms;
     }
@@ -7678,7 +7828,7 @@ namespace aflowlib {
           index_max = 3;
           for (index = index_min; index <= index_max; index++) {
             for (j = 0; j < nspecies; j++) {
-              const xvector<double>& xvec = vxel[j].getPropertyXVectorDouble(vproperties[i]);
+              xvector<double> xvec = vxel[j].getPropertyXVectorDouble(vproperties[i]);
               nspecies_xv[nspecies_xv.lrows + j] = xvec[index];
             }
             if (LDEBUG) {
@@ -7749,7 +7899,7 @@ namespace aflowlib {
       cerr << __AFLOW_FUNC__ << " has NaN" << endl;
     }
     if (!has_NaN) {
-      const xvector<double> natoms_xv(natoms);
+      xvector<double> natoms_xv(natoms);
       if (LDEBUG) {
         cerr << __AFLOW_FUNC__ << " oxidation_states_count=" << aurostd::joinWDelimiter(nspecies_v, ",") << endl;
       }
@@ -7779,8 +7929,8 @@ namespace aflowlib {
     }
     vfeatures.push_back((!has_NaN && formability_ionic ? 1 : 0));
     // character_ionic_max and _mean
-    const xvector<double> pairs_xv(aurostd::nCk((int) nspecies, 2)); // electronegativities
-    const xvector<double> pairs2_xv(aurostd::nCk((int) nspecies, 2)); // stoich
+    xvector<double> pairs_xv(aurostd::nCk((int) nspecies, 2)); // electronegativities
+    xvector<double> pairs2_xv(aurostd::nCk((int) nspecies, 2)); // stoich
     for (i = 0; i < vEN.size(); i++) {
       if (LDEBUG) {
         cerr << __AFLOW_FUNC__ << " EN=" << vEN[i] << endl;
@@ -7817,5 +7967,4 @@ namespace aflowlib {
   }
 } // namespace aflowlib
 
-#endif //  _AFLOWLIB_LIBRARIES_CPP_
 // ***************************************************************************

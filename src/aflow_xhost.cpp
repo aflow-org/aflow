@@ -7,6 +7,10 @@
 #include "aflow_xhost.h"
 
 #include <cstddef>
+#include <fstream>
+#include <istream>
+#include <ostream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -17,7 +21,15 @@
 #include "AUROSTD/aurostd_xerror.h"
 #include "AUROSTD/aurostd_xfile.h"
 
+using std::ifstream;
+using std::iostream;
+using std::istream;
+using std::istringstream;
+using std::ofstream;
+using std::ostream;
+using std::ostringstream;
 using std::string;
+using std::stringstream;
 using std::vector;
 
 // ***************************************************************************

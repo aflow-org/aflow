@@ -24,9 +24,6 @@
 // This file provides a framework to calculate thermodynamic properties for
 // disordered materials modeled using the POCC methodology.
 
-#ifndef _AFLOW_POCC_THERMO_CPP_
-#define _AFLOW_POCC_THERMO_CPP_
-
 #include <cfloat>
 #include <cmath>
 #include <cstddef>
@@ -73,23 +70,12 @@ using std::string;
 using std::stringstream;
 using std::vector;
 
+using aurostd::xmatrix;
+using aurostd::xvector;
+
 ///////////////////////////////////////////////////////////////////////////////
 namespace pocc {
-  EnsembleThermo::EnsembleThermo(ostream &oss) : xStream(oss) {
-    free();
-  }
-  EnsembleThermo::EnsembleThermo(const EnsembleThermo &ens) : xStream(*ens.getOFStream(), *ens.getOSS()) {
-    free();
-    copy(ens);
-  }
-  EnsembleThermo::~EnsembleThermo() {
-    xStream::free();
-    free();
-  }
-  const EnsembleThermo &EnsembleThermo::operator=(const EnsembleThermo &ens) {
-    copy(ens);
-    return *this;
-  }
+  EnsembleThermo::EnsembleThermo(ostream& oss) : xStream(oss) {}
 
   void EnsembleThermo::clear() {
     free();
@@ -116,32 +102,6 @@ namespace pocc {
     Cp.clear();
     gamma.clear();
     beta.clear();
-  }
-
-  void EnsembleThermo::copy(const EnsembleThermo &ens) {
-    if (this == &ens) {
-      return;
-    }
-
-    currentDirectory = ens.currentDirectory;
-    qha = ens.qha;
-    eos_method = ens.eos_method;
-    Nstructures = ens.Nstructures;
-    Nvolumes = ens.Nvolumes;
-    nrows = ens.nrows;
-    T = ens.T;
-    FV = ens.FV;
-    volumes = ens.volumes;
-    degeneracies = ens.degeneracies;
-    coeffs_list = ens.coeffs_list;
-    Veq = ens.Veq;
-    Feq = ens.Feq;
-    B = ens.B;
-    Bprime = ens.Bprime;
-    Cv = ens.Cv;
-    Cp = ens.Cp;
-    gamma = ens.gamma;
-    beta = ens.beta;
   }
 
   EnsembleThermo::EnsembleThermo(const string &currentDir, vector<string> &directories, const string &fname, const string &calc_type, apl::EOSmethod eos_method, bool isFVTprovided, ofstream &FileMESSAGE, ostream &oss) {
@@ -202,8 +162,8 @@ namespace pocc {
         }
       }
 
-      Ensemble_Vmin = min(Vmin, Ensemble_Vmin);
-      Ensemble_Vmax = max(Vmax, Ensemble_Vmax);
+      Ensemble_Vmin = aurostd::min(Vmin, Ensemble_Vmin);
+      Ensemble_Vmax = aurostd::max(Vmax, Ensemble_Vmax);
 
       T_list.push_back(T);
       coeffs_list.push_back(coeffs);
@@ -532,7 +492,7 @@ namespace pocc {
 
   /// Calculates the logarithm of the partition function.
   double EnsembleThermo::logZ(const xvector<double> &E, const vector<int> &degeneracies, double T) {
-    const xvector<double> khi = E;
+    xvector<double> khi = E;
     for (int i = khi.lrows; i <= khi.urows; i++) {
       khi[i] /= -(KBOLTZEV * T);
     }
@@ -563,7 +523,7 @@ namespace pocc {
       throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, msg, _INDEX_ILLEGAL_);
     }
 
-    const xvector<double> beta = aurostd::diffSG(volumes, dT);
+    xvector<double> beta = aurostd::diffSG(volumes, dT);
     for (int i = beta.lrows; i <= beta.urows; i++) {
       beta[i] /= volumes[i];
     }
@@ -579,7 +539,7 @@ namespace pocc {
     // "General least-squares smoothing and differentiation by the convolution (Savitzky-Golay) method"
     // Peter A. Gorry Analytical Chemistry 1990 62 (6), 570-573
     // https://doi.org/10.1021/ac00205a007
-    const static xmatrix<double> SGmat(5, 5);
+    static xmatrix<double> SGmat(5, 5);
     SGmat[1][1] = 1.2857142857142856E+000;
     SGmat[1][2] = 7.8571428571428559E-001;
     SGmat[1][3] = 2.8571428571428570E-001;
@@ -607,7 +567,7 @@ namespace pocc {
     SGmat[5][4] = 7.8571428571428559E-001;
     SGmat[5][5] = 1.2857142857142856E+000;
 
-    const static xvector<double> SGvec(5);
+    static xvector<double> SGvec(5);
     SGvec[1] = 2.8571428571428570E-001;
     SGvec[2] = -1.4285714285714285E-001;
     SGvec[3] = -2.8571428571428570E-001;
@@ -626,8 +586,8 @@ namespace pocc {
     }
 
     xvector<double> endpoints(5);
-    const xvector<double> dummy(5);
-    const xvector<double> Cp(npoints);
+    xvector<double> dummy(5);
+    xvector<double> Cp(npoints);
 
     // calculate derivatives for the first 2 points
     for (int i = 1; i <= 5; i++) {
@@ -669,7 +629,7 @@ namespace pocc {
     const bool LDEBUG = false;
 
     xvector<double> F(Nvolumes);
-    const xvector<double> E(Nstructures);
+    xvector<double> E(Nstructures);
 
     Feq = xvector<double>(nrows);
     Veq = xvector<double>(nrows);
@@ -840,5 +800,3 @@ namespace pocc {
     ens.writeThermodynamicProperties();
   }
 } // namespace pocc
-
-#endif

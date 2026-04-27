@@ -62,6 +62,7 @@ using std::cerr;
 using std::deque;
 using std::endl;
 using std::ifstream;
+using std::iostream;
 using std::istream;
 using std::istringstream;
 using std::ofstream;
@@ -153,7 +154,7 @@ acage::acage(const acage& b) {
 // implementations
 bool GetSphereFromFourPoints(xvector<double>& orig, double& radius, const xvector<double>& v1, const xvector<double>& v2, const xvector<double>& v3, const xvector<double>& v4) {
   const double eps = _EPS_;
-  const xmatrix<double> A(5, 5);
+  xmatrix<double> A(5, 5);
   A[1][1] = 1.0;
   A[1][2] = 1.0;
   A[1][3] = 1.0;
@@ -215,7 +216,7 @@ bool GetSphereFromFourPoints(xvector<double>& orig, double& radius, const xvecto
 
 bool GetCircumCircleeFromThreePoints(xvector<double>& orig, double& radius, const xvector<double>& v1, const xvector<double>& v2, const xvector<double>& v3) {
   const double eps = _EPS_;
-  const xmatrix<double> A(4, 4);
+  xmatrix<double> A(4, 4);
   A[1][1] = 0;
   A[1][2] = 0;
   A[1][3] = 0;
@@ -324,8 +325,8 @@ uint CoordinationPoint(const xstructure& str, deque<_atom>& ratoms, const xvecto
 }
 
 bool AddCageToCages(const xstructure& str,
-                    const xvector<double>& origin_cpos,
-                    const xvector<double>& origin_fpos,
+                    xvector<double>& origin_cpos,
+                    xvector<double>& origin_fpos,
                     const double& radius,
                     const int& cage_points_type,
                     const double& roughness,
@@ -1025,7 +1026,7 @@ bool GetCages(const xstructure& _str, _aflags& aflags, vector<acage>& cagesirred
   _atom ratom;
   _atom iatom;
   _atom tatom;
-  bool cage_found;
+  bool cage_found = false;
   for (size_t i = 0; i < cagesreducible.size(); i++) {
     ratom.cpos = cagesreducible[i].origin_cpos;
     ratom.fpos = C2F(str.lattice, ratom.cpos);
@@ -1044,17 +1045,19 @@ bool GetCages(const xstructure& _str, _aflags& aflags, vector<acage>& cagesirred
             cagesreducible[i].cages_irrtype = cagesirreducible[ii].cages_irrtype;
           }
           // DEBUG
-          cerr.setf(std::ios::fixed, std::ios::floatfield);
-          cerr.precision(14);  // SC to cut/paste from matlab in format long
-          cerr << ratom.fpos[1] << " " << ratom.fpos[2] << " " << ratom.fpos[3] << " " << endl;
-          cerr << tatom.fpos[1] << " " << tatom.fpos[2] << " " << tatom.fpos[3] << " " << endl;
-          cerr << ratom.cpos[1] << " " << ratom.cpos[2] << " " << ratom.cpos[3] << " " << endl;
-          cerr << tatom.cpos[1] << " " << tatom.cpos[2] << " " << tatom.cpos[3] << " " << endl;
-          return false; // debug
+          if (modulus(ratom.cpos - tatom.cpos) > eps && modulus(ratom.fpos - tatom.fpos) < eps) {
+            cerr.setf(std::ios::fixed, std::ios::floatfield);
+            cerr.precision(14); // SC to cut/paste from matlab in format long
+            cerr << ratom.fpos[1] << " " << ratom.fpos[2] << " " << ratom.fpos[3] << " " << endl;
+            cerr << tatom.fpos[1] << " " << tatom.fpos[2] << " " << tatom.fpos[3] << " " << endl;
+            cerr << ratom.cpos[1] << " " << ratom.cpos[2] << " " << ratom.cpos[3] << " " << endl;
+            cerr << tatom.cpos[1] << " " << tatom.cpos[2] << " " << tatom.cpos[3] << " " << endl;
+            return false; // debug
+          }
         }
       }
     }
-    if (cage_found == false) {                                     // new irreducible operation, generate and save it
+    if (cage_found == false) { // new irreducible operation, generate and save it
       cagesirreducible.push_back(cagesreducible[i]);
       const int ig = cagesirreducible.size() - 1;
       cagesirreducible.at(ig).cages_irrtype = ig + 1; // set type

@@ -1,7 +1,7 @@
 #ifndef AFLOW_TMP_SUPPORT_H
 #define AFLOW_TMP_SUPPORT_H
 
-// ME20190628 BEGIN - moved from CHULL for broader access
+// ME20190628 BEGIN
 //  Output formats
 enum filetype {   // CO20190629
     // GENERAL FILE TYPES
@@ -13,9 +13,9 @@ enum filetype {   // CO20190629
   gnuplot_ft,
   jupyter2_ft,    // python 2 jupyter
   jupyter3_ft,    // python 3 jupyter
-    // CHULL SPECIFIC
-  chull_apool_ft,
-  chull_web_ft,
+    // nhull SPECIFIC
+  nhull_apool_ft,
+  nhull_web_ft,
 };
 
 // Vector reduction types

@@ -1,0 +1,51 @@
+
+@GENERATED_BY_CMAKE_COMMENT@
+
+#ifndef AFLOW_CONFIG_H
+#define AFLOW_CONFIG_H
+
+#include <string>
+
+#define PROJECT_NAME build_constants::project_name()
+#define PROJECT_VERSION build_constants::project_version()
+
+#define AFLOW_VERSION build_constants::aflow_name()
+#define AFLOW_VERSION_SHORT build_constants::aflow_version()
+
+#define BUILD_TYPE build_constants::build_type()
+#define BUILD_TIMESTAMP build_constants::build_timestamp()
+
+#define GIT_COMMIT_HASH build_constants::git_commit_hash()
+#define GIT_COMMIT_SHORT build_constants::git_commit_short()
+#define GIT_COMMIT_DATE build_constants::git_commit_date()
+
+#define COMPILER_ID build_constants::compiler_id()
+#define COMPILER_VERSION build_constants::compiler_version()
+#define COMPILE_FLAGS build_constants::compiler_flags()
+
+#define TODAY build_constants::today()
+#define COMMIT_DATE build_constants::commit_date()
+
+namespace build_constants {
+  const std::string& project_name();
+  const std::string& project_version();
+
+  const std::string& aflow_name();
+  const std::string& aflow_version();
+
+  const std::string& build_type();
+  const std::string& build_timestamp();
+
+  const std::string& git_commit_hash();
+  const std::string& git_commit_short();
+  const std::string& git_commit_date();
+
+  const std::string& compiler_id();
+  const std::string& compiler_version();
+  const std::string& compiler_flags();
+
+  const std::string& today();
+  const std::string& commit_date();
+}
+
+#endif //AFLOW_CONFIG_H

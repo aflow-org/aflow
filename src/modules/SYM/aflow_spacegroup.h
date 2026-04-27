@@ -12,7 +12,6 @@
 
 extern std::string LibrarySPACEGROUP;
 namespace spacegroup {
-  using std::string;
   class _spacegroup {
   public:
         // constructors/destructors
@@ -24,9 +23,9 @@ namespace spacegroup {
         // CONTENT
     uint number;
     uint option;
-    string stroption;
-    string name;
-    string sginfo;
+    std::string stroption;
+    std::string name;
+    std::string sginfo;
     std::vector<_sym_op> fgroup;                                  // rotations/inversions + incell_translations operations
     std::vector<_sym_op> pgroup;                                  // rotations/inversions
   private:                                                       // ---------------------------------------

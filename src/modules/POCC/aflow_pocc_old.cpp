@@ -9,9 +9,6 @@
 
 // This file contains the routines to prepare partial occupation input files.
 
-#ifndef _AFLOW_CONTRIB_KESONG_IPOCC_CPP
-#define _AFLOW_CONTRIB_KESONG_IPOCC_CPP
-
 #include "aflow_pocc_old.h"
 
 #include <algorithm>
@@ -64,6 +61,9 @@ using std::setw;
 using std::string;
 using std::stringstream;
 using std::vector;
+
+using aurostd::xmatrix;
+using aurostd::xvector;
 
 // ipocc.cpp
 using std::setfill;
@@ -669,7 +669,7 @@ int CalculateLcmofVector(vector<int> Num) {
     lcmtmp = lcm(Num.at(i), Num.at(i + 1));
     vlcm.push_back(lcmtmp);
   }
-  lcmtmp = max(vlcm);
+  lcmtmp = aurostd::max(vlcm);
   return lcmtmp;
 }
 
@@ -1105,7 +1105,7 @@ vector<xmatrix<double>> CalculateHNF(xstructure str, int n) {
   // PHYSICAL REVIEW B 77, 224115 2008
   // Algorithm for generating derivative structures
   // Gus L. W. Hart and Rodney W. Forcade
-  const xmatrix<double> HNF(3, 3);
+  xmatrix<double> HNF(3, 3);
   vector<xmatrix<double>> vHNF;
   xmatrix<double> A(3, 3);
   const xmatrix<double> B(3, 3);
@@ -2685,7 +2685,7 @@ void xstructure::AddAtom_POCC(const _atom& atom) {
   xvector<double> a1(3);
   xvector<double> a2(3);
   xvector<double> a3(3);
-  const xvector<double> aijk(3);
+  xvector<double> aijk(3);
   a1 = lattice(1);
   a2 = lattice(2);
   a3 = lattice(3);
@@ -3739,13 +3739,13 @@ namespace pocc {
         //	}
       }
 
-      const int min_IONS = min(vions);
+      const int min_IONS = aurostd::min(vions);
       vector<double> vweight; // different ions in each structure
       for (size_t i = 0; i < vrun.size(); i++) { // will use this for DOS as it is extensive
         vweight.push_back(double(1.0 * min_IONS / vions.at(i))); // 1.0 make int to double, otherwise it is zero!
       }
 
-      const double min_toten = min(vtoten_per_atom);
+      const double min_toten = aurostd::min(vtoten_per_atom);
       vector<double> vdelta_toten;
       for (size_t i = 0; i < vtoten_per_atom.size(); i++) {
         vdelta_toten.push_back(vtoten_per_atom[i] - min_toten);
@@ -3996,8 +3996,8 @@ namespace pocc {
     if (LDEBUG) {
       cerr << __AFLOW_FUNC__ << " POCC_COMBINE_TDOS_PDOS_ONEDOS done" << endl;
     }
-    DOS = aurostd::ShiftFirstColumn(DOS, max(vEfermi)); // shift to Efermi
-    DOS_IDOS = aurostd::ShiftFirstColumn(DOS_IDOS, max(vEfermi)); // shift to Efermi
+    DOS = aurostd::ShiftFirstColumn(DOS, aurostd::max(vEfermi)); // shift to Efermi
+    DOS_IDOS = aurostd::ShiftFirstColumn(DOS_IDOS, aurostd::max(vEfermi)); // shift to Efermi
     if (LDEBUG) {
       cerr << __AFLOW_FUNC__ << " ShiftFirstColumn done" << endl;
     }
@@ -5141,7 +5141,7 @@ namespace pocc {
 namespace pocc {
   void UFFPara::GetUFFParameters(string atom) {
     // string strData=ReturnUFFParameters(atom);
-    const string strData = ReturnUFFParameters(KBIN::VASP_PseudoPotential_CleanName(atom));
+    const string strData = ReturnUFFParameters(aurostd::VASP_PseudoPotential_CleanName(atom));
     vector<string> UFFData;
     aurostd::string2tokens(strData, UFFData, " ");
     symbol = UFFData.at(0); // Symbol
@@ -5378,7 +5378,7 @@ namespace pocc {
 
   void Atom::GetAtomicProperties(string atom) {
     // string strData=pocc::ReturnAtomProperties(atom);
-    const string strData = pocc::ReturnAtomProperties(KBIN::VASP_PseudoPotential_CleanName(atom));
+    const string strData = pocc::ReturnAtomProperties(aurostd::VASP_PseudoPotential_CleanName(atom));
     vector<string> atomData;
     aurostd::string2tokens(strData, atomData, " ");
     name = atomData.at(0);
@@ -5392,7 +5392,6 @@ namespace pocc {
 
 // ***********************************************************************************************************************************************************
 
-#endif
 // ***************************************************************************
 // *                                                                         *
 // *              AFlow KESONG YANG  Duke University 2010-2011               *

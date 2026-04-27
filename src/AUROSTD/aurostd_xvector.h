@@ -50,9 +50,12 @@ namespace aurostd {
     xvector<utype>& operator=(const std::initializer_list<utype>); // initializer_list assignment //HE20220616
         // operator xvector<utype>() { return *this;};         // IBM_CPP
     ~xvector();                                            // default destructor
-    utype& operator[](int) const;                         // indicize
-    utype& operator()(int) const;                         // indicize
-    utype& operator()(int, bool) const;                     // indicize boundary conditions
+    utype& operator[](int);                           // indicize
+    const utype& operator[](int) const;               // indicize const
+    utype& operator()(int);                           // indicize
+    const utype& operator()(int) const;               // indicize const
+    utype& operator()(int, bool);                     // indicize boundary conditions
+    const utype& operator()(int, bool) const;         // indicize boundary conditions const
     xvector<utype>& operator+=(const xvector<utype>&);
     xvector<utype>& operator+=(const std::initializer_list<utype>); // HE20220616
     xvector<utype>& operator+=(utype); // CO20180409
@@ -500,6 +503,8 @@ namespace aurostd {
   // grid generation
   xvector<double> linspace(const double start, const double stop, const int n);
   xvector<double> linspace(const double start, const double stop, const double n);
+  xvector<double> logspace(const double start_exp, const double stop_exp, const int n);
+  xvector<double> logspace(const double start_exp, const double stop_exp, const double n);
 
   // SIMPLE SORT ROUTINES
   template <class utype>
@@ -516,7 +521,7 @@ namespace aurostd {
 
   template <class utype>
   xvector<utype>  // QUICKSORT
-  quicksort(const xvector<utype>&) __xprototype;
+  quicksort(xvector<utype>) __xprototype;
 
   template <class utype1, class utype2>
   void  // QUICKSORT
@@ -591,6 +596,7 @@ namespace aurostd { // CO20190419
   template <class utype> utype mean(const xvector<utype>& a); // CO20190520
   template <class utype> utype meanWeighted(const xvector<utype>& a, const xvector<utype>& weights); // CO20190520
   template <class utype> utype meanWeighted(const xvector<utype>& a, const xvector<utype>& weights, utype& sum_weights); // CO20190520
+  template <class utype> utype median(xvector<utype>& a); // NHA20260114
   template <class utype> utype var(const xvector<utype>& a, int ddof = 1); // CO20190520
   template <class utype> utype stddev(const xvector<utype>& a, int ddof = 1); // CO20190520
   template <class utype> utype mode(const xvector<utype>& a); // CO20190520
@@ -621,6 +627,11 @@ namespace aurostd {
   // differenitation
   xvector<double> diffSG(const xvector<double>& f, double dx); // AS20210901
 } // namespace aurostd
+
+namespace aurostd { //NHA20251002
+  //nhull utilities
+  xvector<double> getHyperplaneNorm(const int dim, const std::vector<xvector<double>> &v);
+}
 
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------

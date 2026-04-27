@@ -9,8 +9,8 @@
 // This file provides a framework to calculate thermo-mechanical properties for
 // disordered materials modeled using the POCC algorithm.
 
-#ifndef _AFLOW_POCC_AEL_AGL_CPP_ // CO20200404
-#define _AFLOW_POCC_AEL_AGL_CPP_ // CO20200404
+ // CO20200404
+ // CO20200404
 
 #include <cmath>
 #include <cstddef>
@@ -29,6 +29,7 @@
 #include "AUROSTD/aurostd.h"
 #include "AUROSTD/aurostd_xerror.h"
 #include "AUROSTD/aurostd_xfile.h"
+#include "AUROSTD/aurostd_xmatrix.h"
 
 #include "aflow.h"
 #include "aflow_defs.h"
@@ -66,6 +67,8 @@ using std::setw;
 using std::string;
 using std::stringstream;
 using std::vector;
+
+using aurostd::xmatrix;
 
 // CT20200319 - POCC+AEL functions
 //  ***************************************************************************
@@ -1560,7 +1563,7 @@ namespace pocc {
   }
 } // namespace pocc
 
-#endif  // _AFLOW_POCC_AEL_AGL_CPP_  //CO20200404
+  //CO20200404
 
 //****************************************************************************
 // *                                                                         *

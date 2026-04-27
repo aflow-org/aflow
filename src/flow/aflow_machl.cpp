@@ -4,8 +4,7 @@
 // *                                                                         *
 // ***************************************************************************
 
-#ifndef _AFLOW_MACHL_CPP_
-#define _AFLOW_MACHL_CPP_
+#include "config.h"
 
 #include <algorithm>
 #include <cmath>
@@ -814,7 +813,7 @@ namespace aflowMachL {
     int index = 0;
     for (i = 0; i < vproperties.size(); i++) {
       if (vproperties[i] == "lattice_constants" || vproperties[i] == "lattice_angles") {
-        const xvector<double>& xvec = xel.getPropertyXVectorDouble(vproperties[i]);
+        xvector<double> xvec = xel.getPropertyXVectorDouble(vproperties[i]);
         for (index = xvec.lrows; index <= xvec.urows; index++) {
           vitems.push_back(aurostd::utype2string(xvec[index], _DOUBLE_WRITE_PRECISION_));
         }
@@ -1779,7 +1778,7 @@ namespace aflowMachL {
 
     // table[0] are headers
     // vector<uint> vicol2remove;
-    const xvector<int> xvicol2remove(ncols);  // if xvicol2remove[i]==1, then remove that column
+    xvector<int> xvicol2remove(ncols);  // if xvicol2remove[i]==1, then remove that column
     double var = 0.0;
     uint index = 0;
     for (i = 0; i < xvindices.size(); i++) {
@@ -2437,6 +2436,7 @@ namespace aflowMachL {
           continue;
         }
         found_pp = false;
+        std::vector<xPOTCAR> vxpseudopotential = get_pseudopotential_data();
         for (ipp = 0; ipp < vxpseudopotential.size() && found_pp == false; ipp++) {
           if (vxpseudopotential[ipp].species_pp_type[0] == "PAW_PBE" && vxpseudopotential[ipp].species_pp[0] == species_pp) {
             found_pp = true;
@@ -2743,8 +2743,6 @@ namespace aflowMachL {
     aurostd::stringstream2file(ss, outfile);
   }
 } // namespace aflowMachL
-
-#endif  // _AFLOW_MACHL_CPP_
 
 // **************************************************************************
 // *                                                                        *

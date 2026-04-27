@@ -6,8 +6,6 @@
 // ***************************************************************************
 // Written by Cormac Toher
 // cormac.toher@duke.edu
-#ifndef _AFLOW_AGL_GET_EV_CPP
-#define _AFLOW_AGL_GET_EV_CPP
 
 #include <cstddef>
 #include <deque>
@@ -834,7 +832,6 @@ namespace AGL_functions {
 //  End of AFLOW AGL set-up, extract, sort and check (E, V) data
 // **************************************************************************
 
-#endif // _AFLOW_AGL_GET_EV_CPP
 // ***************************************************************************
 // *                                                                         *
 // *           Aflow STEFANO CURTAROLO - Duke University 2003-2024           *

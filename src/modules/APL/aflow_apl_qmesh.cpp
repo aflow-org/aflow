@@ -8,9 +8,11 @@
 // This class describes a mesh of q-points.
 
 #include <algorithm>
+#include <fstream>
 #include <iomanip>
 #include <ios>
-#include <ostream>
+#include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -32,9 +34,14 @@
 
 #define _DEBUG_APL_QMESH_ false
 
-using aurostd::xvector;
+using std::ofstream;
+using std::ostream;
 using std::string;
+using std::stringstream;
 using std::vector;
+
+using aurostd::xmatrix;
+using aurostd::xvector;
 
 //////////////////////////////////////////////////////////////////////////////
 //                                                                          //
@@ -43,74 +50,17 @@ using std::vector;
 //////////////////////////////////////////////////////////////////////////////
 
 namespace apl {
-
-  // Default Constructor
-  QMesh::QMesh(ostream& oss) : xStream(oss) {
-    free();
-  }
-
-  QMesh::QMesh(ofstream& mf, ostream& oss) : xStream(mf, oss) {
-    free();
-  }
-
   QMesh::QMesh(const xvector<int>& grid, const xstructure& xs, ofstream& mf, bool include_inversions, bool gamma_centered, const string& directory, ostream& oss) : xStream(mf, oss) {
-    free();
     _directory = directory;
     initialize(grid, xs, include_inversions, gamma_centered);
   }
 
   QMesh::QMesh(const vector<int>& vgrid, const xstructure& xs, ofstream& mf, bool include_inversions, bool gamma_centered, const string& directory, ostream& oss) : xStream(mf, oss) {
-    free();
     _directory = directory;
     initialize(aurostd::vector2xvector(vgrid), xs, include_inversions, gamma_centered);
   }
 
-  // Copy constructors
-  QMesh::QMesh(const QMesh& that) : xStream(*that.getOFStream(), *that.getOSS()) {
-    if (this != &that) {
-      free();
-    }
-    copy(that);
-  }
-
-  QMesh& QMesh::operator=(const QMesh& that) {
-    if (this != &that) {
-      free();
-    }
-    copy(that);
-    return *this;
-  }
-
-  void QMesh::copy(const QMesh& that) {
-    if (this == &that) {
-      return;
-    }
-    xStream::copy(that);
-    _ibzqpts = that._ibzqpts;
-    _initialized = that._initialized;
-    _isGammaCentered = that._isGammaCentered;
-    _littleGroups = that._littleGroups;
-    _littleGroupsCalculated = that._littleGroupsCalculated;
-    _directory = that._directory;
-    _nIQPs = that._nIQPs;
-    _nQPs = that._nQPs;
-    _qptGrid = that._qptGrid;
-    _qptMap = that._qptMap;
-    _qpoints = that._qpoints;
-    _recCell = that._recCell;
-    _reduced = that._reduced;
-    _shifted = that._shifted;  // ME20190813
-    _shift = that._shift;
-    _weights = that._weights;
-  }
-
-  // Destructor
-  QMesh::~QMesh() {
-    xStream::free();
-    free();
-  }
-
-  void QMesh::free() {
+  void QMesh::clear() {
     const xvector<int> zeroint(3);
     const xvector<double> zerodbl(3);
     const xmatrix<double> zeroMatrix(3, 3);
@@ -137,10 +87,6 @@ namespace apl {
     _weights.clear();
 
     clear_tetrahedra();
-  }
-
-  void QMesh::clear() {
-    free();
   }
 
   void QMesh::clear_tetrahedra() {
@@ -227,7 +173,7 @@ namespace apl {
     _recCell.c2f = inverse(_recCell.f2c);
 
     // Determine skewedness
-    const xvector<double> min_distances(3);
+    xvector<double> min_distances(3);
     for (int i = 1; i < 4; i++) {
       min_distances[i] = aurostd::modulus(_recCell.lattice(i)) / ((double) _qptGrid[i]);
     }
@@ -294,7 +240,7 @@ namespace apl {
 
     // Determine if the grid is gamma-centered and which dimensions are not
     bool gamma = true;
-    const xvector<double> shift(3);
+    xvector<double> shift(3);
     for (int i = 1; i < 4; i++) {
       if (_qptGrid[i] % 2 == 0) {
         gamma = false;

@@ -169,12 +169,12 @@ namespace aurostd {
   }
 
   /// @brief converting constructor: set the content of this JSON::object based on a vector
-  template <class utype> JSON::object::object(const vector<utype> &content) {
+  template <class utype> JSON::object::object(const std::vector<utype>& content) {
     this->fromVector(content);
   }
 
   /// @brief converting constructor: set the content of this JSON::object based on a deque
-  template <class utype> JSON::object::object(const deque<utype> &content) {
+  template <class utype> JSON::object::object(const std::deque<utype>& content) {
     this->fromDeque(content);
   }
 
@@ -436,7 +436,7 @@ namespace aurostd {
       throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, "JSON xvector conversion failed: element is not a LIST: " + static_cast<std::string>(*this), _VALUE_ILLEGAL_);
     }
     const std::shared_ptr<JSON::List> content = std::static_pointer_cast<JSON::List>(obj);
-    const aurostd::xvector<utype> result(content->size(), 1);
+    aurostd::xvector<utype> result(content->size(), 1);
     if (content->empty()) {
       return result;
     }
@@ -505,7 +505,7 @@ namespace aurostd {
       throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, "JSON xmatrix conversion failed: sub elements have different length", _VALUE_ILLEGAL_);
     }
 
-    const aurostd::xmatrix<utype> result(rows, cols);
+    aurostd::xmatrix<utype> result(rows, cols);
     if (typeid(utype) == typeid(bool)) {
       for (int r = result.lrows; r <= result.urows; r++) {
         const std::shared_ptr<JSON::List> row = std::static_pointer_cast<JSON::List>(content->operator[](r - 1).obj);
@@ -531,7 +531,7 @@ namespace aurostd {
           if (row->operator[](c - 1).type > object_types::STRING) {
             result[r][c] = static_cast<utype>(row->operator[](c - 1));
           } else {
-            throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, "JSON xmatrix conversion failed: elements is not a number: " + static_cast<string>(row->operator[](c - 1)), _VALUE_ILLEGAL_);
+            throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, "JSON xmatrix conversion failed: elements is not a number: " + static_cast<std::string>(row->operator[](c - 1)), _VALUE_ILLEGAL_);
           }
         }
       }
@@ -542,7 +542,7 @@ namespace aurostd {
           if (row->operator[](c - 1).type > object_types::STRING && row->operator[](c - 1).type < object_types::NONE) {
             result[r][c] = static_cast<utype>(row->operator[](c - 1));
           } else {
-            throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, "JSON xmatrix conversion failed: elements is not a number: " + static_cast<string>(row->operator[](c - 1)), _VALUE_ILLEGAL_);
+            throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, "JSON xmatrix conversion failed: elements is not a number: " + static_cast<std::string>(row->operator[](c - 1)), _VALUE_ILLEGAL_);
           }
         }
       }

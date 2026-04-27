@@ -7,9 +7,6 @@
 // Written by Cormac Toher
 // cormac.toher@duke.edu
 
-#ifndef _AFLOW_AGL_ELECTRONIC_CPP
-#define _AFLOW_AGL_ELECTRONIC_CPP
-
 #include <cstddef>
 #include <cstdlib>
 #include <deque>
@@ -2155,7 +2152,6 @@ namespace AGL_functions {
   }
 } // namespace AGL_functions
 
-#endif  // _AFLOW_AGL_ELECTRONIC_CPP
 // ***************************************************************************
 // *                                                                         *
 // *           Aflow STEFANO CURTAROLO - Duke University 2003-2024           *

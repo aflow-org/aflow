@@ -21,32 +21,19 @@ namespace aflowlib {
 // XPLUG/XUPDATE STUFF
   class ARun : public xStream {  // CO20210302
   private:
-      // NECESSARY PUBLIC CLASS METHODS - START
-      // constructors - START
-    ARun(const std::string& dir, std::ostream& oss = std::cout);
-    ARun(const std::string& dir, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout);
-    ARun(const ARun& b);
-      // constructors - STOP
-    ~ARun();
-    const ARun& operator=(const ARun& other);
+    ARun(const std::string& dir, std::ostream& oss = std::cout) : xStream(oss), m_initialized(!dir.empty()), m_dir(dir) {}
+    ARun(const std::string& dir, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout) : xStream(FileMESSAGE, oss), m_initialized(!dir.empty()), m_dir(dir) {}
     void clear();
-      // NECESSARY PUBLIC CLASS METHODS - STOP
 
       // attributes
-    bool m_initialized;
+    bool m_initialized = false;
     std::string m_dir;
     std::string m_aflowin;
     std::string m_LOCK;
-    bool m_completed;
-
-      // methods
-    bool initialize(const std::string& dir = "");
+    bool m_completed = false;
 
   public:
-      // NECESSARY private CLASS METHODS - START
     void free();
-    void copy(const ARun& b);
-      // NECESSARY END CLASS METHODS - END
   };
 
 // ***************************************************************************
@@ -59,7 +46,7 @@ namespace aflowlib {
 
   void XFIX_LIBRARY_ALL(const std::string& LIBRARY_IN, std::vector<std::string>);
   void XPLUG(const aurostd::xoption& xplug_opts);
-  void XPLUG_Check(const std::vector<std::filesystem::path>& vdir_all, std::vector<std::filesystem::path>& vdir_zip, const bool clean, const double last_mod_days);
+  void XPLUG_Check(const std::vector<std::filesystem::path>& vdir_all, std::vector<std::filesystem::path>& vdir_zip, const bool clean, const double stale_threshold_days);
   void XPLUG_Zip(const std::vector<std::filesystem::path>& vdir_zip, const int zip_size_gb, const std::filesystem::path& relative_path, const std::string& prefix);
   std::string LIB2RAW_CheckProjectFromDirectory(const std::string& directory);
   bool LIB2RAW_ALL(const std::string& options, bool overwrite);

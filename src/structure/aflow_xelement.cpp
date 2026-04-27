@@ -4,8 +4,6 @@
 // *                                                                         *
 // ***************************************************************************
 // Written by Stefano Curtarolo - 2007-2019
-#ifndef _AFLOW_XELEMENT_CPP_
-#define _AFLOW_XELEMENT_CPP_
 
 #include <cmath>
 #include <cstddef>
@@ -15,11 +13,13 @@
 #include <istream>
 #include <ostream>
 #include <sstream>
+#include <string>
 #include <vector>
 
 #include "AUROSTD/aurostd.h"
 #include "AUROSTD/aurostd_defs.h"
 #include "AUROSTD/aurostd_xerror.h"
+#include "AUROSTD/aurostd_xvector.h"
 
 #include "aflow.h"
 #include "aflow_defs.h"
@@ -28,16 +28,19 @@
 #include "flow/aflow_pflow.h"
 
 using std::cerr;
-using std::cout;
 using std::endl;
 using std::ifstream;
+using std::iostream;
 using std::istream;
 using std::istringstream;
 using std::ofstream;
 using std::ostream;
 using std::ostringstream;
+using std::string;
 using std::stringstream;
 using std::vector;
+
+using aurostd::xvector;
 
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
@@ -14077,8 +14080,6 @@ namespace xelement {
     throw aurostd::xerror(__AFLOW_FILE__, "xelement::xelement():", "Element number does not exist: " + aurostd::utype2string(ZZ), _VALUE_ILLEGAL_); // CO20200520
   }
 } // namespace xelement
-
-#endif // _AFLOW_XELEMENT_CPP
 
 // **************************************************************************
 // *                                                                        *

@@ -7,8 +7,6 @@
 // Written by Simon Divilov, 2022
 // simon.divilov@duke.edu
 //
-#ifndef _AFLOW_QCA_CPP_
-#define _AFLOW_QCA_CPP_
 
 #include "modules/QCA/aflow_qca.h"
 
@@ -64,15 +62,23 @@ using std::cerr;
 using std::cout;
 using std::deque;
 using std::endl;
+using std::function;
 using std::ifstream;
+using std::iostream;
 using std::istream;
 using std::istringstream;
 using std::ofstream;
 using std::ostream;
 using std::ostringstream;
+using std::pair;
+using std::string;
 using std::stringstream;
 using std::vector;
+
 using namespace std::placeholders;
+
+using aurostd::xmatrix;
+using aurostd::xvector;
 
 // ###############################################################################
 //            AFLOW Quasi-Chemical Approximation (QCA) (2022-)
@@ -88,36 +94,32 @@ namespace qca {
   ///
   /// @see
   /// @doi{10.1016/j.actamat.2018.07.042}
-  QuasiChemApproxCalculator::QuasiChemApproxCalculator(ostream& oss) : xStream(oss), m_initialized(false) {
-    initialize();
-  }
-  QuasiChemApproxCalculator::QuasiChemApproxCalculator(ofstream& FileMESSAGE, ostream& oss) : xStream(FileMESSAGE, oss), m_initialized(false) {
-    initialize();
-  }
-  QuasiChemApproxCalculator::QuasiChemApproxCalculator(const aurostd::xoption& qca_opts, ostream& oss) : xStream(oss), m_initialized(false) {
-    initialize(qca_opts);
-  }
-  QuasiChemApproxCalculator::QuasiChemApproxCalculator(const aurostd::xoption& qca_opts, ofstream& FileMESSAGE, ostream& oss) : xStream(FileMESSAGE, oss), m_initialized(false) {
-    initialize(qca_opts);
-  }
-  QuasiChemApproxCalculator::QuasiChemApproxCalculator(const QuasiChemApproxCalculator& b) : xStream(*b.getOFStream(), *b.getOSS()) {
-    copy(b);
+
+  /// @brief Constructs and initializes the object from the qca options
+  ///
+  /// @param qca_opts QCA xoptions object
+  ///
+  /// @authors
+  /// @mod{ST,20250716,created function}
+  QuasiChemApproxCalculator QuasiChemApproxCalculator::fromOptions(const aurostd::xoption& qca_opts) {
+    QuasiChemApproxCalculator calculator;
+    calculator.initialize(qca_opts);
+    return calculator;
   }
 
-  QuasiChemApproxCalculator::~QuasiChemApproxCalculator() {
-    xStream::free();
-    free();
-  }
-
-  const QuasiChemApproxCalculator& QuasiChemApproxCalculator::operator=(const QuasiChemApproxCalculator& b) {
-    if (this != &b) {
-      copy(b);
-    }
+  /// @brief Initializes the object from the qca options. This will reset the object to a default state before initializing.
+  ///
+  /// @param qca_opts QCA xoptions object
+  ///
+  /// @authors
+  /// @mod{ST,20250716,created function}
+  QuasiChemApproxCalculator& QuasiChemApproxCalculator::withOptions(const aurostd::xoption& qca_opts) {
+    initialize(qca_opts);
     return *this;
   }
+
   void QuasiChemApproxCalculator::clear() {
-    const QuasiChemApproxCalculator a;
-    copy(a);
+    *this = QuasiChemApproxCalculator();
   }
 
   void QuasiChemApproxCalculator::free() {
@@ -168,74 +170,6 @@ namespace qca {
     binodal_curve.clear();
   }
 
-  void QuasiChemApproxCalculator::copy(const QuasiChemApproxCalculator& b) {
-    xStream::copy(b);
-    m_initialized = b.m_initialized;
-    m_aflags = b.m_aflags;
-    min_sleep = b.min_sleep;
-    print = b.print;
-    screen_only = b.screen_only;
-    image_only = b.image_only;
-    calc_binodal = b.calc_binodal;
-    use_sg = b.use_sg;
-    rootdirpath = b.rootdirpath;
-    aflowlibpath = b.aflowlibpath;
-    plattice = b.plattice;
-    elements = b.elements;
-    aflow_max_num_atoms = b.aflow_max_num_atoms;
-    max_num_atoms = b.max_num_atoms;
-    cv_cut = b.cv_cut;
-    conc_npts = b.conc_npts;
-    conc_curve = b.conc_curve;
-    conc_curve_range = b.conc_curve_range;
-    conc_macro = b.conc_macro;
-    temp_npts = b.temp_npts;
-    temp_range = b.temp_range;
-    temp = b.temp;
-    beta = b.beta;
-    alloyname = b.alloyname;
-    rundirpath = b.rundirpath;
-    vstr_aflow = b.vstr_aflow;
-    lat_atat = b.lat_atat;
-    vstr_ce = b.vstr_ce;
-    mapstr = b.mapstr;
-    skipstr = b.skipstr;
-    nelem = b.nelem;
-    ncluster = b.ncluster;
-    nconc = b.nconc;
-    cv_cluster = b.cv_cluster;
-    num_atom_cluster = b.num_atom_cluster;
-    degeneracy_cluster = b.degeneracy_cluster;
-    conc_cluster = b.conc_cluster;
-    excess_energy_cluster = b.excess_energy_cluster;
-    prob_ideal_cluster = b.prob_ideal_cluster;
-    soln0 = b.soln0;
-    prob_cluster = b.prob_cluster;
-    param_ec = b.param_ec;
-    rel_s = b.rel_s;
-    binodal_curve = b.binodal_curve;
-  }
-
-  bool QuasiChemApproxCalculator::initialize(ostream& oss) {
-    xStream::initialize(oss);
-    return initialize();
-  }
-  bool QuasiChemApproxCalculator::initialize(ofstream& FileMESSAGE, ostream& oss) {
-    xStream::initialize(FileMESSAGE, oss);
-    return initialize();
-  }
-  bool QuasiChemApproxCalculator::initialize() {
-    free();
-    return m_initialized;
-  }
-  bool QuasiChemApproxCalculator::initialize(const aurostd::xoption& qca_opts, ostream& oss) {
-    xStream::initialize(oss);
-    return initialize(qca_opts);
-  }
-  bool QuasiChemApproxCalculator::initialize(const aurostd::xoption& qca_opts, ofstream& FileMESSAGE, ostream& oss) {
-    xStream::initialize(FileMESSAGE, oss);
-    return initialize(qca_opts);
-  }
   /// @brief initializes the QCA variables
   ///
   /// @param qca_opts QCA xoptions object
@@ -658,8 +592,8 @@ namespace qca {
     }
     alat /= nelem;
     xmatrix<double> lattice(3, 3);
-    const xvector<double> angles = 90.0 * aurostd::ones_xv<double>(3);
-    const xvector<double> coorsys = aurostd::ones_xv<double>(3);
+    xvector<double> angles = 90.0 * aurostd::ones_xv<double>(3);
+    xvector<double> coorsys = aurostd::ones_xv<double>(3);
     oss.precision(_DOUBLE_WRITE_PRECISION_MAX_);
     oss.setf(std::ios::fixed, std::ios::floatfield);
     if (plattice == "fcc") {
@@ -980,8 +914,8 @@ namespace qca {
     vector<xstructure> _vstr_ce(ncluster);
     xmatrix<double> m1(ncluster, nelem);
     xmatrix<double> m2(ncluster, nelem);
-    const xvector<int> v1(ncluster);
-    const xvector<double> v2(ncluster);
+    xvector<int> v1(ncluster);
+    xvector<double> v2(ncluster);
     for (size_t i = 0; i < index_cluster.size(); i++) {
       _vstr_ce[i] = vstr_ce[index_cluster[i] - 1];
       m1.setmat(conc_cluster.getxmat(index_cluster[i], index_cluster[i], 1, nelem), i + 1, 1);
@@ -1023,7 +957,7 @@ namespace qca {
     deque<_atom> atoms;
     _atom atom;
     uint itype;
-    const xmatrix<double> lattice(3, 3);
+    xmatrix<double> lattice(3, 3);
     // Define primitive parent lattice and pocc atoms
     if (plattice == "fcc") {
       lattice(1, 1) = 0.0;
@@ -1181,12 +1115,12 @@ namespace qca {
         _conc_macro.setcol(1.0 - x, 2);
         conc_macro = _conc_macro;
       } else if (nelem == 3) { // barycentric coordinates
-        const xmatrix<double> _conc_macro((conc_npts * conc_npts - conc_npts) / 2.0, nelem); // always even
-        const xvector<double> x = aurostd::linspace(CONC_SHIFT, 1.0 - CONC_SHIFT, conc_npts);
-        const xvector<double> p1(2);
-        const xvector<double> p2(2);
-        const xvector<double> p3(2);
-        const xvector<double> p4(2);
+        xmatrix<double> _conc_macro((conc_npts * conc_npts - conc_npts) / 2.0, nelem); // always even
+        xvector<double> x = aurostd::linspace(CONC_SHIFT, 1.0 - CONC_SHIFT, conc_npts);
+        xvector<double> p1(2);
+        xvector<double> p2(2);
+        xvector<double> p3(2);
+        xvector<double> p4(2);
         p1(1) = 0.0;
         p1(2) = 0.0;
         p2(1) = 1.0;
@@ -1270,8 +1204,8 @@ namespace qca {
   void QuasiChemApproxCalculator::calculateProbabilityCluster1D(int iix, const int it) {
     const bool LDEBUG = (false || XHOST.DEBUG);
     const int ix = iix + prob_ideal_cluster.lrows;
-    const xvector<double> soln(nelem - 1);
-    const xvector<double> coeff(max_num_atoms + 1);
+    xvector<double> soln(nelem - 1);
+    xvector<double> coeff(max_num_atoms + 1);
     xvector<double> rootr(max_num_atoms);
     xvector<double> rooti(max_num_atoms);
     bool found_soln = false;
@@ -1300,8 +1234,9 @@ namespace qca {
     for (int ic = prob_ideal_cluster.lcols; ic <= prob_ideal_cluster.ucols; ic++) {
       prob_cluster[it - 1](ix, ic) = prob_ideal_cluster(ix, ic) * std::exp(-beta(it) * excess_energy_cluster(ic)) * std::pow(soln(1), num_elem_cluster(ic, 1));
     }
-    prob_cluster[it - 1].setmat(
-        prob_cluster[it - 1].getxmat(ix, ix, prob_ideal_cluster.lcols, prob_ideal_cluster.ucols) / aurostd::sum(prob_cluster[it - 1].getxmat(ix, ix, prob_ideal_cluster.lcols, prob_ideal_cluster.ucols)), ix, 1);
+    prob_cluster[it - 1].setmat(prob_cluster[it - 1].getxmat(ix, ix, prob_ideal_cluster.lcols, prob_ideal_cluster.ucols) /
+                                    aurostd::sum(prob_cluster[it - 1].getxmat(ix, ix, prob_ideal_cluster.lcols, prob_ideal_cluster.ucols)),
+                                ix, 1);
   }
 
   /// @brief calculates the equilibrium cluster probability of a N-D system at a particular concentration
@@ -1358,8 +1293,9 @@ namespace qca {
     for (int ic = prob_ideal_cluster.lcols; ic <= prob_ideal_cluster.ucols; ic++) {
       prob_cluster[it - 1](ix, ic) = prob_ideal_cluster(ix, ic) * std::exp(-beta(it) * excess_energy_cluster(ic)) * aurostd::elements_product(aurostd::pow(soln, num_elem_cluster.getxvec(ic, ic, 1, nelem - 1)));
     }
-    prob_cluster[it - 1].setmat(
-        prob_cluster[it - 1].getxmat(ix, ix, prob_ideal_cluster.lcols, prob_ideal_cluster.ucols) / aurostd::sum(prob_cluster[it - 1].getxmat(ix, ix, prob_ideal_cluster.lcols, prob_ideal_cluster.ucols)), ix, 1); // normalize sum to 1
+    prob_cluster[it - 1].setmat(prob_cluster[it - 1].getxmat(ix, ix, prob_ideal_cluster.lcols, prob_ideal_cluster.ucols) /
+                                    aurostd::sum(prob_cluster[it - 1].getxmat(ix, ix, prob_ideal_cluster.lcols, prob_ideal_cluster.ucols)),
+                                ix, 1); // normalize sum to 1
   }
 
   /// @brief calculates the equilibrium cluster probability
@@ -1501,10 +1437,10 @@ namespace qca {
     const xvector<double> beta_orig = beta; // store original inverse temperature
     message << "Equi-composition temperature range = [" << temp(1) << "K, " << temp(temp.urows) << "K]";
     pflow::logger(__AFLOW_FILE__, __AFLOW_FUNC__, message, m_aflags, *p_FileMESSAGE, *p_oss, _LOGGER_MESSAGE_);
-    const xvector<double> order_param(temp.rows);
+    xvector<double> order_param(temp.rows);
     xmatrix<double> m1;
     xmatrix<double> m2;
-    const xmatrix<double> m3 = prob_ideal_cluster * aurostd::trasp(prob_ideal_cluster);
+    xmatrix<double> m3 = prob_ideal_cluster * aurostd::trasp(prob_ideal_cluster);
     for (int it = temp.lrows; it <= temp.urows; it++) {
       m1 = prob_cluster[it - 1] * aurostd::trasp(prob_ideal_cluster);
       m2 = prob_cluster[it - 1] * aurostd::trasp(prob_cluster[it - 1]);
@@ -1530,9 +1466,9 @@ namespace qca {
     if (low_t_div) {
       message << "Order parameter diverges at low temperature, using interpolation";
       pflow::logger(__AFLOW_FILE__, __AFLOW_FUNC__, message, m_aflags, *p_FileMESSAGE, *p_oss, _LOGGER_WARNING_);
-      const xvector<double> dadt = aurostd::evalPolynomial_xv(temp_scaled, coeff1);
-      const xvector<double> temp_interp(temp.rows + 1);
-      const xvector<double> dadt_interp(temp.rows + 1);
+      xvector<double> dadt = aurostd::evalPolynomial_xv(temp_scaled, coeff1);
+      xvector<double> temp_interp(temp.rows + 1);
+      xvector<double> dadt_interp(temp.rows + 1);
       for (int i = temp.lrows; i <= temp.urows; i++) {
         temp_interp(i + 1) = temp(i);
       } // add T = 0K
@@ -1663,7 +1599,7 @@ namespace qca {
         return;
       }
     } else if (print == "json") {
-      const aurostd::JSON::object jo(aurostd::JSON::object_types::DICTIONARY);
+      aurostd::JSON::object jo(aurostd::JSON::object_types::DICTIONARY);
       jo["Alloy name"] = alloyname;
       jo["Elements"] = elements;
       jo["Parent lattice"] = plattice;
@@ -1693,7 +1629,7 @@ namespace qca {
       const string message = "The JSON file does not exist, filepath=" + filepath;
       throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, message, _FILE_ERROR_);
     }
-    const aurostd::JSON::object jo = aurostd::JSON::loadFile(filepath);
+    aurostd::JSON::object jo = aurostd::JSON::loadFile(filepath);
     alloyname = (string) jo["Alloy name"];
     conc_curve = bool(jo["Concentration curve"]);
     conc_macro = jo["Macroscopic concentration"];
@@ -1739,7 +1675,7 @@ namespace qca {
     // END - set default
     plotter::generateHeader(gpfile, plotoptions, false);
     if (conc_curve) { // generic x-axis for the concentration curve
-      const xvector<double> lsc = aurostd::linspace(0.0, 1.0, conc_macro.rows);
+      xvector<double> lsc = aurostd::linspace(0.0, 1.0, conc_macro.rows);
       for (int ix = conc_macro.lrows; ix <= conc_macro.urows; ix++) {
         data.push_back({lsc(ix), binodal_curve(ix)});
       }
@@ -1841,5 +1777,3 @@ namespace qca {
     init::MessageOption("--usage", "QCA()", usage_options);
   }
 } // namespace qca
-
-#endif

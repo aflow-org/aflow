@@ -6,10 +6,9 @@
 // Stefano Curtarolo
 // contains routines to run PTHREADS
 
-#ifndef _AFLOW_PTHREADS_CPP
-#define _AFLOW_PTHREADS_CPP
-
 #include "interfaces/aflow_pthreads.h"
+
+#include "config.h"
 
 #include <cstddef>
 #include <deque>
@@ -959,8 +958,6 @@ namespace sflow {
 } // namespace sflow
 
 // **************************************************************************
-
-#endif  // _PTHREADS_IMPLEMENTATIONS_
 
 // **************************************************************************
 // *                                                                        *

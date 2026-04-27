@@ -4,8 +4,6 @@
 // *                                                                         *
 // ***************************************************************************
 // Written by Stefano Curtarolo - 2007-2019
-#ifndef _AFLOW_XPROTOTYPE_CPP
-#define _AFLOW_XPROTOTYPE_CPP
 #include <cstddef>
 #include <fstream>
 #include <ios>
@@ -13,6 +11,7 @@
 #include <istream>
 #include <ostream>
 #include <sstream>
+#include <string>
 #include <vector>
 
 #include "AUROSTD/aurostd.h"
@@ -24,11 +23,13 @@
 
 using std::endl;
 using std::ifstream;
+using std::iostream;
 using std::istream;
 using std::istringstream;
 using std::ofstream;
 using std::ostream;
 using std::ostringstream;
+using std::string;
 using std::stringstream;
 using std::vector;
 
@@ -332,8 +333,6 @@ namespace xprototype {
     throw aurostd::xerror(__AFLOW_FILE__, "xprototype::xprototype():", "Prototype does not exist: " + prototype, _FILE_NOT_FOUND_);
   }
 } // namespace xprototype
-
-#endif // _AFLOW_XPROTOTYPE_CPP
 
 // **************************************************************************
 // *                                                                        *

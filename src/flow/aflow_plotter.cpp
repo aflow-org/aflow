@@ -719,7 +719,7 @@ namespace plotter {
     string clean_specie;
     const int comp_prec = (int) ceil(log10(1.0 / xstr.partial_occupation_stoich_tol));  // ceil ensures we round up above 1 //CO20181226
     for (size_t ispecies = 0; ispecies < xstr.species.size(); ispecies++) {
-      clean_specie = KBIN::VASP_PseudoPotential_CleanName(xstr.species[ispecies]);
+      clean_specie = aurostd::VASP_PseudoPotential_CleanName(xstr.species[ispecies]);
       if (LDEBUG) {
         cerr << __AFLOW_FUNC__ << " species[ispecies=" << ispecies << "]=" << clean_specie << endl;
       }
@@ -1645,7 +1645,7 @@ namespace plotter {
         dos_json["pDOS_data"][xstr.species[species_id]] = aurostd::JSON::object(aurostd::JSON::object_types::DICTIONARY);
         for (uint iatom = 0; iatom < map_species_to_iatoms[species_id].size(); iatom++) {
           int atom_id = map_species_to_iatoms[species_id][iatom];
-          const aurostd::JSON::object atom_json(aurostd::JSON::object_types::DICTIONARY);
+          aurostd::JSON::object atom_json(aurostd::JSON::object_types::DICTIONARY);
           atom_id++; // in vDOS atoms are indexed starting from 1
 
           if (xdos.isLSCOUPLING) {
@@ -1776,7 +1776,7 @@ namespace plotter {
         dos_json["tDOS_data"][xstr.species[species_id]] = aurostd::JSON::object(aurostd::JSON::object_types::DICTIONARY);
         for (uint iatom = 0; iatom < map_species_to_iatoms[species_id].size(); iatom++) {
           int atom_id = map_species_to_iatoms[species_id][iatom];
-          const aurostd::JSON::object atom_json(aurostd::JSON::object_types::DICTIONARY);
+          aurostd::JSON::object atom_json(aurostd::JSON::object_types::DICTIONARY);
           atom_id++; // in vDOS atoms are indexed starting from 1
           for (uint p = 1; p < xdos.vDOS[atom_id].size(); p++) {
             atom_json[projections[p - 1]] = xdos.vDOS[atom_id][p][0];
@@ -2143,7 +2143,7 @@ namespace plotter {
     labels.back() = convertKPointLabel(xkpts.vpath.back(), format);
 
     // k-points
-    const xmatrix<double> f2c = trasp(ReciprocalLattice(xstr.lattice));
+    const aurostd::xmatrix<double> f2c = trasp(ReciprocalLattice(xstr.lattice));
     double total_length = 0.0;
     vector<double> segment_points(nsegments + 1, 0.0);
     double dk;

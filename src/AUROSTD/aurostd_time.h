@@ -42,6 +42,7 @@ namespace aurostd {
   std::string get_datetime(bool include_utc_offset = false);
   std::string get_datetime(const tm& tsruct, bool include_utc_offset = false); // CO20200624
   std::string get_datetime_formatted(const std::string& date_delim = "/", bool include_time = true, const std::string& date_time_sep = " ", const std::string& time_delim = ":");  // CO20171215
+  std::string get_datetime_utc_formatted(const std::string& date_delim="/",bool include_time=true,const std::string& date_time_sep=" ",const std::string& time_delim=":");  //CO20171215
   std::string get_datetime_formatted(const tm& tsruct, const std::string& date_delim = "/", bool include_time = true, const std::string& date_time_sep = " ", const std::string& time_delim = ":"); // CO20171215 //CO20200624
   bool beep(uint = 2000, uint = 100); // standard values
 } // namespace aurostd

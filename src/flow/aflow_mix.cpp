@@ -5,9 +5,6 @@
 // ***************************************************************************
 // Stefano Curtarolo - 2009 Duke
 
-#ifndef _AFLOW_MIX_CPP
-#define _AFLOW_MIX_CPP
-
 #include <cstdlib>
 #include <string>
 
@@ -86,7 +83,7 @@ int MiscibilityMiedemaCheck(std::string speciesA, std::string speciesB) {// aflo
 int MiscibilityMiedemaCheck(std::string system_in) {  // (nomix,unknown,mix)
   std::string speciesA;
   std::string speciesB;
-  KBIN::VASP_SplitAlloySpecies(KBIN::VASP_PseudoPotential_CleanName(system_in), speciesA, speciesB);
+  KBIN::VASP_SplitAlloySpecies(aurostd::VASP_PseudoPotential_CleanName(system_in), speciesA, speciesB);
   return MiscibilityMiedemaCheck(GetAtomNumber(speciesA), GetAtomNumber(speciesB));
 }
 
@@ -120,12 +117,11 @@ int MiscibilityHumeRotheryCheck(std::string speciesA, std::string speciesB) {// 
 int MiscibilityHumeRotheryCheck(std::string system_in) {  // (nomix,unknown,mix)
   std::string speciesA;
   std::string speciesB;
-  KBIN::VASP_SplitAlloySpecies(KBIN::VASP_PseudoPotential_CleanName(system_in), speciesA, speciesB);
+  KBIN::VASP_SplitAlloySpecies(aurostd::VASP_PseudoPotential_CleanName(system_in), speciesA, speciesB);
   return MiscibilityHumeRotheryCheck(GetAtomNumber(speciesA), GetAtomNumber(speciesB));
 }
 
 // ***************************************************************************
-#endif
 
 // ***************************************************************************
 // *                                                                         *

@@ -7,9 +7,6 @@
 // Updated by David Hicks
 // d.hicks@duke.edu
 
-#ifndef _AFLOW_SYMMETRY_SPACEGROUP_CPP_
-#define _AFLOW_SYMMETRY_SPACEGROUP_CPP_
-
 #include "modules/SYM/aflow_symmetry_spacegroup.h"
 
 #include <algorithm>
@@ -44,6 +41,9 @@
 // ========== Using namespace standard ========== //
 using namespace std;
 
+using aurostd::xmatrix;
+using aurostd::xvector;
+
 // **************************************************************************************************************************************************
 //  Orient Conventional Cell
 // **************************************************************************************************************************************************
@@ -55,14 +55,14 @@ namespace SYM {
     stringstream message;
     const double sym_tol = xstr.sym_eps; // DX20190215 - added sym_tol
     const double tol = _ZERO_TOL_;
-    const xvector<double> a;
+    xvector<double> a;
     a(1) = 1;
-    const xvector<double> b;
+    xvector<double> b;
     b(2) = 1;
-    const xvector<double> c;
+    xvector<double> c;
     c(3) = 1;
     xvector<double> tmpvec;
-    const xvector<double> zero;
+    xvector<double> zero;
     zero(1) = 0;
     zero(2) = 0;
     zero(3) = 0;
@@ -312,7 +312,7 @@ namespace SYM {
           }
         }
         // GET ANGLE BETWEEN lattice_basis[0] AND (Sqrt(3)/2 1/2 0)
-        const xvector<double> fromx;  // 30 degrees above x axis
+        xvector<double> fromx;  // 30 degrees above x axis
         fromx(1) = sqrt(3.0) / 2.0;
         fromx(2) = 1.0 / 2.0;
         angle = aurostd::angle(lattice_basis[0], fromx);
@@ -374,7 +374,7 @@ namespace SYM {
           }
         }
         // GET ANGLE BETWEEN lattice_basis[0] AND (Sqrt(3)/2 1/2 0)
-        const xvector<double> fromx;  // 30 degrees above x axis
+        xvector<double> fromx;  // 30 degrees above x axis
         fromx(1) = sqrt(3.0) / 2.0;
         fromx(2) = 1.0 / 2.0;
         angle = aurostd::angle(lattice_basis[0], fromx);
@@ -433,7 +433,7 @@ namespace SYM {
           minus_one(atomic_basis_, 3);
         }
         // GET ANGLE BETWEEN lattice_basis[0] AND (Sqrt(3)/2 1/2 0)
-        const xvector<double> fromx;  // 30 degrees above x axis
+        xvector<double> fromx;  // 30 degrees above x axis
         fromx(1) = sqrt(3.0) / 2.0;
         fromx(2) = 1.0 / 2.0;
         angle = aurostd::angle(lattice_basis[0], fromx);
@@ -582,13 +582,13 @@ namespace SYM {
     reverse3.name = "0";
 
     // Also, check (1/2,0,0) and (1/2,0,1/2)
-    const _atom half_x;
+    _atom half_x;
     half_x.fpos(1) = 0.5;
     _atom half_x_shift1;
     half_x_shift1.fpos = half_x.fpos + reverse1.fpos;
     _atom half_x_shift2;
     half_x_shift2.fpos = half_x.fpos + reverse2.fpos;
-    const _atom half_xz;
+    _atom half_xz;
     half_xz.fpos(1) = 0.5;
     half_xz.fpos(3) = 0.5;
     _atom half_xz_shift1;
@@ -669,13 +669,13 @@ namespace SYM {
     reverse2.name = "0";
     reverse3.name = "0";
     // Also, check (1/2,0,0) and (1/2,0,1/2)
-    const _atom half_x;
+    _atom half_x;
     half_x.fpos(1) = 0.5;
     _atom half_x_shift1;
     half_x_shift1.fpos = half_x.fpos + reverse1.fpos;
     _atom half_x_shift2;
     half_x_shift2.fpos = half_x.fpos + reverse2.fpos;
-    const _atom half_xz;
+    _atom half_xz;
     half_xz.fpos(1) = 0.5;
     half_xz.fpos(3) = 0.5;
     _atom half_xz_shift1;
@@ -731,7 +731,7 @@ namespace SYM {
     lattice_basis.push_back(lattice(2));
     lattice_basis.push_back(lattice(3));
     // Rotate by 60 degrees
-    const xmatrix<double> R_60;
+    xmatrix<double> R_60;
     R_60(1, 1) = cos(60.0 * Pi_r / 180);
     R_60(1, 2) = -sin(60.0 * Pi_r / 180);
     R_60(1, 3) = 0.0;
@@ -884,15 +884,15 @@ uint xstructure::GetPrimitiveCell() {
       }
     }
     // add the original lattice vectors' translations to pool of potential translations:
-    const xvector<double> a1;
+    xvector<double> a1;
     a1(1) = 1;
     a1(2) = 0;
     a1(3) = 0;
-    const xvector<double> a2;
+    xvector<double> a2;
     a2(1) = 0;
     a2(2) = 1;
     a2(3) = 0;
-    const xvector<double> a3;
+    xvector<double> a3;
     a3(1) = 0;
     a3(2) = 0;
     a3(3) = 1;
@@ -1088,7 +1088,7 @@ namespace SYM {
     // We are choosing a lattice point as origin and then expanding from that point.
     // The expanded points are in cartesian coordinates. This is a generic "stupid" expansion.
     vector<xvector<double>> out;
-    const xvector<double> tmp;
+    xvector<double> tmp;
     for (int x = 0; x <= a; x++) {
       for (int y = 0; y <= b; y++) {
         for (int z = 0; z <= c; z++) {
@@ -1111,7 +1111,7 @@ namespace SYM {
     // We are choosing a lattice point as origin and then expanding from that point.
     // The expanded points are in cartesian coordinates. This is a generic "stupid" expansion.
     vector<xvector<double>> out;
-    const xvector<double> tmp;
+    xvector<double> tmp;
     for (int x = -a; x <= a; x++) {
       for (int y = -b; y <= b; y++) {
         for (int z = -c; z <= c; z++) {
@@ -1883,7 +1883,7 @@ namespace SYM {
     xvector<double> conv_lattice_vec_b;
     xvector<double> conv_lattice_vec_c;
     const vector<xvector<double>> conven;
-    const xvector<double> null;
+    xvector<double> null;
     null[1] = null[2] = null[3] = 0.0;
 
     // ===== Conventional lattice c ===== //
@@ -2009,7 +2009,7 @@ namespace SYM {
     const vector<xvector<double>> conven;
     vector<xvector<double>> fourfold_lattice_vectors;
     const vector<xvector<double>> twofold;
-    const xvector<double> null;
+    xvector<double> null;
     null[1] = null[2] = null[3] = 0.0;
 
     // ===== Conventional lattice c ===== //
@@ -2044,7 +2044,7 @@ namespace SYM {
         if (i == 0) {
           rot_dir = twofold_ops_vec[i].return_direction();
         } else {
-          const xvector<double> rot_tmp = twofold_ops_vec[i].return_direction();
+          xvector<double> rot_tmp = twofold_ops_vec[i].return_direction();
           if ((rot_dir[1] - rot_tmp[1]) > tol && (rot_dir[2] - rot_tmp[2]) > tol && (rot_dir[3] - rot_tmp[3]) > tol) { // DX20190215 - _SYM_TOL_ to tol
             all_dir_equal = false;
             break;
@@ -2150,7 +2150,7 @@ namespace SYM {
     xvector<double> conv_lattice_vec_b;
     xvector<double> conv_lattice_vec_c;
     const vector<xvector<double>> conven;
-    const xvector<double> null;
+    xvector<double> null;
     null[1] = null[2] = null[3] = 0.0;
 
     // ===== Conventional lattice unique axis ===== //
@@ -2229,9 +2229,9 @@ namespace SYM {
             int e = -1;
             int f = -1;
             int g = -1;
-            const xvector<double> tranvec_i = possible_efg_vectors[i];
-            const xvector<double> tranvec_j = possible_efg_vectors[j];
-            const xvector<double> tranvec_k = possible_efg_vectors[k];
+            xvector<double> tranvec_i = possible_efg_vectors[i];
+            xvector<double> tranvec_j = possible_efg_vectors[j];
+            xvector<double> tranvec_k = possible_efg_vectors[k];
 
             // ===== Ensure none of the possible vectors is a null vector ===== //
             if ((aurostd::abs(tranvec_i[1]) >= _ZERO_TOL_ || aurostd::abs(tranvec_i[2]) >= _ZERO_TOL_ || aurostd::abs(tranvec_i[3]) >= _ZERO_TOL_) &&
@@ -2577,7 +2577,7 @@ namespace SYM {
     xvector<double> conv_lattice_vec_b;
     xvector<double> conv_lattice_vec_c;
     const vector<xvector<double>> conven;
-    const xvector<double> null;
+    xvector<double> null;
     null[1] = null[2] = null[3] = 0.0;
 
     vector<xvector<double>> six_or_threefold_lattice_vectors;
@@ -2685,7 +2685,7 @@ namespace SYM {
     xvector<double> conv_lattice_vec_b;
     xvector<double> conv_lattice_vec_c;
     const vector<xvector<double>> conven;
-    const xvector<double> null;
+    xvector<double> null;
     null[1] = null[2] = null[3] = 0.0;
 
     // store hexagonal c-axis
@@ -2833,7 +2833,7 @@ namespace SYM {
       vector<double> ys;
       vector<double> xs;
       for (size_t a = 0; a < bravais_basis.size(); a++) {
-        const xvector<double> bravais_direct = c2f * bravais_basis[a];
+        xvector<double> bravais_direct = c2f * bravais_basis[a];
         zs.push_back(bravais_direct[3]);
         ys.push_back(bravais_direct[2]);
         xs.push_back(bravais_direct[1]);
@@ -2856,19 +2856,19 @@ namespace SYM {
     } else if (crystalsystem == "HEXAGONAL") {
       if (bravais_count == 3) {
         // Check if HEX has obverse/reverse to know if this is actually rhombohedral
-        const xvector<double> centering1;
+        xvector<double> centering1;
         centering1(1) = 2.0 / 3.0;
         centering1(2) = 1.0 / 3.0;
         centering1(3) = 1.0 / 3.0;
-        const xvector<double> centering2;
+        xvector<double> centering2;
         centering2(1) = 1.0 / 3.0;
         centering2(2) = 2.0 / 3.0;
         centering2(3) = 2.0 / 3.0;
-        const xvector<double> centering1_swap;
+        xvector<double> centering1_swap;
         centering1_swap(1) = 1.0 / 3.0;
         centering1_swap(2) = 2.0 / 3.0;
         centering1_swap(3) = 1.0 / 3.0;
-        const xvector<double> centering2_swap;
+        xvector<double> centering2_swap;
         centering2_swap(1) = 2.0 / 3.0;
         centering2_swap(2) = 1.0 / 3.0;
         centering2_swap(3) = 2.0 / 3.0;
@@ -2908,7 +2908,7 @@ namespace SYM {
     ITC_sym_info.initsymmats(); // LOOK IN MAIN (CONVENTIONALCELL)
     ITC_sym_info.initglides();
     ITC_sym_info.initsymops();
-    const xvector<double> tmp;
+    xvector<double> tmp;
     tmp(1) = 1;
     // extern vector<xvector<double> > glideplanes;
     // extern vector<xvector<double> > glidetrans;
@@ -2951,11 +2951,11 @@ namespace SYM {
     vector<string> pointgroupops;
     vector<xvector<double>> mcount_dirs;
     vector<xvector<double>> latticecell;
-    const xvector<double> a;
+    xvector<double> a;
     a(1) = 1;
-    const xvector<double> b;
+    xvector<double> b;
     b(2) = 1;
-    const xvector<double> c;
+    xvector<double> c;
     c(3) = 1;
     latticecell.push_back(a);
     latticecell.push_back(b);
@@ -3465,7 +3465,7 @@ uint xstructure::SpaceGroup_ITC(double& use_tol, const int& manual_it, const int
 
   int cell_choice = setting; // DX20180806 - use setting instead of 0
 
-  const xmatrix<double> Ident;
+  xmatrix<double> Ident;
   Ident(1, 1) = 1;
   Ident(2, 2) = 1;
   Ident(3, 3) = 1;
@@ -4504,8 +4504,6 @@ namespace SYM {
 } // namespace SYM
 
 // ***************************************************************************
-
-#endif
 
 // Written by Richard H. Taylor
 // Updated by David Hicks

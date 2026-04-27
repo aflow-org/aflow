@@ -38,6 +38,7 @@ using std::string;
 using std::vector;
 
 using aurostd::utype2string;
+using aurostd::xoption;
 
 namespace KBIN {
 

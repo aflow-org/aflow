@@ -11,16 +11,20 @@
 
 // /home/auro/work/AFLOW3/aflow --potential=potpaw_GGA  --potential_complete --aflow_proto=A3,ICSD_94429.A,ICSD_108026.A,ICSD_165132.A,ICSD_240995.A,ICSD_22300,A,ICSD_240995.A,ICSD_14288.A,ICSD_43431.A:B,B_s,B_h
 
-#ifndef _AFLOW_XPROTO_CPP
-#define _AFLOW_XPROTO_CPP
+#include "config.h"
+
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <deque>
+#include <fstream>
 #include <functional>
+#include <iostream>
+#include <istream>
 #include <iterator>
 #include <ostream>
 #include <set>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -41,24 +45,26 @@
 
 #define _EPS_ 0.02
 
+using std::cerr;
 using std::deque;
+using std::endl;
+using std::ifstream;
+using std::iostream;
+using std::istringstream;
+using std::ofstream;
 using std::ostream;
+using std::ostringstream;
+using std::set;
+using std::string;
+using std::stringstream;
 using std::vector;
 
-string *LOAD_Library_ICSD(string file);
-
-namespace aurostd {
-  template <class utype> void swap(utype &a, utype &b) {
-    utype temp = a;
-    a = b;
-    b = temp;
-  }
-} // namespace aurostd
+string* LOAD_Library_ICSD(string file);
 
 // ***************************************************************************
 // Function extra operator << for vector
 template <class utype> // operator <<  vector<>
-std::ostream &operator<<(std::ostream &buf, const std::vector<utype> &x) {
+std::ostream& operator<<(std::ostream& buf, const std::vector<utype>& x) {
   for (size_t i = 0; i < x.size(); i++) {
     buf << x[i] << " ";
   }
@@ -67,7 +73,7 @@ std::ostream &operator<<(std::ostream &buf, const std::vector<utype> &x) {
 // ***************************************************************************
 // Function extra operator << for deque
 template <class utype> // operator <<  deque<>
-std::ostream &operator<<(std::ostream &buf, const std::deque<utype> &x) {
+std::ostream& operator<<(std::ostream& buf, const std::deque<utype>& x) {
   for (size_t i = 0; i < x.size(); i++) {
     buf << x[i] << " ";
   }
@@ -80,7 +86,7 @@ std::ostream &operator<<(std::ostream &buf, const std::deque<utype> &x) {
 
 // ***************************************************************************
 namespace aflowlib {
-  string PrototypeCleanLatticeString(const string &latticeIN) {
+  string PrototypeCleanLatticeString(const string& latticeIN) {
     string lattice = latticeIN;
     lattice = aurostd::RemoveSubStringFirst(lattice, "fcc");
     lattice = aurostd::RemoveSubStringFirst(lattice, "FCC");
@@ -110,7 +116,7 @@ namespace aflowlib {
 // ***************************************************************************
 // ***************************************************************************
 namespace aflowlib {
-  std::set<string> GetPrototypesByStoichiometry(const vector<uint> &stoichiometry, const string &library) {
+  std::set<string> GetPrototypesByStoichiometry(const vector<uint>& stoichiometry, const string& library) {
     // return uid list
     std::vector<uint> stoichiometry_reduced;
     aurostd::reduceByGCD(stoichiometry, stoichiometry_reduced);
@@ -127,19 +133,28 @@ namespace aflowlib {
 // ***************************************************************************
 // ***************************************************************************
 namespace aflowlib {
-  std::set<string> GetPrototypesBySymmetry(const vector<uint> &stoichiometry, const uint space_group_number, const vector<GroupedWyckoffPosition> &grouped_Wyckoff_positions, const uint setting, const string &library) {
+  std::set<string> GetPrototypesBySymmetry(const vector<uint>& stoichiometry, const uint space_group_number, const vector<GroupedWyckoffPosition>& grouped_Wyckoff_positions, const uint setting, const string& library) {
     const anrl::ProtoData pd = anrl::ProtoData::get();
     const std::set<std::string> vuid_stoichiometry = GetPrototypesByStoichiometry(stoichiometry, library);
-    if (pd.lookup["space_group_number"].find(std::to_string(space_group_number)) == pd.lookup["space_group_number"].end()) {
-       return {};
+
+    // get enantiomorph (if it exists, otherwise, the same space group is returned)
+    uint space_group_enantiomorph = SYM::getEnantiomorphSpaceGroupNumber(space_group_number);
+
+    if (pd.lookup["space_group_number"].find(std::to_string(space_group_number)) == pd.lookup["space_group_number"].end()
+        && pd.lookup["space_group_number"].find(std::to_string(space_group_enantiomorph)) == pd.lookup["space_group_number"].end()) {
+      return {};
     }
-    const std::set<std::string> vuid_space_group = pd.lookup["space_group_number"][std::to_string(space_group_number)];
+    std::set<std::string> vuid_space_group = pd.lookup["space_group_number"][std::to_string(space_group_number)];
+    std::set<std::string> vuid_space_group_enantiomorph = pd.lookup["space_group_number"][std::to_string(space_group_enantiomorph)];
+    // add enantiomorph to space group set
+    vuid_space_group.insert(vuid_space_group_enantiomorph.begin(), vuid_space_group_enantiomorph.end());
+
     std::vector<std::string> vuid_symmetry_temp;
     std::set_intersection(vuid_stoichiometry.begin(), vuid_stoichiometry.end(), vuid_space_group.begin(), vuid_space_group.end(), std::back_inserter(vuid_symmetry_temp));
     std::set<std::string> vuid_symmetry(vuid_symmetry_temp.begin(), vuid_symmetry_temp.end());
     if (grouped_Wyckoff_positions.empty()) {
       vector<GroupedWyckoffPosition> prototype_grouped_Wyckoffs;
-      for (const auto &uid : vuid_symmetry) {
+      for (const auto& uid : vuid_symmetry) {
         const vector<vector<string>> prototype_grouped_Wyckoff_letters = compare::convertANRLWyckoffString2GroupedPositions(static_cast<string>(pd.content[uid]["label"]));
         compare::groupWyckoffPositionsFromGroupedString(static_cast<uint>(pd.content[uid]["space_group_number"]), setting, prototype_grouped_Wyckoff_letters, prototype_grouped_Wyckoffs);
         if (!compare::matchableWyckoffPositions(grouped_Wyckoff_positions, prototype_grouped_Wyckoffs, false)) {
@@ -163,7 +178,7 @@ namespace aflowlib {
   /// @authors
   /// @mod{CO,20181226,created}
   /// @mod{HE,20250519,updated to new prototype DB}
-  uint PrototypeLibrariesSpeciesNumber(const string &_label) { // CO20181226
+  uint PrototypeLibrariesSpeciesNumber(const string& _label) { // CO20181226
     if (_label.empty()) {
       throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, "label empty [1]", _VALUE_ILLEGAL_);
     }
@@ -199,7 +214,7 @@ namespace aflowlib {
 // ***************************************************************************
 // ***************************************************************************
 namespace aflowlib {
-  xstructure PrototypeLibraries(ostream &oss, const string &label, const string &parameters, int mode) {
+  xstructure PrototypeLibraries(ostream& oss, const string& label, const string& parameters, int mode) {
     const bool LDEBUG = (false || XHOST.DEBUG);
     if (LDEBUG) {
       cerr << XPID << "aflowlib::PrototypeLibraries(ostream &oss,string label,string parameters,int mode)" << endl;
@@ -218,7 +233,7 @@ namespace aflowlib {
 } // namespace aflowlib
 
 namespace aflowlib {
-  xstructure PrototypeLibraries(ostream &oss, const string &label, const string &parameters, deque<string> &atomX, int mode) {
+  xstructure PrototypeLibraries(ostream& oss, const string& label, const string& parameters, deque<string>& atomX, int mode) {
     const bool LDEBUG = (false || XHOST.DEBUG);
     if (LDEBUG) {
       cerr << XPID << "aflowlib::PrototypeLibraries(ostream &oss,string label,string parameters,deque<string> &atomX)" << endl;
@@ -230,14 +245,14 @@ namespace aflowlib {
         cerr << __AFLOW_FUNC__ << " GetAtomVolume()=" << GetAtomVolume(atomX[i]) << endl;
       }
       volumeX.push_back(GetAtomVolume(atomX[i]));
-      //[CO20181106]volumeX.push_back(GetAtomVolume(KBIN::VASP_PseudoPotential_CleanName(atomX[i])));
+      //[CO20181106]volumeX.push_back(GetAtomVolume(aurostd::VASP_PseudoPotential_CleanName(atomX[i])));
     }
     return aflowlib::PrototypeLibraries(oss, label, parameters, atomX, volumeX, -3.0, mode, false);
   }
 } // namespace aflowlib
 
 namespace aflowlib {
-  xstructure PrototypeLibraries(ostream &oss, const string &label, const string &parameters, deque<string> &atomX, deque<double> &volumeX, int mode) {
+  xstructure PrototypeLibraries(ostream& oss, const string& label, const string& parameters, deque<string>& atomX, deque<double>& volumeX, int mode) {
     const bool LDEBUG = (false || XHOST.DEBUG);
     if (LDEBUG) {
       cerr << XPID << "aflowlib::PrototypeLibraries(ostream &oss,string label,string parameters,deque<string> &atomX,deque<double> &volumeX)" << endl;
@@ -247,7 +262,7 @@ namespace aflowlib {
 } // namespace aflowlib
 
 namespace aflowlib {
-  xstructure PrototypeLibraries(ostream &oss, const string &label, const string &parameters, deque<string> &atomX, deque<double> &volumeX, double volume_in, int mode) {
+  xstructure PrototypeLibraries(ostream& oss, const string& label, const string& parameters, deque<string>& atomX, deque<double>& volumeX, double volume_in, int mode) {
     const bool LDEBUG = (false || XHOST.DEBUG);
     if (LDEBUG) {
       cerr << XPID << "aflowlib::PrototypeLibraries(ostream &oss,string label,string parameters,deque<string> &atomX,deque<double> &volumeX,double volume_in)" << endl;
@@ -261,78 +276,58 @@ namespace aflowlib {
 // ***************************************************************************
 // the mother of all the prototypes
 namespace aflowlib {
-  xstructure PrototypeLibraries(ostream &oss, string label, string parameters, deque<string> &vatomX, deque<double> &vvolumeX, double volume_in, int mode, bool flip_option) { // COMPLETE ONE
-    // XHOST.DEBUG=true;
+  xstructure PrototypeLibraries(ostream& oss, string label, string parameters, deque<string>& vatomX, deque<double>& vvolumeX, double volume_in, int mode, bool flip_option) {
+    // COMPLETE ONE
     const bool LDEBUG = (false || XHOST.DEBUG);
 
-    const std::string uid = anrl::getPrototypeUID(label);
-    const anrl::ProtoData pd = anrl::ProtoData::get();
+    // search prototype database
+    std::string uid;
+    if (parameters.empty()) {
+      uid = anrl::getPrototypeUID(label);
+    }
 
     stringstream message;
     if (LDEBUG) {
-      cerr << XPID << "aflowlib::PrototypeLibraries(ostream &oss,string label,string parameters,deque<string> &vatomX,deque<double> &vvolumeX,double volume_in,int mode,bool flip_option)" << endl;
-    }
-    if (LDEBUG) {
-      cerr << XPID << "aflowlib::PrototypeLibraries: label=" << label << endl;
-    }
-    if (LDEBUG) {
-      cerr << XPID << "aflowlib::PrototypeLibraries: parameters=" << parameters << endl;
-    }
-    if (LDEBUG) {
-      cerr << XPID << "aflowlib::PrototypeLibraries: vatomX.size()=" << vatomX.size() << endl;
-    }
-    if (LDEBUG) {
+      cerr << XPID << "aflowlib::PrototypeLibraries: label=" << label << "\n";
+      cerr << XPID << "aflowlib::PrototypeLibraries: parameters=" << parameters << "\n";
+      cerr << XPID << "aflowlib::PrototypeLibraries: vatomX.size()=" << vatomX.size() << "\n";
       cerr << XPID << "aflowlib::PrototypeLibraries: vatomX =";
-      for (size_t i = 0; i < vatomX.size(); i++) {
-        cerr << " " << vatomX[i];
+      for (const string& atype : vatomX) {
+        cerr << " " << atype;
       }
-      cerr << endl;
-    }
-    if (LDEBUG) {
-      cerr << XPID << "aflowlib::PrototypeLibraries: vvolumeX.size()=" << vvolumeX.size() << endl;
-    }
-    if (LDEBUG) {
+      cerr << "\n";
+      cerr << XPID << "aflowlib::PrototypeLibraries: vvolumeX.size()=" << vvolumeX.size() << "\n";
       cerr << XPID << "aflowlib::PrototypeLibraries: vvolumeX =";
-      for (size_t i = 0; i < vvolumeX.size(); i++) {
-        cerr << " " << vvolumeX[i];
+      for (const double vol : vvolumeX) {
+        cerr << " " << vol;
       }
-      cerr << endl;
-    }
-    if (LDEBUG) {
-      cerr << XPID << "aflowlib::PrototypeLibraries: volume_in=" << volume_in << endl;
-    }
-    if (LDEBUG) {
-      cerr << XPID << "aflowlib::PrototypeLibraries: mode=" << mode << endl;
-    }
-    if (LDEBUG) {
-      cerr << XPID << "aflowlib::PrototypeLibraries: flip_option=" << flip_option << endl;
-    }
-    if (LDEBUG) {
+      cerr << "\n";
+      cerr << XPID << "aflowlib::PrototypeLibraries: volume_in=" << volume_in << "\n";
+      cerr << XPID << "aflowlib::PrototypeLibraries: mode=" << mode << "\n";
+      cerr << XPID << "aflowlib::PrototypeLibraries: flip_option=" << flip_option << "\n";
       if (uid.empty()) {
-        cerr << XPID << "aflowlib::PrototypeLibraries: can't find uid" << endl;
+        cerr << XPID << "aflowlib::PrototypeLibraries: can't find uid" << "\n";
       } else {
-        cerr << XPID << "aflowlib::PrototypeLibraries: found uid=" << uid << endl;
+        cerr << XPID << "aflowlib::PrototypeLibraries: found uid=" << uid << "\n";
       }
-    }
-    // check for ANRL
-    if (!uid.empty()) {
-      return anrl::PrototypeANRL_Generator_UID(uid, parameters, vatomX, vvolumeX);
+      cerr.flush();
     }
 
-    vector<string> vlabel_ANRL;
-    if (aurostd::string2tokens(label, vlabel_ANRL, "_") >= 4) {
+    // extract permutation for later use
+    std::string permutation;
+    if (label.find('.') != string::npos) {
+      permutation = label.substr(label.find('.')); // includes .
+    }
+
+    // load the prototype from the database
+    if (!uid.empty()) {
+      return anrl::PrototypeANRL_Generator_UID(uid, parameters, permutation, vatomX, vvolumeX);
+    }
+
+    // use the genric prototype generation
+    if (std::count(label.begin(), label.end(), '_') >= 3) {
       if (LDEBUG) {
-        cerr << XPID << "aflowlib::PrototypeLibraries: ANRL=" << 1 << endl;
-      }
-      // DX20190708 START
-      //  add default permutation to label if not included in input //DX20190708
-      vector<string> perm_tokens;
-      if (aurostd::string2tokens(label, perm_tokens, ".") == 1) {
-        const string default_permutation = aurostd::RemoveNumbers(vlabel_ANRL[0]);
-        label += "." + default_permutation;
-        if (LDEBUG) {
-          cerr << __AFLOW_FUNC__ << " added default permutation designation to ANRL label; label=" << label << endl;
-        }
+        cerr << XPID << "aflowlib::PrototypeLibraries: treat as generic label." << endl;
       }
       return anrl::PrototypeANRL_Generator(label, parameters, vatomX, vvolumeX); // DX20200423
     }
@@ -357,9 +352,9 @@ namespace aflowlib {
     result << aflow::Banner("BANNER_BIG") << endl;
     vector<string> number_of_species = pd.lookup["number_of_species"].keys();
     std::sort(number_of_species.begin(), number_of_species.end());
-    for (const std::string &number : number_of_species) {
+    for (const std::string& number : number_of_species) {
       result << "PROTOTYPES " << number << "-COMPONENTS (UID | LINK | LABEL)" << endl;
-      for (const std::string &uid : static_cast<std::vector<std::string>>(pd.lookup["number_of_species"][number])) {
+      for (const std::string& uid : static_cast<std::vector<std::string>>(pd.lookup["number_of_species"][number])) {
         if (pd.content[uid]["legacy"]) {
           result << "  " << uid << " | - | " << static_cast<string>(pd.content[uid]["label"]) << endl;
         } else {
@@ -378,7 +373,7 @@ namespace aflowlib {
   /// @brief write all available prototypes that correspond to an ICSD number with a certain number of elements
   /// @param options number of elements as comma seperated list, or empty for all available
   /// @return
-  string PrototypesIcsdHelp(const string &options) {
+  string PrototypesIcsdHelp(const string& options) {
     stringstream result;
     vector<string> number_of_species;
     const anrl::ProtoData pd = anrl::ProtoData::get();
@@ -388,7 +383,7 @@ namespace aflowlib {
     } else {
       vector<string> tokens;
       aurostd::string2tokens(options, tokens, ",");
-      for (const auto &n : tokens) {
+      for (const auto& n : tokens) {
         if (pd.lookup["number_of_species"].find(n) != pd.lookup["number_of_species"].end()) {
           number_of_species.push_back(n);
         } else {
@@ -398,9 +393,9 @@ namespace aflowlib {
     }
     std::sort(number_of_species.begin(), number_of_species.end());
 
-    for (const std::string &number : number_of_species) {
+    for (const std::string& number : number_of_species) {
       result << number << "-COMPONENTS (ICSD | UID | LINK | LABEL)" << endl;
-      for (const std::string &uid : static_cast<std::vector<std::string>>(pd.lookup["number_of_species"][number])) {
+      for (const std::string& uid : static_cast<std::vector<std::string>>(pd.lookup["number_of_species"][number])) {
         if (pd.content[uid]["icsd"]) {
           result << "  ICSD_" << static_cast<string>(pd.content[uid]["icsd"]) << " | " << uid << " | https://aflow.org/p/" << uid << " | " << static_cast<string>(pd.content[uid]["label"]) << endl;
         }
@@ -421,7 +416,7 @@ namespace aflowlib {
   /// @mod{HE,20240326,changed to use AFLUX}
   string CALCULATED() {
     const std::string statistic_raw = aurostd::httpGet("http://aflow.org/API/aflowlib_stats/");
-    const aurostd::JSON::object aflux_statistic = aurostd::JSON::loadString(statistic_raw);
+    aurostd::JSON::object aflux_statistic = aurostd::JSON::loadString(statistic_raw);
     stringstream out;
     out << "Calculations available on AFLUX " << TODAY << endl;
     out << "Library_ICSD_CALCULATED = " << (long) aflux_statistic["Aflow_DBs"]["ICSD"]["count"] << endl;
@@ -444,10 +439,10 @@ namespace aflowlib {
   /// @authors
   /// @mod{HE,20240326,changed to use AFLUX}
   string CALCULATED_ICSD_RANDOM() {
-    const aurostd::JSON::object aflux_statistic = aurostd::JSON::loadString(aurostd::httpGet("http://aflow.org/API/aflowlib_stats/"));
+    aurostd::JSON::object aflux_statistic = aurostd::JSON::loadString(aurostd::httpGet("http://aflow.org/API/aflowlib_stats/"));
 
     const uint rnd_choice = (uint) floor((double) aflux_statistic["Aflow_DBs"]["ICSD"]["count"] * aurostd::ran0());
-    const aurostd::JSON::object selected_system = aurostd::JSON::loadString(aurostd::httpGet("http://aflow.org/API/aflux/?$catalog(ICSD),$paging(" + std::to_string(rnd_choice) + ",1)"));
+    aurostd::JSON::object selected_system = aurostd::JSON::loadString(aurostd::httpGet("http://aflow.org/API/aflux/?$catalog(ICSD),$paging(" + std::to_string(rnd_choice) + ",1)"));
 
     return (string) selected_system[(size_t) 0]["aurl"] + "\n";
   }
@@ -457,7 +452,6 @@ namespace aflowlib {
 
 // ***************************************************************************
 
-#endif // _AFLOW_XPROTO_CPP
 // **************************************************************************
 // *                                                                        *
 // *             STEFANO CURTAROLO - Duke University 2003-2024              *

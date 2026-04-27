@@ -8,9 +8,6 @@
 // 2007-2011: wahyu@alumni.duke.edu
 // Fixed for xz by SC - 2018
 
-#ifndef _AFLOW_CONTRIB_WAHYU_CPP_
-#define _AFLOW_CONTRIB_WAHYU_CPP_
-
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
@@ -3119,8 +3116,6 @@ vector<float> SortFloat(vector<float> va, int mode) {
   }
   return vb;
 }
-
-#endif
 
 // ***************************************************************************
 // *                                                                         *

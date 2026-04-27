@@ -5,9 +5,6 @@
 // ***************************************************************************
 // Stefano Curtarolo
 
-#ifndef _AUROSTD_HASH_CPP_
-#define _AUROSTD_HASH_CPP_
-
 #include "aurostd_hash.h"
 
 #include <cstdint>
@@ -21,6 +18,7 @@
 #include <vector>
 
 #include <openssl/evp.h>
+#include <openssl/types.h>
 
 #include "aurostd.h"
 #include "aurostd_xerror.h"
@@ -76,6 +74,7 @@
 #define UINT64_C(c) c##ULL
 #endif
 
+using std::ifstream;
 using std::string;
 using std::stringstream;
 using std::vector;
@@ -319,8 +318,6 @@ namespace aurostd {
   }
 
 } // namespace aurostd
-
-#endif  // _AUROSTD_HASH_CPP_
 
 // ***************************************************************************
 // *                                                                         *

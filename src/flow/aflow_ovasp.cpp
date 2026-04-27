@@ -4,9 +4,6 @@
 // *                                                                         *
 // ***************************************************************************
 
-#ifndef _AFLOW_OVASP_CPP_
-#define _AFLOW_OVASP_CPP_
-
 #include <algorithm>
 #include <cctype>
 #include <cmath>
@@ -32,6 +29,7 @@
 #include "AUROSTD/aurostd_xfile.h"
 #include "AUROSTD/aurostd_xhttp.h"
 #include "AUROSTD/aurostd_xmatrix.h"
+#include "AUROSTD/aurostd_xparser.h"
 #include "AUROSTD/aurostd_xparser_json.h"
 #include "AUROSTD/aurostd_xscalar.h"
 #include "AUROSTD/aurostd_xtensor.h"
@@ -42,7 +40,6 @@
 #include "aflow_defs.h"
 #include "aflow_xhost.h"
 #include "aflowlib/aflowlib.h"
-#include "flow/aflow_ivasp.h"
 #include "flow/aflow_pflow.h"
 #include "flow/aflow_xclasses.h"
 #include "modules/SYM/aflow_symmetry.h"
@@ -63,6 +60,9 @@ using std::string;
 using std::stringstream;
 using std::vector;
 
+using aurostd::xmatrix;
+using aurostd::xvector;
+
 //---------------------------------------------------------------------------------
 // for bechmark
 string time_delay(long double seconds) {
@@ -72,424 +72,6 @@ string time_delay(long double seconds) {
 //---------------------------------------------------------------------------------
 // class xOUTCAR
 //---------------------------------------------------------------------------------
-// ME20200427 - included xStream::initialize
-xOUTCAR::xOUTCAR(ostream& oss) : xStream(oss) {
-  free();
-} // CO20200404 - xStream integration for logging
-xOUTCAR::xOUTCAR(ofstream& FileMESSAGE, ostream& oss) : xStream(FileMESSAGE, oss) {
-  free();
-} // CO20200404 - xStream integration for logging
-xOUTCAR::xOUTCAR(const string& fileIN, bool QUIET, ostream& oss) : xStream(oss) {
-  m_initialized = initialize(fileIN, QUIET);
-}  // CO20200404 - xStream integration for logging
-xOUTCAR::xOUTCAR(const string& fileIN, ofstream& FileMESSAGE, bool QUIET, ostream& oss) : xStream(FileMESSAGE, oss) {
-  m_initialized = initialize(fileIN, QUIET);
-}  // CO20200404 - xStream integration for logging
-
-bool xOUTCAR::initialize(const string& fileIN, ostream& oss, bool QUIET) {
-  xStream::initialize(oss);
-  return initialize(fileIN, QUIET);
-} // CO20200508
-bool xOUTCAR::initialize(const string& fileIN, ofstream& FileMESSAGE, ostream& oss, bool QUIET) {
-  xStream::initialize(FileMESSAGE, oss);
-  return initialize(fileIN, QUIET);
-} // CO20200508
-bool xOUTCAR::initialize(const string& fileIN, bool QUIET) {
-  free();
-  if (aurostd::CompressFileExist(fileIN, filename)) {
-    return GetPropertiesFile(filename, QUIET);
-  } else {
-    return false;
-  }
-}
-
-xOUTCAR::xOUTCAR(const xOUTCAR& b) : xStream(*b.getOFStream(), *b.getOSS()) {
-  free();
-  copy(b);
-} // copy PUBLIC
-
-xOUTCAR::~xOUTCAR() {
-  xStream::free();
-  free();
-}  // CO20200404 - xStream integration for logging
-
-void xOUTCAR::free() {
-  //------------------------------------------------------------------------------
-  m_initialized = false; // CO20200404
-  // GetProperties
-  content = "";                   // for aflowlib_libraries.cpp
-  vcontent.clear();             // for aflowlib_libraries.cpp
-  filename = "";                  // for aflowlib_libraries.cpp
-  SYSTEM = "";                  // for aflowlib_libraries.cpp
-  NELM = 0;                       // for xwarnings  //CO20200624
-  NIONS = 0;                      // for aflowlib_libraries.cpp
-  Efermi = 0.0;                   // for aflowlib_libraries.cpp
-  isLSCOUPLING = false;           // for aflowlib_libraries.cpp
-  efield_pead.clear();          // for ivasp
-  nelectrons = 0;               // AS20200528
-  natoms = 0.0;                   // for aflowlib_libraries.cpp
-  energy_cell = 0.0;              // for aflowlib_libraries.cpp
-  energy_atom = 0.0;              // for aflowlib_libraries.cpp
-  enthalpy_cell = 0.0;            // for aflowlib_libraries.cpp
-  enthalpy_atom = 0.0;            // for aflowlib_libraries.cpp
-  eentropy_cell = 0.0;            // for aflowlib_libraries.cpp
-  eentropy_atom = 0.0;            // for aflowlib_libraries.cpp
-  PV_cell = 0.0;                  // for aflowlib_libraries.cpp
-  PV_atom = 0.0;                  // for aflowlib_libraries.cpp
-  stress.clear();               // for aflowlib_libraries.cpp
-  mag_cell = 0.0;                 // for aflowlib_libraries.cpp
-  mag_atom = 0.0;                 // for aflowlib_libraries.cpp
-  vmag.clear();                 // for aflowlib_libraries.cpp
-  vmag_noncoll.clear();         // DX20171205 - non-collinear magnetization
-  volume_cell = 0.0;              // for aflowlib_libraries.cpp
-  volume_atom = 0.0;              // for aflowlib_libraries.cpp
-  pressure = 0.0;                 // for aflowlib_libraries.cpp // copy of PSTRESS
-  pressure_residual = 0.0;        // for aflowlib_libraries.cpp
-  Pulay_stress = 0.0;             // for aflowlib_libraries.cpp
-  vforces.clear();              // for aflowlib_libraries.cpp
-  vpositions_cartesian.clear(); // for aflowlib_libraries.cpp
-  ENCUT = 0.0;
-  EDIFF = 0.0;
-  EDIFFG = 0.0;
-  POTIM = 0.0;
-  TEIN = 0.0;
-  TEBEG = 0.0;
-  TEEND = 0.0;
-  SMASS = 0.0;
-  NPACO = 0.0;
-  APACO = 0.0;
-  PSTRESS = 0.0;     //
-  NBANDS = 0;
-  NKPTS = 0;
-  NSW = 0;
-  NBLOCK = 0;
-  KBLOCK = 0;
-  IBRION = 0;
-  NFREE = 0;
-  ISIF = 0;
-  IWAVPR = 0;
-  ISYM = 0;
-  ISPIN = 0; //
-  total_energy_change = 0.0;
-  // DOS related values:
-  EMIN = 0.0;
-  EMAX = 0.0;
-  SIGMA = 0.0;
-  ISMEAR = 0;  // for aflowlib_libraries.cpp
-  //  Electronic relaxation
-  IALGO = 0;                      // for aflowlib_libraries.cpp
-  LDIAG = "";                     // for aflowlib_libraries.cpp
-  IMIX = 0;
-  INIMIX = 0;
-  MIXPRE = 0;     // for aflowlib_libraries.cpp
-  AMIX = 0.0;
-  BMIX = 0.0;
-  AMIX_MAG = 0.0;
-  BMIX_MAG = 0.0;
-  AMIN = 0.0;
-  WC = 0.0;  // for aflowlib_libraries.cpp
-  // Intra band minimization
-  WEIMIN = 0.0;
-  EBREAK = 0.0;
-  DEPER = 0.0;
-  TIME = 0.0;  // for aflowlib_libraries.cpp
-  // begin shared xPOTCAR
-  ENMAX = 0.0;
-  vENMAX.clear();                                      // for aflowlib_libraries.cpp
-  ENMIN = 0.0;
-  vENMIN.clear();                                      // for aflowlib_libraries.cpp
-  POMASS_sum = 0.0;
-  POMASS_min = 0.0;
-  POMASS_max = 0.0;
-  vPOMASS.clear();  // for aflowlib_libraries.cpp
-  ZVAL_sum = 0.0;
-  ZVAL_min = 0.0;
-  ZVAL_max = 0.0;
-  vZVAL.clear();          // for aflowlib_libraries.cpp
-  EATOM_min = 0.0;
-  EATOM_max = 0.0;
-  vEATOM.clear();          // for aflowlib_libraries.cpp
-  RCORE_min = 0.0;
-  RCORE_max = 0.0;
-  vRCORE.clear();          // for aflowlib_libraries.cpp
-  RWIGS_min = 0.0;
-  RWIGS_max = 0.0;
-  vRWIGS.clear();          // for aflowlib_libraries.cpp
-  EAUG_min = 0.0;
-  EAUG_max = 0.0;
-  vEAUG.clear();              // for aflowlib_libraries.cpp
-  RAUG_min = 0.0;
-  RAUG_max = 0.0;
-  vRAUG.clear();              // for aflowlib_libraries.cpp
-  RMAX_min = 0.0;
-  RMAX_max = 0.0;
-  vRMAX.clear();              // unicity
-  vTITEL.clear();                                                // unicity
-  vLEXCH.clear();                                                // unicity
-  // end shared xPOTCAR
-  pp_type = "";                   // for aflowlib_libraries.cpp
-  species.clear();              // for aflowlib_libraries.cpp
-  species_Z.clear();            // for aflowlib_libraries.cpp
-  species_pp.clear();           // for aflowlib_libraries.cpp
-  species_pp_type.clear();      // for aflowlib_libraries.cpp
-  species_pp_version.clear();   // for aflowlib_libraries.cpp
-  species_pp_AUID.clear();      // for aflowlib_libraries.cpp
-  species_pp_AUID_collisions.clear();   // for aflowlib_libraries.cpp
-  species_pp_groundstate_energy.clear();      // for aflowlib_libraries.cpp
-  species_pp_groundstate_structure.clear();   // for aflowlib_libraries.cpp
-  species_pp_vLDAU.clear();     // for aflowlib_libraries.cpp
-  string_LDAU = "";               // for aflowlib_libraries.cpp
-  isKIN = false;                  // for aflowlib_libraries.cpp
-  isMETAGGA = false;              // for aflowlib_libraries.cpp
-  METAGGA = "";                   // for aflowlib_libraries.cpp
-  //------------------------------------------------------------------------------
-  nweights = 0;
-  nkpoints_irreducible = 0;   // for aflowlib_libraries.cpp
-  vkpoint_reciprocal.clear();      // for aflowlib_libraries.cpp
-  vkpoint_cartesian.clear();       // for aflowlib_libraries.cpp
-  vweights.clear();                    // for aflowlib_libraries.cpp
-  //------------------------------------------------------------------------------
-  calculation_time = 0.0;         // for aflowlib_libraries.cpp
-  calculation_memory = 0.0;       // for aflowlib_libraries.cpp
-  calculation_cores = 1;          // for aflowlib_libraries.cpp
-  //------------------------------------------------------------------------------
-  // EffectiveMass
-  band_index.clear();           // for aflowlib_libraries.cpp
-  carrier_type.clear();         // for aflowlib_libraries.cpp
-  carrier_spin.clear();         // for aflowlib_libraries.cpp
-  extrema_cart_coord.clear();   // for aflowlib_libraries.cpp
-  effective_mass_axes.clear();  // for aflowlib_libraries.cpp
-  equivalent_valley.clear();    // for aflowlib_libraries.cpp
-  effective_mass_DOS.clear();   // for aflowlib_libraries.cpp
-  effective_mass_COND.clear();  // for aflowlib_libraries.cpp
-  mass_elec_dos.clear();        // for aflowlib_libraries.cpp
-  mass_hole_dos.clear();        // for aflowlib_libraries.cpp
-  mass_elec_conduction.clear(); // for aflowlib_libraries.cpp
-  mass_hole_conduction.clear(); // for aflowlib_libraries.cpp
-  //------------------------------------------------------------------------------
-  // BandGap
-  xstr.clear(); // DX20191220 - uppercase to lowercase clear
-  conduction_band_min.clear();  // for aflowlib_libraries.cpp
-  valence_band_max.clear();     // for aflowlib_libraries.cpp
-  Egap_type.clear();            // for aflowlib_libraries.cpp
-  Egap_fit.clear();             // for aflowlib_libraries.cpp
-  Egap.clear();                 // for aflowlib_libraries.cpp
-  conduction_band_min_net = 0.0;// for aflowlib_libraries.cpp
-  valence_band_max_net = 0.0;   // for aflowlib_libraries.cpp
-  Egap_type_net = "";             // for aflowlib_libraries.cpp
-  Egap_fit_net = AUROSTD_NAN;   // for aflowlib_libraries.cpp
-  Egap_net = AUROSTD_NAN;       // for aflowlib_libraries.cpp
-  //------------------------------------------------------------------------------
-  // Dielectric
-  freq_plasma.clear();
-  freq_grid.clear();
-  dielectric_static.clear();
-  dielectric_interband_real.clear();
-  dielectric_interband_imag.clear();
-  freq_plasma_iso = 0.0;
-  dielectric_iso_interband_real.clear();
-  dielectric_iso_interband_imag.clear();
-  dielectric_drude_real.clear();
-  dielectric_drude_imag.clear();
-  energy_loss_function.clear();
-  reflectivity.clear();
-}
-
-void xOUTCAR::copy(const xOUTCAR& b) { // copy PRIVATE
-  xStream::copy(b);  // CO20200404 - xStream integration for logging
-  free();
-  m_initialized = b.m_initialized; // CO20200404
-  content = b.content;
-  vcontent = b.vcontent;
-  filename = b.filename;
-  SYSTEM = b.SYSTEM; // camilo
-  NELM = b.NELM;  // CO20200624
-  NIONS = b.NIONS;
-  Efermi = b.Efermi;
-  isLSCOUPLING = b.isLSCOUPLING;
-  efield_pead = b.efield_pead;  // CO20210315
-  nelectrons = b.nelectrons; // AS20200528
-  natoms = b.natoms;                              // for aflowlib_libraries.cpp
-  energy_cell = b.energy_cell;                    // for aflowlib_libraries.cpp
-  energy_atom = b.energy_atom;                    // for aflowlib_libraries.cpp
-  enthalpy_cell = b.enthalpy_cell;                // for aflowlib_libraries.cpp
-  enthalpy_atom = b.enthalpy_atom;                // for aflowlib_libraries.cpp
-  eentropy_cell = b.eentropy_cell;                // for aflowlib_libraries.cpp
-  eentropy_atom = b.eentropy_atom;                // for aflowlib_libraries.cpp
-  PV_cell = b.PV_cell;                            // for aflowlib_libraries.cpp
-  PV_atom = b.PV_atom;                            // for aflowlib_libraries.cpp
-  stress = b.stress;                              // for aflowlib_libraries.cpp
-  mag_cell = b.mag_cell;                          // for aflowlib_libraries.cpp
-  mag_atom = b.mag_atom;                          // for aflowlib_libraries.cpp
-  vmag = b.vmag;
-  vmag_noncoll = b.vmag_noncoll;
-  volume_cell = b.volume_cell;                    // for aflowlib_libraries.cpp
-  volume_atom = b.volume_atom;                    // for aflowlib_libraries.cpp
-  pressure = b.pressure;                          // for aflowlib_libraries.cpp
-  pressure_residual = b.pressure_residual;        // for aflowlib_libraries.cpp
-  Pulay_stress = b.Pulay_stress;                  // for aflowlib_libraries.cpp
-  vforces = b.vforces;
-  vpositions_cartesian = b.vpositions_cartesian;
-  ENCUT = b.ENCUT;
-  EDIFF = b.EDIFF;
-  EDIFFG = b.EDIFFG;
-  POTIM = b.POTIM;
-  TEIN = b.TEIN;
-  TEBEG = b.TEBEG;
-  TEEND = b.TEEND;
-  SMASS = b.SMASS;
-  NPACO = b.NPACO;
-  APACO = b.APACO;
-  PSTRESS = b.PSTRESS;     //
-  NBANDS = b.NBANDS;
-  NKPTS = b.NKPTS;
-  NSW = b.NSW;
-  NBLOCK = b.NBLOCK;
-  KBLOCK = b.KBLOCK;
-  IBRION = b.IBRION;
-  NFREE = b.NFREE;
-  ISIF = b.ISIF;
-  IWAVPR = b.IWAVPR;
-  ISYM = b.ISYM;
-  ISPIN = b.ISPIN; //
-  total_energy_change = b.total_energy_change;
-  // DOS related values:
-  EMIN = b.EMIN;  // for aflowlib_libraries.cpp
-  EMAX = b.EMAX;  // for aflowlib_libraries.cpp
-  SIGMA = b.SIGMA;  // for aflowlib_libraries.cpp
-  ISMEAR = b.ISMEAR;  // for aflowlib_libraries.cpp
-  //  Electronic relaxation
-  IALGO = b.IALGO;                                // for aflowlib_libraries.cpp
-  LDIAG = b.LDIAG;                                // for aflowlib_libraries.cpp
-  IMIX = b.IMIX;
-  INIMIX = b.INIMIX;
-  MIXPRE = b.MIXPRE;  // for aflowlib_libraries.cpp
-  AMIX = b.AMIX;
-  BMIX = b.BMIX;
-  AMIX_MAG = b.AMIX_MAG;
-  BMIX_MAG = b.BMIX_MAG;
-  AMIN = b.AMIN;
-  WC = b.WC;  // for aflowlib_libraries.cpp
-  // Intra band minimization
-  WEIMIN = b.WEIMIN;
-  EBREAK = b.EBREAK;
-  DEPER = b.DEPER;
-  TIME = b.TIME;  // for aflowlib_libraries.cpp
-  ENMAX = b.ENMAX;
-  vENMAX = b.vENMAX;
-  ENMIN = b.ENMIN;
-  vENMIN = b.vENMIN;
-  POMASS_sum = b.POMASS_sum;
-  POMASS_min = b.POMASS_min;
-  POMASS_max = b.POMASS_max;
-  vPOMASS = b.vPOMASS;
-  ZVAL_sum = b.ZVAL_sum;
-  ZVAL_min = b.ZVAL_min;
-  ZVAL_max = b.ZVAL_max;
-  vZVAL = b.vZVAL;
-  EATOM_min = b.EATOM_min;
-  EATOM_max = b.EATOM_max;
-  vEATOM = b.vEATOM;
-  RCORE_min = b.RCORE_min;
-  RCORE_max = b.RCORE_max;
-  vRCORE = b.vRCORE;
-  RWIGS_min = b.RWIGS_min;
-  RWIGS_max = b.RWIGS_max;
-  vRWIGS = b.vRWIGS;
-  EAUG_min = b.EAUG_min;
-  EAUG_max = b.EAUG_max;
-  vEAUG = b.vEAUG;
-  RAUG_min = b.RAUG_min;
-  RAUG_max = b.RAUG_max;
-  vRAUG = b.vRAUG;
-  RMAX_min = b.RMAX_min;
-  RMAX_max = b.RMAX_max;
-  vRMAX = b.vRMAX;
-  vTITEL = b.vTITEL;
-  vLEXCH = b.vLEXCH;
-  pp_type = b.pp_type;                            // for aflowlib_libraries.cpp
-  species = b.species;
-  species_Z = b.species_Z;
-  species_pp = b.species_pp;
-  species_pp_type = b.species_pp_type;
-  species_pp_version = b.species_pp_version;
-  species_pp_AUID = b.species_pp_AUID;
-  species_pp_AUID_collisions = b.species_pp_AUID_collisions;
-  species_pp_groundstate_energy = b.species_pp_groundstate_energy;
-  species_pp_groundstate_structure = b.species_pp_groundstate_structure;
-  species_pp_vLDAU = b.species_pp_vLDAU;
-  string_LDAU = b.string_LDAU;                     // for aflowlib_libraries.cpp
-  isKIN = b.isKIN;                                 // for aflowlib_libraries.cpp
-  isMETAGGA = b.isMETAGGA;                         // for aflowlib_libraries.cpp
-  METAGGA = b.METAGGA;                             // for aflowlib_libraries.cpp
-  // KPOINTS
-  nweights = b.nweights;                           // for aflowlib_libraries.cpp
-  nkpoints_irreducible = b.nkpoints_irreducible;   // for aflowlib_libraries.cpp
-  vkpoint_reciprocal = b.vkpoint_reciprocal;
-  vkpoint_cartesian = b.vkpoint_cartesian;
-  vweights = b.vweights;
-  // times
-  calculation_time = b.calculation_time;          // for aflowlib_libraries.cpp
-  calculation_memory = b.calculation_memory;      // for aflowlib_libraries.cpp
-  calculation_cores = b.calculation_cores;        // for aflowlib_libraries.cpp
-  //------------------------------------------------------------------------------
-  // EffectiveMass
-  band_index = b.band_index;
-  carrier_type = b.carrier_type;
-  carrier_spin = b.carrier_spin;
-  extrema_cart_coord = b.extrema_cart_coord;
-  effective_mass_axes = b.effective_mass_axes;
-  equivalent_valley = b.equivalent_valley;
-  effective_mass_DOS = b.effective_mass_DOS;
-  effective_mass_COND = b.effective_mass_COND;
-  mass_elec_dos = b.mass_elec_dos;
-  mass_hole_dos = b.mass_hole_dos;
-  mass_elec_conduction = b.mass_elec_conduction;
-  mass_hole_conduction = b.mass_hole_conduction;
-  //------------------------------------------------------------------------------
-  // BandGap
-  xstr = b.xstr;
-  conduction_band_min = b.conduction_band_min;
-  valence_band_max = b.valence_band_max;
-  Egap_type = b.Egap_type;
-  Egap_fit = b.Egap_fit;
-  Egap = b.Egap;
-  conduction_band_min_net = b.conduction_band_min_net;
-  valence_band_max_net = b.valence_band_max_net;
-  Egap_type_net = b.Egap_type_net;
-  Egap_fit_net = b.Egap_net;
-  Egap_net = b.Egap_net;
-  //------------------------------------------------------------------------------
-  // Dielectric
-  freq_plasma = b.freq_plasma;
-  freq_grid = b.freq_grid;
-  dielectric_static = b.dielectric_static;
-  dielectric_interband_real = b.dielectric_interband_real;
-  dielectric_interband_imag = b.dielectric_interband_imag;
-  freq_plasma_iso = b.freq_plasma_iso;
-  dielectric_iso_interband_real = b.dielectric_iso_interband_real;
-  dielectric_iso_interband_imag = b.dielectric_iso_interband_imag;
-  dielectric_drude_real = b.dielectric_drude_real;
-  dielectric_drude_imag = b.dielectric_drude_imag;
-  energy_loss_function = b.energy_loss_function;
-  reflectivity = b.reflectivity;
-}
-
-const xOUTCAR& xOUTCAR::operator=(const xOUTCAR& b) {  // operator= PUBLIC
-  if (this != &b) {
-    free();
-    copy(b);
-  }
-  return *this;
-}
-
-void xOUTCAR::clear() {  // clear PRIVATE
-  const xOUTCAR _temp;
-  const string filename_aus = filename;
-  copy(_temp);
-  filename = filename_aus;
-}
-
 ostream& operator<<(ostream& oss, const xOUTCAR& xOUT) {  // SC20200330
   const bool LDEBUG = (false || XHOST.DEBUG);
   const long double seconds = aurostd::get_seconds();
@@ -1567,7 +1149,7 @@ bool xOUTCAR::GetProperties(const stringstream& stringstreamIN, bool QUIET) {
       ERROR_flag = true;
     }
     for (size_t m = 0; m < vmag_x.size(); m++) {
-      const xvector<double> mag_xyz;
+      xvector<double> mag_xyz;
       mag_xyz(1) = vmag_x[m];
       mag_xyz(2) = vmag_y[m];
       mag_xyz(3) = vmag_z[m];
@@ -1643,7 +1225,7 @@ bool xOUTCAR::GetProperties(const stringstream& stringstreamIN, bool QUIET) {
       }
     }
   }
-  const aurostd::xmatrix<double> tensor(3, 3);
+  aurostd::xmatrix<double> tensor(3, 3);
   if (iline_freq_plasma) {
     for (int ir = 1; ir <= 3; ir++) {
       aurostd::string2tokens(vcontent[iline_freq_plasma + 1 + ir], tokens);
@@ -1655,7 +1237,7 @@ bool xOUTCAR::GetProperties(const stringstream& stringstreamIN, bool QUIET) {
   }
   if (iline_df_real) {
     int il = 3;
-    while (vcontent[iline_df_real + il].length() > 1) {
+    while (vcontent[iline_df_real + il].length() > 1 && vcontent[iline_df_real + il][2] != 'f') {
       aurostd::string2tokens(vcontent[iline_df_real + il], tokens);
       freq_grid.emplace_back(aurostd::string2utype<double>(tokens[0]));
       tensor[1][1] = aurostd::string2utype<double>(tokens[1]);
@@ -1674,7 +1256,7 @@ bool xOUTCAR::GetProperties(const stringstream& stringstreamIN, bool QUIET) {
   }
   if (iline_df_imag) {
     int il = 3;
-    while (vcontent[iline_df_imag + il].length() > 1) {
+    while (vcontent[iline_df_imag + il].length() > 1 && vcontent[iline_df_imag + il][2] != 'f') {
       aurostd::string2tokens(vcontent[iline_df_imag + il], tokens);
       tensor[1][1] = aurostd::string2utype<double>(tokens[1]);
       tensor[2][2] = aurostd::string2utype<double>(tokens[2]);
@@ -2298,8 +1880,8 @@ bool xOUTCAR::GetProperties(const stringstream& stringstreamIN, bool QUIET) {
     if (LDEBUG) {
       cerr << __AFLOW_FUNC__ << " pp_type=" << pp_type << endl;
     }
-    species.push_back(KBIN::VASP_PseudoPotential_CleanName(tokens.at(1)));
-    species_Z.push_back(xelement::symbol2Z(KBIN::VASP_PseudoPotential_CleanName(tokens.at(1))));
+    species.push_back(aurostd::VASP_PseudoPotential_CleanName(tokens.at(1)));
+    species_Z.push_back(xelement::symbol2Z(aurostd::VASP_PseudoPotential_CleanName(tokens.at(1))));
     species_pp.push_back(tokens.at(1));
     species_pp_type.push_back(pp_type);
     if (pp_type == "LDA" && tokens.size() < 3) {
@@ -2452,25 +2034,25 @@ bool xOUTCAR::GetProperties(const stringstream& stringstreamIN, bool QUIET) {
 
     if (LDEBUG) {
       //
-      cout << __AFLOW_FUNC__ << " LDA_type=" << LDAUT << endl;
+      cerr << __AFLOW_FUNC__ << " LDA_type=" << LDAUT << endl;
       //
-      cout << __AFLOW_FUNC__ << " LDAU_L=";
+      cerr << __AFLOW_FUNC__ << " LDAU_L=";
       for (size_t i = 0; i < vLDAUL.size(); i++) {
-        cout << vLDAUL[i] << ((i < vLDAUL.size() - 1) ? "," : "");
+        cerr << vLDAUL[i] << ((i < vLDAUL.size() - 1) ? "," : "");
       }
-      cout << endl;
+      cerr << endl;
       //
-      cout << __AFLOW_FUNC__ << " LDAU_U=";
+      cerr << __AFLOW_FUNC__ << " LDAU_U=";
       for (size_t i = 0; i < vLDAUU.size(); i++) {
-        cout << vLDAUU[i] << ((i < vLDAUU.size() - 1) ? "," : "");
+        cerr << vLDAUU[i] << ((i < vLDAUU.size() - 1) ? "," : "");
       }
-      cout << endl;
+      cerr << endl;
       //
-      cout << __AFLOW_FUNC__ << " LDAU_J=";
+      cerr << __AFLOW_FUNC__ << " LDAU_J=";
       for (size_t i = 0; i < vLDAUJ.size(); i++) {
-        cout << vLDAUJ[i] << ((i < vLDAUJ.size() - 1) ? "," : "");
+        cerr << vLDAUJ[i] << ((i < vLDAUJ.size() - 1) ? "," : "");
       }
-      cout << endl;
+      cerr << endl;
     }
     sdata_ldau << aurostd::utype2string(LDAUT) + ";";
     for (size_t i = 0; i < vLDAUL.size(); i++) {
@@ -2495,7 +2077,7 @@ bool xOUTCAR::GetProperties(const stringstream& stringstreamIN, bool QUIET) {
       species_pp_vLDAU.at(j).push_back(LDAUT);
     }
     if (LDEBUG) {
-      cout << __AFLOW_FUNC__ << " LDA_type=" << LDAUT << endl;
+      cerr << __AFLOW_FUNC__ << " LDA_type=" << LDAUT << endl;
     }
     //[CO+ME20210713 - keep legacy behavior, only print when non-zero]sdata_ldau << aurostd::utype2string(LDAUT);
     //[CO+ME20210713 - keep legacy behavior, only print when non-zero]string_LDAU=sdata_ldau.str();
@@ -2826,7 +2408,7 @@ bool xOUTCAR::GetProperties(const stringstream& stringstreamIN, bool QUIET) {
     for (size_t iline = nkpoints_line; (iline < nkpoints_line + nkpoints_irreducible && iline < vcontent.size()); iline++) {
       aurostd::string2tokens(vcontent[iline], tokens, " ");
       if (tokens.size() == 4) {
-        const xvector<double> kpoint(3);
+        xvector<double> kpoint(3);
         kpoint[1] = aurostd::string2utype<double>(tokens.at(0));
         kpoint[2] = aurostd::string2utype<double>(tokens.at(1));
         kpoint[3] = aurostd::string2utype<double>(tokens.at(2));
@@ -2840,7 +2422,7 @@ bool xOUTCAR::GetProperties(const stringstream& stringstreamIN, bool QUIET) {
     for (size_t iline = nkpoints_line; (iline < nkpoints_line + nkpoints_irreducible && iline < vcontent.size()); iline++) {
       aurostd::string2tokens(vcontent[iline], tokens, " ");
       if (tokens.size() == 4) {
-        const xvector<double> kpoint(3);
+        xvector<double> kpoint(3);
         kpoint[1] = aurostd::string2utype<double>(tokens.at(0));
         kpoint[2] = aurostd::string2utype<double>(tokens.at(1));
         kpoint[3] = aurostd::string2utype<double>(tokens.at(2));
@@ -2978,14 +2560,14 @@ bool xOUTCAR::GetXStructure() {
   found_lattice = found_types = found_positions = false;
   string token;
   vector<string> tokens;
-  const xmatrix<double> lattice(3, 3);
-  const xmatrix<double> klattice(3, 3);
+  xmatrix<double> lattice(3, 3);
+  xmatrix<double> klattice(3, 3);
   deque<int> num_each_type;
   double num = 0.0;
   double natoms = 0.0;
   deque<_atom> atoms;
-  const xvector<double> cpos(3);
-  const xvector<double> fpos(3);
+  xvector<double> cpos(3);
+  xvector<double> fpos(3);
   const uint vcontent_size = vcontent.size();
   for (uint iline = vcontent_size - 1; iline < vcontent_size; iline--) {  // NEW FROM THE BACK
     // get lattice
@@ -3232,7 +2814,7 @@ int xOUTCAR::isKPointLine(uint iline, xvector<double>& _kpoint) {
   // snag kpoint index
   const int kpt_num = (tokens[1] == "***" ? -1 : aurostd::string2utype<int>(tokens[1]));  // issue with printing kpt_num > 999
   // snag kpoint
-  const xvector<double> kpoint(3);
+  xvector<double> kpoint(3);
   for (size_t i = 3; i < tokens.size(); i++) {
     kpoint[i - 2] = aurostd::string2utype<double>(tokens[i]);
   }
@@ -3728,7 +3310,7 @@ double xOUTCAR::minimumDistanceKPoints(xvector<double>& kpoint1_kl, xvector<doub
   }
 
   // make sure to account for skewed cells
-  const xvector<int> dims = LatticeDimensionSphere(klattice, RadiusSphereLattice(klattice));
+  xvector<int> dims = LatticeDimensionSphere(klattice, RadiusSphereLattice(klattice));
 
   xvector<double> vdist_kcart;
   xvector<double> vdist_kcart_min;
@@ -4463,6 +4045,38 @@ bool xOUTCAR::GetBandGap(double EFERMI, double efermi_tol, double energy_tol, do
   return true;
 }
 
+/// @brief calculates total dielectric function, EELS, and reflectivity
+/// @note See A. M. Fox, Optical Properties of Solids
+/// @authors
+/// @mod{NHA,20251102,created function}
+void xOUTCAR::GetDielectricData() {
+  for (size_t i = 0; i < freq_grid.size(); i++) {
+    xmatrix<double> dielectric_real;
+    xmatrix<double> dielectric_imag;
+    double dielectric_iso_real;
+    double dielectric_iso_imag;
+    double dielectric_norm;
+    double refractive_index_iso;
+    double extinction_coeff_iso;
+
+    //full:
+    dielectric_real = dielectric_interband_real[i] + dielectric_drude_real[i];
+    dielectric_imag = dielectric_interband_imag[i] + dielectric_drude_imag[i];
+    dielectric_full_real.push_back(dielectric_real);
+    dielectric_full_imag.push_back(dielectric_imag);
+    //isotropic:
+    dielectric_iso_real = dielectric_interband_iso_real[i] + dielectric_drude_iso_real[i];
+    dielectric_iso_imag = dielectric_interband_iso_imag[i] + dielectric_drude_iso_imag[i];
+    dielectric_full_iso_real.push_back(dielectric_iso_real);
+    dielectric_full_iso_imag.push_back(dielectric_iso_imag);
+    dielectric_norm = std::sqrt(std::pow(dielectric_iso_real, 2.0) + std::pow(dielectric_iso_imag, 2.0));
+    energy_loss_function_iso.emplace_back(dielectric_iso_imag / std::pow(dielectric_norm, 2.0));
+    refractive_index_iso = std::sqrt(0.5 * (dielectric_norm + dielectric_iso_real));
+    extinction_coeff_iso = std::sqrt(0.5 * (dielectric_norm - dielectric_iso_real));
+    reflectivity_iso.emplace_back((std::pow(refractive_index_iso - 1.0, 2.) + std::pow(extinction_coeff_iso, 2.0)) / (std::pow(refractive_index_iso + 1.0, 2.) + std::pow(extinction_coeff_iso, 2.0)));
+  }
+}
+
 /// @brief gets the optical information
 /// @param freq_relax relaxation frequency of the electrons
 /// @return true if successful
@@ -4472,20 +4086,29 @@ bool xOUTCAR::GetBandGap(double EFERMI, double efermi_tol, double energy_tol, do
 bool xOUTCAR::GetOptical(const double freq_relax) {
   dielectric_drude_real.clear();
   dielectric_drude_imag.clear();
+  dielectric_drude_iso_real.clear();
+  dielectric_drude_iso_imag.clear();
   if (aurostd::isequal(aurostd::sum(aurostd::abs(freq_plasma)), 0.0)) {
-    dielectric_drude_real.resize(freq_grid.size(), 0.0);
-    dielectric_drude_imag.resize(freq_grid.size(), 0.0);
+    aurostd::xmatrix<double> dummy(3, 3);
+    dielectric_drude_real.resize(freq_grid.size(), dummy);
+    dielectric_drude_imag.resize(freq_grid.size(), dummy);
+    dielectric_drude_iso_real.resize(freq_grid.size(), 0.0);
+    dielectric_drude_iso_imag.resize(freq_grid.size(), 0.0);
   } else {
     freq_plasma_iso = 0.0;
     for (int i = 1; i <= 3; i++) {
       freq_plasma_iso += freq_plasma[i][i] / 3.0;
     }
+    xmatrix<double> identity_matrix = aurostd::identity((double) 0, 3);
+
     const double denergy = freq_grid[1] - freq_grid[0];
-    double drude;
     for (const double& freq : freq_grid) {
-      drude = std::pow(freq_plasma_iso, 2.0) / (std::pow(freq, 2.0) + std::pow(freq_relax, 2.0));
-      dielectric_drude_real.emplace_back(1.0 - drude);
-      dielectric_drude_imag.emplace_back(drude * (freq_relax / std::min(freq, denergy)));
+      xmatrix<double> drude = (freq_plasma * freq_plasma) / (std::pow(freq, 2.0) + std::pow(freq_relax, 2.0));
+      double drude_iso = std::pow(freq_plasma_iso, 2.0) / (std::pow(freq, 2.0) + std::pow(freq_relax, 2.0));
+      dielectric_drude_real.emplace_back(identity_matrix - drude);
+      dielectric_drude_imag.emplace_back(drude * (freq_relax / std::max(freq, denergy)));
+      dielectric_drude_iso_real.emplace_back(1.0 - drude_iso);
+      dielectric_drude_iso_imag.emplace_back(drude_iso * (freq_relax / std::max(freq, denergy)));
     }
   }
 
@@ -4495,31 +4118,17 @@ bool xOUTCAR::GetOptical(const double freq_relax) {
     for (int i = 1; i <= 3; i++) {
       dielectric_iso += dielectric_interband[i][i] / 3.0;
     }
-    dielectric_iso_interband_real.emplace_back(dielectric_iso);
+    dielectric_interband_iso_real.emplace_back(dielectric_iso);
   }
   for (const aurostd::xmatrix<double>& dielectric_interband : dielectric_interband_imag) {
     dielectric_iso = 0.0;
     for (int i = 1; i <= 3; i++) {
       dielectric_iso += dielectric_interband[i][i] / 3.0;
     }
-    dielectric_iso_interband_imag.emplace_back(dielectric_iso);
+    dielectric_interband_iso_imag.emplace_back(dielectric_iso);
   }
 
-  double dielectric_real;
-  double dielectric_imag;
-  double dielectric_norm;
-  double refractive_index;
-  double extinction_coeff;
-  for (size_t i = 0; i < freq_grid.size(); i++) {
-    dielectric_real = dielectric_iso_interband_real[i] + dielectric_drude_real[i];
-    dielectric_imag = dielectric_iso_interband_imag[i] + dielectric_drude_imag[i];
-    dielectric_norm = std::sqrt(std::pow(dielectric_real, 2.0) + std::pow(dielectric_imag, 2.0));
-    energy_loss_function.emplace_back(dielectric_imag / std::pow(dielectric_norm, 2.0));
-    refractive_index = std::sqrt(0.5 * (dielectric_norm + dielectric_real));
-    extinction_coeff = std::sqrt(0.5 * (dielectric_norm - dielectric_real));
-    reflectivity.emplace_back((std::pow(refractive_index - 1.0, 2.) + std::pow(extinction_coeff, 2.0)) / (std::pow(refractive_index + 1.0, 2.) + std::pow(extinction_coeff, 2.0)));
-  }
-
+  GetDielectricData();
   return true;
 }
 
@@ -4791,7 +4400,7 @@ void xOUTCAR::AddStepsIAPCFG(aurostd::JSON::object& jo, aflowlib::_aflowlib_entr
   vector<xvector<double>> cpos;
   vector<xvector<double>> force;
   for (size_t istr = 0; istr < vxstr_ionic.size(); istr++) {
-    const aurostd::JSON::object step(aurostd::JSON::object_types::DICTIONARY);
+    aurostd::JSON::object step(aurostd::JSON::object_types::DICTIONARY);
     step["auid"] = entry.auid;
     step["energy"] = venergy_ionic[istr];
     step["lattice"] = vxstr_ionic[istr].lattice;
@@ -4806,18 +4415,12 @@ void xOUTCAR::AddStepsIAPCFG(aurostd::JSON::object& jo, aflowlib::_aflowlib_entr
       cpos.push_back(vxstr_ionic[istr].atoms[iatom].cpos);
       force.push_back(vxstr_ionic[istr].atoms[iatom].force);
     }
-    const aurostd::JSON::object atoms(aurostd::JSON::object_types::DICTIONARY);
+    aurostd::JSON::object atoms(aurostd::JSON::object_types::DICTIONARY);
     atoms["type"] = type;
     atoms["fpos"] = fpos;
     atoms["cpos"] = cpos;
     atoms["force"] = force;
     step["atoms"] = atoms;
-    //  entry.enthalpy_cell = entry.enthalpy_atom = venergy_ionic[istr];
-    //  entry.enthalpy_atom /= vxstr_ionic[istr].atoms.size();
-    //  FORMATION_CALC = aflowlib::LIB2RAW_Calculate_FormationEnthalpy(entry, vxstr_ionic[istr], __AFLOW_FUNC__);
-    //  if (FORMATION_CALC) {
-    //    step["enthalpy_formation_atom"] = entry.enthalpy_formation_atom;
-    //  }
     jo["data"].push_back(step);
   }
 }
@@ -4837,143 +4440,6 @@ xOUTCAR xOUTCAR::deserialize(const aurostd::JSON::object& jo) {
 
 // ***************************************************************************
 // class xDOSCAR
-// ME20200427 - included xStream::initialize
-xDOSCAR::xDOSCAR(ostream& oss) : xStream(oss) {
-  free();
-} // CO20200404 - xStream integration for logging
-xDOSCAR::xDOSCAR(ofstream& FileMESSAGE, ostream& oss) : xStream(FileMESSAGE, oss) {
-  free();
-} // CO20200404 - xStream integration for logging
-xDOSCAR::xDOSCAR(const string& fileIN, bool QUIET, ostream& oss) : xStream(oss) {
-  m_initialized = initialize(fileIN, QUIET);
-} // CO20200404 - xStream integration for logging
-xDOSCAR::xDOSCAR(const string& fileIN, ofstream& FileMESSAGE, bool QUIET, ostream& oss) : xStream(FileMESSAGE, oss) {
-  m_initialized = initialize(fileIN, QUIET);
-} // CO20200404 - xStream integration for logging
-
-bool xDOSCAR::initialize(const string& fileIN, ostream& oss, bool QUIET) {
-  xStream::initialize(oss);
-  return initialize(fileIN, QUIET);
-} // CO20200508
-bool xDOSCAR::initialize(const string& fileIN, ofstream& FileMESSAGE, ostream& oss, bool QUIET) {
-  xStream::initialize(FileMESSAGE, oss);
-  return initialize(fileIN, QUIET);
-} // CO20200508
-bool xDOSCAR::initialize(const string& fileIN, bool QUIET) {
-  free();
-  if (aurostd::CompressFileExist(fileIN, filename)) {
-    return GetPropertiesFile(filename, QUIET);
-  } else {
-    return false;
-  }
-}
-
-xDOSCAR::xDOSCAR(const xDOSCAR& b) : xStream(*b.getOFStream(), *b.getOSS()) {
-  free();
-  copy(b);
-} // copy PUBLIC
-
-xDOSCAR::~xDOSCAR() {
-  xStream::free();
-  free();
-} // CO20191110 //CO20200404 - xStream integration for logging
-
-void xDOSCAR::free() { // CO20191110
-  m_initialized = false; // CO20200404
-  content = "";
-  vcontent.clear();
-  filename = "";
-  title = "";
-  spin = 0;
-  Vol = 0.0;
-  POTIM = 0.0;
-  lattice.clear();
-  temperature = 0.0;
-  RWIGS = false;
-  Efermi = 0.0;
-  // spinF=0.0;  //CO
-  spinF = AUROSTD_NAN;
-  energy_max = 0.0;
-  energy_min = 0.0;
-  number_energies = 0;
-  number_atoms = 0; // CO20191010
-  partial = false; // ME20190614
-  denergy = 0.0;
-  venergy.clear();
-  venergy.clear();
-  vDOS.clear();
-  viDOS.clear();
-  isLSCOUPLING = false; // ME20190620
-  lmResolved = false; // ME20190620
-  carstring = ""; // CO20191010
-  conduction_band_min.clear();
-  conduction_band_min_net = AUROSTD_NAN;
-  valence_band_max.clear();
-  valence_band_max_net = AUROSTD_NAN;
-  Egap.clear();
-  Egap_net = AUROSTD_NAN;
-  Egap_fit.clear();
-  Egap_fit_net = AUROSTD_NAN;
-  Egap_type.clear();
-  Egap_type_net = "";
-}
-
-void xDOSCAR::copy(const xDOSCAR& b) { // copy PRIVATE
-  xStream::copy(b); // CO20200404 - xStream integration for logging
-  free();
-  m_initialized = b.m_initialized; // CO20200404 - xStream integration for logging
-  content = b.content;
-  vcontent = b.vcontent;
-  filename = b.filename;
-  title = b.title;
-  spin = b.spin;
-  Vol = b.Vol;
-  POTIM = b.POTIM;
-  lattice = b.lattice;
-  temperature = b.temperature;
-  RWIGS = b.RWIGS;
-  Efermi = b.Efermi;
-  spinF = b.spinF;
-  energy_max = b.energy_max;
-  energy_min = b.energy_min;
-  number_energies = b.number_energies;
-  number_atoms = b.number_atoms; // CO20191010
-  partial = b.partial; // ME20190614
-  denergy = b.denergy;
-  venergy = b.venergy;
-  venergyEf = b.venergyEf;
-  viDOS = b.viDOS;
-  vDOS = b.vDOS;
-  isLSCOUPLING = b.isLSCOUPLING; // ME20190620
-  lmResolved = b.lmResolved; // ME20190620
-  carstring = b.carstring; // CO20191010
-  conduction_band_min = b.conduction_band_min;
-  conduction_band_min_net = b.conduction_band_min_net;
-  valence_band_max = b.valence_band_max;
-  valence_band_max_net = b.valence_band_max_net;
-  Egap = b.Egap;
-  Egap_net = b.Egap_net;
-  Egap_fit = b.Egap_fit;
-  Egap_fit_net = b.Egap_fit_net;
-  Egap_type = b.Egap_type;
-  Egap_type_net = b.Egap_type_net;
-}
-
-const xDOSCAR& xDOSCAR::operator=(const xDOSCAR& b) { // operator= PUBLIC
-  if (this != &b) {
-    free();
-    copy(b);
-  }
-  return *this;
-}
-
-void xDOSCAR::clear() { // clear PRIVATE
-  const xDOSCAR _temp;
-  const string filename_aus = filename;
-  copy(_temp);
-  filename = filename_aus;
-}
-
 bool xDOSCAR::GetProperties(const string& stringIN, bool QUIET) {
   stringstream sss;
   sss.str(stringIN);
@@ -4985,7 +4451,6 @@ bool xDOSCAR::GetProperties(const string& stringIN, bool QUIET) {
 
 bool xDOSCAR::GetPropertiesFile(const string& fileIN, bool QUIET) {
   stringstream sss;
-  //[CO20210315 - always set for GetPropertiesFile]if(filename=="")
   filename = fileIN;
   aurostd::compressfile2stringstream(fileIN, sss);
   return xDOSCAR::GetProperties(sss, QUIET);
@@ -5569,6 +5034,236 @@ bool xDOSCAR::checkDOS(string& ERROR_out) const { // CO20191110
   return true;
 }
 
+void xDOSCAR::GetVDOSSpecies(const xstructure& xstr) {
+  return GetVDOSSpecies(xstr.num_each_type);
+} //CO20191004
+void xDOSCAR::GetVDOSSpecies(const deque<int>& num_each_type) { //CO20191004
+  bool LDEBUG = (false || XHOST.DEBUG);
+  stringstream message;
+
+  if ((content.empty()) || (vcontent.empty())) {
+    message << "xDOSCAR needs to be loaded before." << endl;
+    message << "       GetProperties(const stringstream&);" << endl;
+    message << "       GetProperties(const string&);" << endl;
+    message << "       GetPropertiesFile(const string&);";
+    throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, message, _INPUT_ERROR_);
+  }
+  if (LDEBUG) {
+    cerr << __AFLOW_FUNC__ << " DOSCAR content found" << endl;
+  }
+
+  string error_string; //keep this function const for plotter
+  if (!checkDOS(error_string)) {
+    throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, error_string, _INPUT_ERROR_);
+  }; //quick check if GetProperties() failed
+
+  //this should all work now that we checkDOS()
+  uint IENERGY = venergy.size();
+  uint IATOM = vDOS_atom.size();
+  uint IORBITAL = vDOS_atom.front().size();
+  uint IORBITAL_LM = vDOS_lm_atom.front().size();
+  uint ISPIN = vDOS_atom.front().front().size();
+
+  if (LDEBUG) {
+    cerr << __AFLOW_FUNC__ << " IENERGY=" << IENERGY << endl;
+    cerr << __AFLOW_FUNC__ << " IATOM=" << IATOM << endl;
+    cerr << __AFLOW_FUNC__ << " IORBITAL=" << IORBITAL << endl;
+    cerr << __AFLOW_FUNC__ << " IORBITAL_LM=" << IORBITAL_LM << endl;
+    cerr << __AFLOW_FUNC__ << " ISPIN=" << ISPIN << endl;
+  }
+
+  //check that num_each_type corresponds to vDOS
+  uint atoms_total = 0;
+  for (uint iatom = 0; iatom < num_each_type.size(); iatom++) {
+    atoms_total += num_each_type[iatom];
+  }
+  if (LDEBUG) {
+    cerr << __AFLOW_FUNC__ << " atoms_total=" << atoms_total << endl;
+    cerr << __AFLOW_FUNC__ << " vDOS.size()=" << vDOS.size() << endl;
+  }
+
+  if (atoms_total + 1 != IATOM) { //total column
+    message << "Input xstructure and DOS mismatch: atoms_total+1!=vDOS.size()" << endl;
+    message << "For POCC runs, check that all ARUN.POCC's have the same num_each_type" << endl;
+    throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, message, _INDEX_MISMATCH_);
+  }
+
+  //create vDOS_species with appropriate dimensions
+  vDOS_species.assign(num_each_type.size() + 1, deque<deque<deque<double>>>(IORBITAL, deque<deque<double>>(ISPIN, deque<double>(number_energies, 0.0))));
+  if (lmResolved) {
+    vDOS_lm_species.assign(num_each_type.size() + 1, deque<deque<deque<double>>>(IORBITAL_LM, deque<deque<double>>(ISPIN, deque<double>(number_energies, 0.0))));
+  }
+
+  uint iatom = 0;
+  double dos = 0; //ME trick
+  if (LDEBUG) {
+    cerr << __AFLOW_FUNC__ << " summing vDOS_species[ispecies] (individuals)" << endl;
+  }
+  for (uint ispecies = 0; ispecies < num_each_type.size(); ispecies++) {
+    for (uint i = 0; i < (uint) num_each_type[ispecies]; i++) {
+      for (uint iorbital = 1; iorbital < IORBITAL; iorbital++) { //iorbital==0 is total (VASP), skip that for now
+        for (uint ispin = 0; ispin < ISPIN; ispin++) {
+          if (LDEBUG) {
+            cerr << __AFLOW_FUNC__ << " ispecies=" << ispecies << ", iorbital=" << iorbital << ", ispin=" << ispin << endl;
+          }
+          for (uint ienergy = 0; ienergy < IENERGY; ienergy++) {
+            dos = vDOS_atom[iatom + 1][iorbital][ispin][ienergy]; //iatom==0 is total (VASP), skip that for now
+            vDOS_species[ispecies + 1][iorbital][ispin][ienergy] += dos; //ispecies==0 is total (VASP), skip for now
+            vDOS_species[ispecies + 1][0][ispin][ienergy] += dos;
+            if (lmResolved && iorbital < IORBITAL_LM) {
+              dos = vDOS_lm_atom[iatom + 1][iorbital][ispin][ienergy]; //iatom==0 is total (VASP), skip that for now
+              vDOS_lm_species[ispecies + 1][iorbital][ispin][ienergy] += dos; //ispecies==0 is total (VASP), skip for now
+              vDOS_lm_species[ispecies + 1][0][ispin][ienergy] += dos;
+            }
+          }
+        }
+      }
+      iatom++;
+    }
+  }
+  if (LDEBUG) {
+    cerr << __AFLOW_FUNC__ << " getting vDOS_species[iorbital] (VASP totals)" << endl;
+  }
+  for (uint iorbital = 1; iorbital < IORBITAL; iorbital++) { //iorbital==0 is total (VASP), skip for now
+    for (uint ispin = 0; ispin < ISPIN; ispin++) {
+      if (LDEBUG) {
+        cerr << __AFLOW_FUNC__ << " iorbital=" << iorbital << ", ispin=" << ispin << endl;
+      }
+      for (uint ienergy = 0; ienergy < IENERGY; ienergy++) {
+        dos = vDOS_atom[0][iorbital][ispin][ienergy];
+        vDOS_species[0][iorbital][ispin][ienergy] += dos;
+        if (lmResolved && iorbital < IORBITAL_LM) {
+          dos = vDOS_lm_atom[0][iorbital][ispin][ienergy];
+          vDOS_lm_species[0][iorbital][ispin][ienergy] += dos;
+        }
+      }
+    }
+  }
+  if (LDEBUG) {
+    cerr << __AFLOW_FUNC__ << " getting vDOS_species[0] (VASP totals)" << endl;
+  }
+  for (uint ispin = 0; ispin < ISPIN; ispin++) {
+    if (LDEBUG) {
+      cerr << __AFLOW_FUNC__ << " ispin=" << ispin << endl;
+    }
+    for (uint ienergy = 0; ienergy < IENERGY; ienergy++) {
+      dos = vDOS_atom[0][0][ispin][ienergy];
+      vDOS_species[0][0][ispin][ienergy] += dos;
+      if (lmResolved) {
+        vDOS_lm_species[0][0][ispin][ienergy] += dos;
+      }
+    }
+  }
+
+  //[SD20230213 - OBSOLETE]return vDOS_species;
+}
+
+void xDOSCAR::GetVDOSIAtom(const xstructure& _xstr) { //SD20230227
+  if (_xstr.iatoms_calculated) {
+    return GetVDOSIAtom(_xstr.iatoms);
+  }
+  xstructure xstr = _xstr;
+  xstr.sortAtomsEquivalent();
+  return GetVDOSIAtom(xstr.iatoms);
+}
+void xDOSCAR::GetVDOSIAtom(const vector<vector<int>>& iatoms_index) { //SD20230227
+  bool LDEBUG = (false || XHOST.DEBUG);
+  stringstream message;
+
+  if ((content.empty()) || (vcontent.empty())) {
+    message << "xDOSCAR needs to be loaded before." << endl;
+    message << "       GetProperties(const stringstream&);" << endl;
+    message << "       GetProperties(const string&);" << endl;
+    message << "       GetPropertiesFile(const string&);";
+    throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, message, _INPUT_ERROR_);
+  }
+  if (LDEBUG) {
+    cerr << __AFLOW_FUNC__ << " DOSCAR content found" << endl;
+  }
+
+  string error_string; //keep this function const for plotter
+  if (!checkDOS(error_string)) {
+    throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, error_string, _INPUT_ERROR_);
+  }; //quick check if GetProperties() failed
+
+  //this should all work now that we checkDOS()
+  uint IENERGY = venergy.size();
+  uint IATOM = vDOS_atom.size();
+  uint IORBITAL = vDOS_atom.front().size();
+  uint IORBITAL_LM = vDOS_lm_atom.front().size();
+  uint ISPIN = vDOS_atom.front().front().size();
+
+  if (LDEBUG) {
+    cerr << __AFLOW_FUNC__ << " IENERGY=" << IENERGY << endl;
+    cerr << __AFLOW_FUNC__ << " IATOM=" << IATOM << endl;
+    cerr << __AFLOW_FUNC__ << " IORBITAL=" << IORBITAL << endl;
+    cerr << __AFLOW_FUNC__ << " IORBITAL_LM=" << IORBITAL_LM << endl;
+    cerr << __AFLOW_FUNC__ << " ISPIN=" << ISPIN << endl;
+  }
+  //create vDOS_iatom with appropriate dimensions
+  vDOS_iatom.assign(iatoms_index.size() + 1, deque<deque<deque<double>>>(IORBITAL, deque<deque<double>>(ISPIN, deque<double>(number_energies, 0.0))));
+  if (lmResolved) {
+    vDOS_lm_iatom.assign(iatoms_index.size() + 1, deque<deque<deque<double>>>(IORBITAL_LM, deque<deque<double>>(ISPIN, deque<double>(number_energies, 0.0))));
+  }
+
+  double dos = 0; //ME trick
+  if (LDEBUG) {
+    cerr << __AFLOW_FUNC__ << " summing vDOS_iatom[iatom] (individuals)" << endl;
+  }
+  for (uint iatom = 0; iatom < iatoms_index.size(); iatom++) {
+    for (uint iorbital = 1; iorbital < IORBITAL; iorbital++) { //iorbital==0 is total (VASP), skip that for now
+      for (uint ispin = 0; ispin < ISPIN; ispin++) {
+        if (LDEBUG) {
+          cerr << __AFLOW_FUNC__ << " iatom=" << iatom << ", iorbital=" << iorbital << ", ispin=" << ispin << endl;
+        }
+        for (uint ienergy = 0; ienergy < IENERGY; ienergy++) {
+          dos = vDOS_atom[iatoms_index[iatom][0] + 1][iorbital][ispin][ienergy]; //iatom==0 is total (VASP), skip that for now
+          vDOS_iatom[iatom + 1][iorbital][ispin][ienergy] += dos; //ispecies==0 is total (VASP), skip for now
+          vDOS_iatom[iatom + 1][0][ispin][ienergy] += dos;
+          if (lmResolved && iorbital < IORBITAL_LM) {
+            dos = vDOS_lm_atom[iatoms_index[iatom][0] + 1][iorbital][ispin][ienergy]; //iatom==0 is total (VASP), skip that for now
+            vDOS_lm_iatom[iatom + 1][iorbital][ispin][ienergy] += dos; //ispecies==0 is total (VASP), skip for now
+            vDOS_lm_iatom[iatom + 1][0][ispin][ienergy] += dos;
+          }
+        }
+      }
+    }
+  }
+  if (LDEBUG) {
+    cerr << __AFLOW_FUNC__ << " getting vDOS_iatom[iorbital] (VASP totals)" << endl;
+  }
+  for (uint iorbital = 1; iorbital < IORBITAL; iorbital++) { //iorbital==0 is total (VASP), skip for now
+    for (uint ispin = 0; ispin < ISPIN; ispin++) {
+      if (LDEBUG) {
+        cerr << __AFLOW_FUNC__ << " iorbital=" << iorbital << ", ispin=" << ispin << endl;
+      }
+      for (uint ienergy = 0; ienergy < IENERGY; ienergy++) {
+        dos = vDOS_atom[0][iorbital][ispin][ienergy];
+        vDOS_iatom[0][iorbital][ispin][ienergy] += dos;
+        if (lmResolved && iorbital < IORBITAL_LM) {
+          dos = vDOS_lm_atom[0][iorbital][ispin][ienergy];
+          vDOS_lm_iatom[0][iorbital][ispin][ienergy] += dos;
+        }
+      }
+    }
+  }
+  if (LDEBUG) {
+    cerr << __AFLOW_FUNC__ << " getting vDOS_iatom[0] (VASP totals)" << endl;
+  }
+  for (uint ispin = 0; ispin < ISPIN; ispin++) {
+    if (LDEBUG) {
+      cerr << __AFLOW_FUNC__ << " ispin=" << ispin << endl;
+    }
+    for (uint ienergy = 0; ienergy < IENERGY; ienergy++) {
+      dos = vDOS_atom[0][0][ispin][ienergy];
+      vDOS_iatom[0][0][ispin][ienergy] += dos;
+      if (lmResolved) {
+        vDOS_lm_iatom[0][0][ispin][ienergy] += dos;
+      }
+    }
+  }
+}
+
 bool xDOSCAR::GetBandGap(double EFERMI, double efermi_tol, double energy_tol, double occ_tol) { // CO20191004
   const bool LDEBUG = (false || XHOST.DEBUG);
   stringstream message;
@@ -5900,21 +5595,6 @@ deque<deque<deque<deque<double>>>> xDOSCAR::GetVDOSSpecies(deque<int> num_each_t
     }
   }
 
-  //  for(size_t ispecies=0;ispecies<num_each_type.size();ispecies++){
-  //    for(uint i=0;i<(uint)num_each_type[ispecies];i++){
-  //      for(size_t iorbital=1;iorbital<vDOS[iatom+1].size();iorbital++){  //iatom/iorbital total is 0
-  //        for(size_t ispin=0;ispin<vDOS[iatom+1][iorbital].size();ispin++){
-  //          if(LDEBUG){cerr << __AFLOW_FUNC__ << " ispecies=" << ispecies << ", iorbital=" << iorbital << ", ispin=" << ispin << endl;}
-  //          for(size_t ienergy=0;ienergy<vDOS[iatom+1][iorbital][ispin].size();ienergy++){
-  //            dos=vDOS[iatom+1][iorbital][ispin][ienergy];
-  //            vDOS_species[ispecies+1][ispin][ienergy]+=dos;
-  //          }
-  //        }
-  //      }
-  //      iatom++;
-  //    }
-  //  }
-
   return vDOS_species;
 }
 
@@ -5985,113 +5665,6 @@ xDOSCAR xDOSCAR::deserialize(const aurostd::JSON::object& jo) {
 
 // ***************************************************************************
 // class xEIGENVAL
-// ME20200427 - included xStream::initialize
-xEIGENVAL::xEIGENVAL(ostream& oss) : xStream(oss) {
-  free();
-} // CO20200404 - xStream integration for logging
-xEIGENVAL::xEIGENVAL(ofstream& FileMESSAGE, ostream& oss) : xStream(FileMESSAGE, oss) {
-  free();
-} // CO20200404 - xStream integration for logging
-xEIGENVAL::xEIGENVAL(const string& fileIN, bool QUIET, ostream& oss) : xStream(oss) {
-  m_initialized = initialize(fileIN, QUIET);
-} // CO20200404 - xStream integration for logging
-xEIGENVAL::xEIGENVAL(const string& fileIN, ofstream& FileMESSAGE, bool QUIET, ostream& oss) : xStream(FileMESSAGE, oss) {
-  m_initialized = initialize(fileIN, QUIET);
-} // CO20200404 - xStream integration for logging
-
-bool xEIGENVAL::initialize(const string& fileIN, ostream& oss, bool QUIET) {
-  xStream::initialize(oss);
-  return initialize(fileIN, QUIET);
-} // CO20200508
-bool xEIGENVAL::initialize(const string& fileIN, ofstream& FileMESSAGE, ostream& oss, bool QUIET) {
-  xStream::initialize(FileMESSAGE, oss);
-  return initialize(fileIN, QUIET);
-} // CO20200508
-bool xEIGENVAL::initialize(const string& fileIN, bool QUIET) {
-  free();
-  if (aurostd::CompressFileExist(fileIN, filename)) {
-    return GetPropertiesFile(filename, QUIET);
-  } else {
-    return false;
-  }
-}
-
-xEIGENVAL::xEIGENVAL(const xEIGENVAL& b) : xStream(*b.getOFStream(), *b.getOSS()) {
-  free();
-  copy(b);
-} // copy PUBLIC
-
-xEIGENVAL::~xEIGENVAL() {
-  xStream::free();
-  free();
-} // CO20191110 //CO20200404 - xStream integration for logging
-
-void xEIGENVAL::free() {
-  m_initialized = false; // CO20200404
-  content = "";
-  vcontent.clear();
-  filename = "";
-  title = "";
-  spin = 0;
-  ;
-  Vol = 0.0;
-  POTIM = 0.0;
-  lattice.clear();
-  temperature = 0.0;
-  number_electrons = 0;
-  number_kpoints = 0;
-  number_bands = 0;
-  energy_max = -1e30; // ME20190614
-  energy_min = 1e30; // ME20190614
-  vweight.clear();
-  vkpoint.clear();
-  venergy.clear();
-  carstring = ""; // ME20190620
-  number_atoms = 0; // ME20190623
-  number_loops = 0; // ME20190623
-}
-
-void xEIGENVAL::copy(const xEIGENVAL& b) { // copy PRIVATE
-  xStream::copy(b); // CO20200404 - xStream integration for logging
-  free();
-  m_initialized = b.m_initialized; // CO20200404 - xStream integration for logging
-  content = b.content;
-  vcontent = b.vcontent;
-  filename = b.filename;
-  title = b.title;
-  spin = b.spin;
-  Vol = b.Vol;
-  lattice = b.lattice;
-  POTIM = b.POTIM;
-  temperature = b.temperature;
-  number_electrons = b.number_electrons;
-  number_kpoints = b.number_kpoints;
-  number_bands = b.number_bands;
-  energy_min = b.energy_min; // ME20190614
-  energy_max = b.energy_max; // ME20190614
-  vweight = b.vweight;
-  vkpoint = b.vkpoint;
-  venergy = b.venergy;
-  carstring = b.carstring; // ME20190620
-  number_atoms = b.number_atoms; // ME20190623
-  number_loops = b.number_loops; // ME20190623
-}
-
-const xEIGENVAL& xEIGENVAL::operator=(const xEIGENVAL& b) { // operator= PUBLIC
-  if (this != &b) {
-    free();
-    copy(b);
-  }
-  return *this;
-}
-
-void xEIGENVAL::clear() { // clear PRIVATE
-  const xEIGENVAL _temp;
-  const string filename_aus = filename;
-  copy(_temp);
-  filename = filename_aus;
-}
-
 bool xEIGENVAL::GetProperties(const string& stringIN, bool QUIET) {
   stringstream sss;
   sss.str(stringIN);
@@ -6186,7 +5759,7 @@ bool xEIGENVAL::GetProperties(const stringstream& stringstreamIN, bool QUIET) {
     }
     if (iline >= 7) {
       for (size_t jline = 0; jline < number_kpoints && iline < vcontent.size(); jline++, iline++) { // the iline++ is to get rid of the vacuum
-        const xvector<double> kpoint(3);
+        xvector<double> kpoint(3);
         aurostd::string2tokens(vcontent[iline], tokens);
         if (tokens.size() >= 4) {
           uint i = 0;
@@ -6419,7 +5992,7 @@ bool GetEffectiveMass(xOUTCAR& xoutcar, xDOSCAR& xdoscar, xEIGENVAL& xeigenval, 
     vector<vector<kEn_st>> allkE_points;
     // allkE_points.at(eigenvalue).at(kpoint).{kEn_st details}
     allkE_points.resize(xeigenval.number_bands);
-    const xvector<double> temp_recip(1, 3);
+    xvector<double> temp_recip(1, 3);
     xvector<double> temp_cart(1, 3);
     // loop over KPOINTS (vkpoints)
     for (vector<int>::size_type ix = 0; ix != xeigenval.vkpoint.size(); ++ix) {
@@ -6522,14 +6095,14 @@ bool GetEffectiveMass(xOUTCAR& xoutcar, xDOSCAR& xdoscar, xEIGENVAL& xeigenval, 
       for (size_t i = 0; i < fit_data.size(); i++) {
         vector<kEn_st> fit_data_band;
         kEn_st kp;
-        const xvector<double> pt(1, 3);
+        xvector<double> pt(1, 3);
         // the first point is closest to the extremes
         kp = fit_data[i].at(0);
         pt[1] = kp.kpoint(1);
         pt[2] = kp.kpoint(2);
         pt[3] = kp.kpoint(3);
         for (size_t ii = 0; ii < fit_data[i].size(); ii++) {
-          const xvector<double> pt1(1, 3);
+          xvector<double> pt1(1, 3);
           xvector<double> pt_sym(1, 3);
           kEn_st kp1;
           // the first point is closest to the extremes
@@ -6588,7 +6161,7 @@ bool GetEffectiveMass(xOUTCAR& xoutcar, xDOSCAR& xdoscar, xEIGENVAL& xeigenval, 
         const int ncol = 9; // 9 polynomial coefficients, (a) thru (i)
         xvector<double> y_vec(1, nrow); // = En2 - En1
         xvector<double> y_sig(1, nrow);
-        const xmatrix<double> x_mat(1, 1, nrow, ncol);
+        xmatrix<double> x_mat(1, 1, nrow, ncol);
         for (int jj = 1; jj < nrow + 1; jj++) {
           y_vec[jj] = fit_data[ii].at(jj).energy[spin_idx] - kp1.energy[spin_idx]; // = En2 - En1
           y_sig[jj] = _SIGMA; // _SIGMA = 1 (default std dev, see aflow.h)
@@ -6641,7 +6214,7 @@ bool GetEffectiveMass(xOUTCAR& xoutcar, xDOSCAR& xdoscar, xEIGENVAL& xeigenval, 
         aurostd::cematrix ECI_matrix(x_mat);
         ECI_matrix.LeastSquare(y_vec, y_sig); // minimization happens here
         // starting @ 1, ending at 3 and 3x3
-        const xmatrix<double> mass_m(1, 1, 3, 3);
+        xmatrix<double> mass_m(1, 1, 3, 3);
         // looks like upper triangular stuff happens here
         mass_m[1][1] = ECI_matrix.AVec().at(0);
         mass_m[2][2] = ECI_matrix.AVec().at(1);
@@ -6653,7 +6226,7 @@ bool GetEffectiveMass(xOUTCAR& xoutcar, xDOSCAR& xdoscar, xEIGENVAL& xeigenval, 
         mass_m[3][1] = mass_m[1][3];
         mass_m[3][2] = mass_m[2][3];
         aurostd::cematrix mass_m_ce(mass_m);
-        const xvector<double> mr = mass_m_ce.EigenValues();
+        xvector<double> mr = mass_m_ce.EigenValues();
         vector<double> mr_tmp;
         for (int jj = 1; jj <= 3; jj++) {
           mr[jj] = 1.0 * _MASS_FACTOR / mr[jj];
@@ -6727,43 +6300,10 @@ bool GetEffectiveMass(xOUTCAR& xoutcar, xDOSCAR& xdoscar, xEIGENVAL& xeigenval, 
       } // END: loop over mass_eff_list
       // problem ends here
 
-      // Calculate the total electron conductivity effective mass
-      //       double numerator   = 0.0; double denominator = 0.0;
-      //       for(vector<int>::size_type ix=0; ix != elec_cond_mass_per_valley.size(); ++ix) {
-      //          numerator   += elec_valley_multiplicity.at(ix);
-      //          denominator += elec_valley_multiplicity.at(ix)/elec_cond_mass_per_valley.at(ix);
-      //       }
-      //       numerator *= 3;
-      //       xoutcar.mass_elec_conduction.at(spin_idx) = numerator/denominator;
-      //       // Calculate the total hole conductivity effective mass
-      //       numerator   = 0.0;
-      //       denominator = 0.0;
-      //       for(vector<int>::size_type ix=0; ix != hole_cond_mass_per_valley.size(); ++ix) {
-      //          numerator   += hole_valley_multiplicity.at(ix);
-      //          denominator += hole_valley_multiplicity.at(ix)/hole_cond_mass_per_valley.at(ix);
-      //       }
-      //       numerator *= 3;
-      //       xoutcar.mass_hole_conduction.at(spin_idx) = numerator / denominator;
     }
     // end Spin Loop
 
-    // DOS electron effective mass for all spins
-    //    for(int spin_idx=0; spin_idx<ispin; spin_idx++) {
-    //       xoutcar.mass_elec_dos.at(spin_idx) /= valley_elec.at(spin_idx);
-    //       xoutcar.mass_elec_dos.at(spin_idx)  = std::pow((double)xoutcar.mass_elec_dos.at(spin_idx),(double)1.0/3.0);
-    //    }
-    //    // DOS hole effective mass for all spins
-    //    for(int spin_idx=0; spin_idx<ispin; spin_idx++) {
-    //       xoutcar.mass_hole_dos.at(spin_idx) /= valley_hole.at(spin_idx);
-    //       xoutcar.mass_hole_dos.at(spin_idx)  = std::pow((double)xoutcar.mass_hole_dos.at(spin_idx),(double)  1.0/3.0);
-    //    }
   }
-  // if(ispin==1) {
-  //    xoutcar.mass_elec_dos.pop_back();
-  //    xoutcar.mass_hole_dos.pop_back();
-  //    xoutcar.mass_elec_conduction.pop_back();
-  //    xoutcar.mass_hole_conduction.pop_back();
-  // } // END: EffMass
 
   // ----------------------------------------------------------------------
   // DONE NOW RETURN
@@ -7472,7 +7012,7 @@ bool ParseKPOINTS(stringstream& file_KPOINTS, int& GRIDS, vector<xvector<double>
     itr2 += delcnt;
   }
   for (size_t itr0 = 0; itr0 < unique_kpts.size(); itr0++) {
-    const xvector<int> tempvec(special_kpts.size());
+    xvector<int> tempvec(special_kpts.size());
     const int index1 = unique_kpts[itr0][4];
     int count = 1;
     for (size_t itr1 = 1; itr1 <= unique_kpts.size(); itr1++) {
@@ -7515,7 +7055,7 @@ bool ParseKPOINTS(stringstream& file_KPOINTS, int& GRIDS, vector<xvector<double>
 bool AdjacencyList_KPT(vector<xvector<double>>& special_kpts, vector<xvector<double>>& unique_kpts, vector<xvector<int>>& connect_kpts, vector<int>& connect_kpts_num) {
   for (size_t itr0 = 0; itr0 < unique_kpts.size(); itr0++) {
     int count = 1;
-    const xvector<int> tempvec0(unique_kpts.size() + 1);
+    xvector<int> tempvec0(unique_kpts.size() + 1);
     for (size_t itr1 = 1; itr1 <= unique_kpts.size() + 1; itr1++) {
       tempvec0[itr1] = 99999;
     }
@@ -7604,7 +7144,7 @@ bool AdjacencyList_EIG(vector<xvector<double>>& unique_kpts,
                        vector<xvector<int>>& connect_kpts_EIG,
                        vector<xvector<double>>& vkpoint_eig) {
   for (size_t itr0 = 0; itr0 < xeigenval.vkpoint.size(); itr0++) {
-    const xvector<double> tempvec(3);
+    xvector<double> tempvec(3);
     for (int itr1 = 1; itr1 <= 3; itr1++) {
       if (aurostd::abs(xeigenval.vkpoint[itr0][itr1]) <= 1.0E-15) {
         tempvec[itr1] = 0.0;
@@ -7735,7 +7275,7 @@ bool VertexPaths(vector<xvector<int>>& repeat_kpts_EIG,
   }
   const vector<xvector<int>> tmp_vrtx_path;
   for (size_t itr0 = 0; itr0 < vrtx_list.size(); itr0++) {
-    const xvector<int> vrtx_segments(4);
+    xvector<int> vrtx_segments(4);
     if (aurostd::abs(vrtx_list[itr0][1] - vrtx_list[itr0][2]) == GRIDS - 1) {
       vrtx_segments[1] = vrtx_list[itr0][1];
       vrtx_segments[2] = vrtx_list[itr0][2];
@@ -7803,7 +7343,7 @@ bool RepeatedEdges(vector<xvector<int>>& vrtx_path,
       vector<xvector<int>> temparray;
       for (int itr2 = 1; itr2 <= repeat_kpts_num.at(itr0); itr2++) {
         for (int itr3 = 1; itr3 <= repeat_kpts_num.at(itr1); itr3++) {
-          const xvector<int> tempvec(2);
+          xvector<int> tempvec(2);
           tempvec[1] = repeat_kpts_EIG[itr0][itr2];
           tempvec[2] = repeat_kpts_EIG[itr1][itr3];
           temparray.push_back(tempvec);
@@ -7814,9 +7354,9 @@ bool RepeatedEdges(vector<xvector<int>>& vrtx_path,
   }
   vector<vector<xvector<int>>> ndx_edges_tmp;
   for (size_t itr0 = 0; itr0 < vrtx_path.size(); itr0++) {
-    const xvector<int> edge1(2);
-    const xvector<int> edge2(2);
-    const xvector<int> edge_type(2);
+    xvector<int> edge1(2);
+    xvector<int> edge2(2);
+    xvector<int> edge_type(2);
     int count = 0;
     edge1[1] = vrtx_path[itr0][1];
     edge1[2] = vrtx_path[itr0][2];
@@ -7824,7 +7364,7 @@ bool RepeatedEdges(vector<xvector<int>>& vrtx_path,
     edge2[2] = vrtx_path[itr0][4];
     for (size_t itr1 = 0; itr1 < allpairs.size(); itr1++) {
       for (size_t itr2 = 0; itr2 < allpairs[itr1].size(); itr2++) {
-        const xvector<int> pair(2);
+        xvector<int> pair(2);
         pair[1] = allpairs[itr1][itr2][1];
         pair[2] = allpairs[itr1][itr2][2];
         if ((edge1[1] == pair[1] and edge1[2] == pair[2]) or (edge1[1] == pair[2] and edge1[2] == pair[1])) {
@@ -7839,12 +7379,12 @@ bool RepeatedEdges(vector<xvector<int>>& vrtx_path,
     }
     if (count == 2) {
       vector<xvector<int>> edge_cur;
-      const xvector<int> temp1(3);
+      xvector<int> temp1(3);
       temp1[1] = edge_type[1];
       temp1[2] = edge1[1];
       temp1[3] = edge1[2];
       edge_cur.push_back(temp1);
-      const xvector<int> temp2(3);
+      xvector<int> temp2(3);
       temp2[1] = edge_type[2];
       temp2[2] = edge2[1];
       temp2[3] = edge2[2];
@@ -7896,7 +7436,7 @@ bool VertexBranches(vector<xvector<int>>& ndx_edges,
       for (size_t itr1 = 0; itr1 < repeat_kpts_EIG.size(); itr1++) {
         for (uint itr2 = 1; itr2 <= (uint) repeat_kpts_num.at(itr1); itr2++) {
           if (ndx_edges[itr0][2] == repeat_kpts_EIG[itr1][itr2]) {
-            const xvector<int> edge_crnt(2);
+            xvector<int> edge_crnt(2);
             if (ndx_edges[itr0][2] == repeat_kpts_EIG[itr1][itr2]) {
               edge_crnt[1] = ndx_edges[itr0][2];
               edge_crnt[2] = ndx_edges[itr0][3];
@@ -8126,7 +7666,7 @@ bool IBZextrema(xEIGENVAL& xeigenval, vector<xvector<double>>& vkpoint_eig, vect
         // for(uint itr4=0; itr4<xeigenval.spin; itr4++)
         for (uint itr4 = 0; itr4 < 1; itr4++) { // CO20200106 - patching for auto-indenting
           xvector<double> eigvec(5);
-          const xvector<int> ndxvec(5);
+          xvector<int> ndxvec(5);
           if (branches[itr0][itr1][1] > branches[itr0][itr1][2]) {
             for (int itr2 = branches[itr0][itr1][1] - 2; itr2 >= branches[itr0][itr1][2] + 2; itr2--) {
               ndxvec[1] = itr2 + 2;
@@ -8171,7 +7711,7 @@ bool IBZextrema(xEIGENVAL& xeigenval, vector<xvector<double>>& vkpoint_eig, vect
           if (!beg_edge_ndx.empty()) {
             for (size_t itr2 = 0; itr2 < beg_edge_ndx.size(); itr2++) {
               xvector<double> eigvec(6);
-              const xvector<int> ndxvec(6);
+              xvector<int> ndxvec(6);
               if (beg_edge_ndx[itr2][1] < beg_edge_ndx[itr2][2]) {
                 ndxvec[1] = beg_edge_ndx[itr2][1] + 2;
                 ndxvec[2] = beg_edge_ndx[itr2][1] + 1;
@@ -8222,7 +7762,7 @@ bool IBZextrema(xEIGENVAL& xeigenval, vector<xvector<double>>& vkpoint_eig, vect
             }
           } else if (beg_edge_ndx.empty()) { // if no branches @ beg
             xvector<double> eigvec(6);
-            const xvector<int> ndxvec(6);
+            xvector<int> ndxvec(6);
             if (branches[itr0][itr1][1] > branches[itr0][itr1][2]) {
               ndxvec[1] = branches[itr0][itr1][1] - 3;
               ndxvec[2] = branches[itr0][itr1][1] - 2;
@@ -8262,7 +7802,7 @@ bool IBZextrema(xEIGENVAL& xeigenval, vector<xvector<double>>& vkpoint_eig, vect
           if (!end_edge_ndx.empty()) {
             for (size_t itr2 = 0; itr2 < end_edge_ndx.size(); itr2++) {
               xvector<double> eigvec(6);
-              const xvector<int> ndxvec(6);
+              xvector<int> ndxvec(6);
               if (end_edge_ndx[itr2][1] < end_edge_ndx[itr2][2]) {
                 if (branches[itr0][itr1][1] > branches[itr0][itr1][2]) {
                   ndxvec[1] = branches[itr0][itr1][2] + 3;
@@ -8313,7 +7853,7 @@ bool IBZextrema(xEIGENVAL& xeigenval, vector<xvector<double>>& vkpoint_eig, vect
             }
           } else if (end_edge_ndx.empty()) { // only in disconnected edges
             xvector<double> eigvec(6);
-            const xvector<int> ndxvec(6);
+            xvector<int> ndxvec(6);
             if (branches[itr0][itr1][1] > branches[itr0][itr1][2]) {
               ndxvec[1] = branches[itr0][itr1][1] - 3;
               ndxvec[2] = branches[itr0][itr1][1] - 2;
@@ -8376,7 +7916,7 @@ void NaiveCurvatures(xvector<double>& eigvec,
     xvector<double> eigenvals(posvec.size() - 1);
     vector<xvector<double>> positions;
     for (size_t itr0 = 0; itr0 < posvec.size() - 1; itr0++) {
-      const xvector<double> tempvec(3);
+      xvector<double> tempvec(3);
       tempvec[1] = posvec[itr0][1];
       tempvec[2] = posvec[itr0][2];
       tempvec[3] = posvec[itr0][3];
@@ -8386,7 +7926,7 @@ void NaiveCurvatures(xvector<double>& eigvec,
     curvature.push_back(StencilLinear1D(positions, eigenvals));
     positions.clear();
     for (size_t itr0 = 1; itr0 < posvec.size(); itr0++) {
-      const xvector<double> tempvec(3);
+      xvector<double> tempvec(3);
       tempvec[1] = posvec[itr0][1];
       tempvec[2] = posvec[itr0][2];
       tempvec[3] = posvec[itr0][3];
@@ -8408,9 +7948,9 @@ void NaiveCurvatures(xvector<double>& eigvec,
 // Camilo E. Calderon, 2015
 //-------------------------------------------------------------------------------------------------
 double StencilLinear1D(vector<xvector<double>>& positions, xvector<double>& eigenvals) {
-  const xvector<double> numer(5);
-  const xvector<double> posns(5);
-  const xvector<double> delta(3);
+  xvector<double> numer(5);
+  xvector<double> posns(5);
+  xvector<double> delta(3);
   double denom;
   double dist = 0;
   posns[1] = 0;
@@ -8465,7 +8005,7 @@ void CompareDoublesChar(bool& MATCH, double& number1, double& number2) {
     int decloc2 = -1;
     const int len1 = oss1.str().size();
     const int len2 = oss2.str().size();
-    for (uint itr0 = 0; itr0 < (uint) min(len1, len2); itr0++) {
+    for (uint itr0 = 0; itr0 < (uint) aurostd::min(len1, len2); itr0++) {
       if ((int) oss1.str().at(itr0) == 46) {
         decloc1 = itr0;
       }
@@ -8482,8 +8022,8 @@ void CompareDoublesChar(bool& MATCH, double& number1, double& number2) {
     } else if (decloc1 == decloc2) {
       double min_num = 0.0;
       double max_num = 0.0; // CAMILOFIX
-      const int min_len = min(len1, len2) - 1;
-      const int max_len = max(len1, len2) - 1;
+      const int min_len = aurostd::min(len1, len2) - 1;
+      const int max_len = aurostd::max(len1, len2) - 1;
       if (len1 == min_len + 1) {
         min_num = number1;
         max_num = number2;
@@ -8553,179 +8093,6 @@ xEIGENVAL xEIGENVAL::deserialize(const aurostd::JSON::object& jo) {
 //-------------------------------------------------------------------------------------------------
 // ***************************************************************************
 // class xPOTCAR
-// ME20200427 - included xStream::initialize
-xPOTCAR::xPOTCAR(ostream& oss) : xStream(oss) {
-  free();
-} // CO20200404 - xStream integration for logging
-xPOTCAR::xPOTCAR(ofstream& FileMESSAGE, ostream& oss) : xStream(FileMESSAGE, oss) {
-  free();
-} // CO20200404 - xStream integration for logging
-xPOTCAR::xPOTCAR(const string& fileIN, bool QUIET, ostream& oss) : xStream(oss) {
-  m_initialized = initialize(fileIN, QUIET);
-} // CO20200404 - xStream integration for logging
-xPOTCAR::xPOTCAR(const string& fileIN, ofstream& FileMESSAGE, bool QUIET, ostream& oss) : xStream(FileMESSAGE, oss) {
-  m_initialized = initialize(fileIN, QUIET);
-} // CO20200404 - xStream integration for logging
-
-bool xPOTCAR::initialize(const string& fileIN, ostream& oss, bool QUIET) {
-  xStream::initialize(oss);
-  return initialize(fileIN, QUIET);
-} // CO20200508
-bool xPOTCAR::initialize(const string& fileIN, ofstream& FileMESSAGE, ostream& oss, bool QUIET) {
-  xStream::initialize(FileMESSAGE, oss);
-  return initialize(fileIN, QUIET);
-} // CO20200508
-bool xPOTCAR::initialize(const string& fileIN, bool QUIET) {
-  free();
-  if (aurostd::CompressFileExist(fileIN, filename)) {
-    return GetPropertiesFile(filename, QUIET);
-  } else {
-    return false;
-  }
-}
-
-xPOTCAR::xPOTCAR(const xPOTCAR& b) : xStream(*b.getOFStream(), *b.getOSS()) {
-  free();
-  copy(b);
-} // copy PUBLIC
-
-xPOTCAR::~xPOTCAR() {
-  xStream::free();
-  free();
-} // CO20191110 //CO20200404 - xStream integration for logging
-
-void xPOTCAR::free() {
-  m_initialized = false; // CO20200404
-  content = ""; // for aflowlib_libraries.cpp
-  vcontent.clear(); // for aflowlib_libraries.cpp
-  filename = ""; // for aflowlib_libraries.cpp
-  title = ""; // for aflowlib_libraries.cpp
-  POTCAR_PAW = false; // for aflowlib_libraries.cpp
-  POTCAR_TYPE = ""; // for aflowlib_libraries.cpp
-  POTCAR_KINETIC = false; // for aflowlib_libraries.cpp
-  POTCAR_GW = false; // for aflowlib_libraries.cpp
-  POTCAR_AE = false; // for aflowlib_libraries.cpp
-  // begin shared xPOTCAR
-  ENMAX = 0.0;
-  vENMAX.clear(); // for aflowlib_libraries.cpp
-  ENMIN = 0.0;
-  vENMIN.clear(); // for aflowlib_libraries.cpp
-  POMASS_sum = 0.0;
-  POMASS_min = 0.0;
-  POMASS_max = 0.0;
-  vPOMASS.clear(); // for aflowlib_libraries.cpp
-  ZVAL_sum = 0.0;
-  ZVAL_min = 0.0;
-  ZVAL_max = 0.0;
-  vZVAL.clear(); // for aflowlib_libraries.cpp
-  EATOM_min = 0.0;
-  EATOM_max = 0.0;
-  vEATOM.clear(); // for aflowlib_libraries.cpp
-  RCORE_min = 0.0;
-  RCORE_max = 0.0;
-  vRCORE.clear(); // for aflowlib_libraries.cpp
-  RWIGS_min = 0.0;
-  RWIGS_max = 0.0;
-  vRWIGS.clear(); // for aflowlib_libraries.cpp
-  EAUG_min = 0.0;
-  EAUG_max = 0.0;
-  vEAUG.clear(); // for aflowlib_libraries.cpp
-  RAUG_min = 0.0;
-  RAUG_max = 0.0;
-  vRAUG.clear(); // for aflowlib_libraries.cpp
-  RMAX_min = 0.0;
-  RMAX_max = 0.0;
-  vRMAX.clear(); // unicity
-  vTITEL.clear(); // unicity
-  vLEXCH.clear(); // unicity
-  // end shared xPOTCAR
-  pp_type = ""; // for aflowlib_libraries.cpp
-  species.clear(); // for aflowlib_libraries.cpp
-  species_Z.clear(); // for aflowlib_libraries.cpp
-  species_pp.clear(); // for aflowlib_libraries.cpp
-  species_pp_type.clear(); // for aflowlib_libraries.cpp
-  species_pp_version.clear(); // for aflowlib_libraries.cpp
-  species_pp_AUID.clear(); // for aflowlib_libraries.cpp
-  species_pp_AUID_collisions.clear(); // for aflowlib_libraries.cpp
-  species_pp_groundstate_energy.clear(); // for aflowlib_libraries.cpp
-  species_pp_groundstate_structure.clear(); // for aflowlib_libraries.cpp
-  // objects/functions for references energies
-  AUID = ""; // for pseudopotential references
-}
-
-void xPOTCAR::copy(const xPOTCAR& b) { // copy PRIVATE
-  xStream::copy(b); // CO20200404 - xStream integration for logging
-  free();
-  m_initialized = b.m_initialized; // CO20200404 - xStream integration for logging
-  content = b.content;
-  vcontent = b.vcontent;
-  filename = b.filename;
-  title = b.title;
-  POTCAR_PAW = b.POTCAR_PAW;
-  POTCAR_TYPE = b.POTCAR_TYPE;
-  POTCAR_KINETIC = b.POTCAR_KINETIC;
-  POTCAR_GW = b.POTCAR_GW;
-  POTCAR_AE = b.POTCAR_AE;
-  ENMAX = b.ENMAX;
-  vENMAX = b.vENMAX;
-  ENMIN = b.ENMIN;
-  vENMIN = b.vENMIN;
-  POMASS_sum = b.POMASS_sum;
-  POMASS_min = b.POMASS_min;
-  POMASS_max = b.POMASS_max;
-  vPOMASS = b.vPOMASS;
-  ZVAL_sum = b.ZVAL_sum;
-  ZVAL_min = b.ZVAL_min;
-  ZVAL_max = b.ZVAL_max;
-  vZVAL = b.vZVAL;
-  EATOM_min = b.EATOM_min;
-  EATOM_max = b.EATOM_max;
-  vEATOM = b.vEATOM;
-  RCORE_min = b.RCORE_min;
-  RCORE_max = b.RCORE_max;
-  vRCORE = b.vRCORE;
-  RWIGS_min = b.RWIGS_min;
-  RWIGS_max = b.RWIGS_max;
-  vRWIGS = b.vRWIGS;
-  EAUG_min = b.EAUG_min;
-  EAUG_max = b.EAUG_max;
-  vEAUG = b.vEAUG;
-  RAUG_min = b.RAUG_min;
-  RAUG_max = b.RAUG_max;
-  vRAUG = b.vRAUG;
-  RMAX_min = b.RMAX_min;
-  RMAX_max = b.RMAX_max;
-  vRMAX = b.vRMAX;
-  vTITEL = b.vTITEL;
-  vLEXCH = b.vLEXCH;
-  pp_type = b.pp_type; // for aflowlib_libraries.cpp
-  species = b.species;
-  species_Z = b.species_Z;
-  species_pp = b.species_pp;
-  species_pp_type = b.species_pp_type;
-  species_pp_version = b.species_pp_version;
-  species_pp_AUID = b.species_pp_AUID;
-  species_pp_AUID_collisions = b.species_pp_AUID_collisions;
-  species_pp_groundstate_energy = b.species_pp_groundstate_energy;
-  species_pp_groundstate_structure = b.species_pp_groundstate_structure;
-  AUID = b.AUID; // for pseudopotential references
-}
-
-const xPOTCAR& xPOTCAR::operator=(const xPOTCAR& b) { // operator= PUBLIC
-  if (this != &b) {
-    free();
-    copy(b);
-  }
-  return *this;
-}
-
-void xPOTCAR::clear() { // clear PRIVATE
-  const xPOTCAR _temp;
-  const string filename_aus = filename;
-  copy(_temp);
-  filename = filename_aus;
-}
-
 bool xPOTCAR::GetProperties(const string& stringIN, bool QUIET) {
   stringstream sss;
   sss.str(stringIN);
@@ -8794,7 +8161,6 @@ bool xPOTCAR::GetProperties(const stringstream& stringstreamIN, bool QUIET) {
   //  vline.clear();
   for (size_t iline = 0; iline < vcontent.size(); iline++) {
     aurostd::string2tokens(vcontent[iline], tokens);
-    //    cerr << "iline=" << iline << "  " << vcontent[iline] << " tokens.size()=" << tokens.size() << endl;
     if (iline == 4) {
       title = vcontent[iline]; // might be wrong
     }
@@ -9113,8 +8479,8 @@ bool xPOTCAR::GetProperties(const stringstream& stringstreamIN, bool QUIET) {
       if (LDEBUG) {
         cerr << __AFLOW_FUNC__ << " pp_type=" << pp_type << " " << "tokens.size()=" << tokens.size() << endl;
       }
-      species.push_back(KBIN::VASP_PseudoPotential_CleanName(tokens.at(1)));
-      species_Z.push_back(xelement::symbol2Z(KBIN::VASP_PseudoPotential_CleanName(tokens.at(1))));
+      species.push_back(aurostd::VASP_PseudoPotential_CleanName(tokens.at(1)));
+      species_Z.push_back(xelement::symbol2Z(aurostd::VASP_PseudoPotential_CleanName(tokens.at(1))));
       species_pp.push_back(tokens.at(1));
       species_pp_type.push_back(pp_type);
       if (pp_type == "LDA" && tokens.size() < 3) {
@@ -9126,9 +8492,9 @@ bool xPOTCAR::GetProperties(const stringstream& stringstreamIN, bool QUIET) {
       species_pp_version.push_back(tokens.at(1) + ":" + pp_type + ":" + tokens.at(2));
     } else { // only  one definition
       pp_type = "AE";
-      species.push_back(KBIN::VASP_PseudoPotential_CleanName(tokens.at(0)));
-      species_Z.push_back(xelement::symbol2Z(KBIN::VASP_PseudoPotential_CleanName(tokens.at(0))));
-      species_pp.push_back(KBIN::VASP_PseudoPotential_CleanName(tokens.at(0))); // same as species
+      species.push_back(aurostd::VASP_PseudoPotential_CleanName(tokens.at(0)));
+      species_Z.push_back(xelement::symbol2Z(aurostd::VASP_PseudoPotential_CleanName(tokens.at(0))));
+      species_pp.push_back(aurostd::VASP_PseudoPotential_CleanName(tokens.at(0))); // same as species
       species_pp_type.push_back(pp_type);
       species_pp_version.push_back(tokens.at(0) + ":" + pp_type + ":" + "BigBang"); // ALL Atomic Potential has been existing since the BigBang
     }
@@ -9376,86 +8742,6 @@ xPOTCAR xPOTCAR::deserialize(const aurostd::JSON::object& jo) {
 //---------------------------------------------------------------------------------
 // class xVASPRUNXML
 //---------------------------------------------------------------------------------
-xVASPRUNXML::xVASPRUNXML(ostream& oss) : xStream(oss) {
-  free();
-} // CO20200404 - xStream integration for logging
-xVASPRUNXML::xVASPRUNXML(ofstream& FileMESSAGE, ostream& oss) : xStream(FileMESSAGE, oss) {
-  free();
-} // CO20200404 - xStream integration for logging
-xVASPRUNXML::xVASPRUNXML(const string& fileIN, bool QUIET, ostream& oss) : xStream(oss) {
-  m_initialized = initialize(fileIN, QUIET);
-} // CO20200404 - xStream integration for logging
-xVASPRUNXML::xVASPRUNXML(const string& fileIN, ofstream& FileMESSAGE, bool QUIET, ostream& oss) : xStream(FileMESSAGE, oss) {
-  m_initialized = initialize(fileIN, QUIET);
-} // CO20200404 - xStream integration for logging
-
-bool xVASPRUNXML::initialize(const string& fileIN, ostream& oss, bool QUIET) {
-  xStream::initialize(oss);
-  return initialize(fileIN, QUIET);
-} // CO20200508
-bool xVASPRUNXML::initialize(const string& fileIN, ofstream& FileMESSAGE, ostream& oss, bool QUIET) {
-  xStream::initialize(FileMESSAGE, oss);
-  return initialize(fileIN, QUIET);
-} // CO20200508
-bool xVASPRUNXML::initialize(const string& fileIN, bool QUIET) {
-  free();
-  if (aurostd::CompressFileExist(fileIN, filename)) {
-    return GetPropertiesFile(filename, QUIET);
-  } else {
-    return false;
-  }
-}
-
-xVASPRUNXML::xVASPRUNXML(const xVASPRUNXML& b) : xStream(*b.getOFStream(), *b.getOSS()) {
-  free();
-  copy(b);
-} // copy PUBLIC
-
-xVASPRUNXML::~xVASPRUNXML() {
-  xStream::free();
-  free();
-} // CO20200404 - xStream integration for logging
-
-void xVASPRUNXML::free() {
-  m_initialized = false; // CO20200404
-  //------------------------------------------------------------------------------
-  // GetProperties
-  content = ""; // for aflowlib_libraries.cpp
-  vcontent.clear(); // for aflowlib_libraries.cpp
-  filename = ""; // for aflowlib_libraries.cpp
-  natoms = 0.0; // for aflowlib_libraries.cpp
-  stress.clear(); // for aflowlib_libraries.cpp
-  vkpoint.clear(); // for aflowlib_libraries.cpp
-  vweights.clear(); // for aflowlib_libraries.cpp
-  vforces.clear(); // for aflowlib_libraries.cpp
-}
-
-void xVASPRUNXML::copy(const xVASPRUNXML& b) { // copy PRIVATE
-  content = b.content;
-  vcontent = b.vcontent;
-  filename = b.filename;
-  natoms = b.natoms; // for aflowlib_libraries.cpp
-  stress = b.stress; // for aflowlib_libraries.cpp
-  vkpoint = b.vkpoint;
-  vweights = b.vweights;
-  vforces = b.vforces;
-}
-
-const xVASPRUNXML& xVASPRUNXML::operator=(const xVASPRUNXML& b) { // operator= PUBLIC
-  if (this != &b) {
-    free();
-    copy(b);
-  }
-  return *this;
-}
-
-void xVASPRUNXML::clear() { // clear PRIVATE
-  const xVASPRUNXML _temp;
-  const string filename_aus = filename;
-  copy(_temp);
-  filename = filename_aus;
-}
-
 bool xVASPRUNXML::GetProperties(const string& stringIN, bool QUIET) {
   stringstream sss;
   sss.str(stringIN);
@@ -9555,7 +8841,7 @@ bool xVASPRUNXML::GetProperties(const stringstream& stringstreamIN, bool QUIET) 
         // if(LDEBUG) cerr << __AFLOW_FUNC__ << " vcontent[iline+iat+1]=" << vcontent[iline+iat+1] << endl;
         aurostd::string2tokens(vcontent[iline + iat + 1], tokens, " ");
         if (tokens.size() == 3) {
-          const xvector<double> force(3);
+          xvector<double> force(3);
           force[1] = aurostd::string2utype<double>(tokens.at(0));
           force[2] = aurostd::string2utype<double>(tokens.at(1));
           force[3] = aurostd::string2utype<double>(tokens.at(2));
@@ -9595,7 +8881,7 @@ bool xVASPRUNXML::GetProperties(const stringstream& stringstreamIN, bool QUIET) 
           aurostd::StringSubstInPlace(vcontent[iline + iat], "</v>", "");
           aurostd::string2tokens(vcontent[iline + iat], tokens, " ");
           if (tokens.size() == 3) {
-            const xvector<double> kpoint(3);
+            xvector<double> kpoint(3);
             kpoint[1] = aurostd::string2utype<double>(tokens.at(0));
             kpoint[2] = aurostd::string2utype<double>(tokens.at(1));
             kpoint[3] = aurostd::string2utype<double>(tokens.at(2));
@@ -9732,7 +9018,7 @@ bool xVASPRUNXML::GetForces(stringstream& stringstreamIN, bool QUIET) {
   vforces.clear();
   string line;
   vector<double> tokens;
-  const xvector<double> force(3);
+  xvector<double> force(3);
   while (std::getline(stringstreamIN, line)) {
     if (aurostd::substring2bool(line, "<varray name=\"forces\" >")) {
       while (std::getline(stringstreamIN, line) && !aurostd::substring2bool(line, "</varray>")) {
@@ -9781,90 +9067,6 @@ xVASPRUNXML xVASPRUNXML::deserialize(const aurostd::JSON::object& jo) {
 //---------------------------------------------------------------------------------
 // class xIBZKPT
 //---------------------------------------------------------------------------------
-xIBZKPT::xIBZKPT(ostream& oss) : xStream(oss) {
-  free();
-} // CO20200404 - xStream integration for logging
-xIBZKPT::xIBZKPT(ofstream& FileMESSAGE, ostream& oss) : xStream(FileMESSAGE, oss) {
-  free();
-} // CO20200404 - xStream integration for logging
-xIBZKPT::xIBZKPT(const string& fileIN, bool QUIET, ostream& oss) : xStream(oss) {
-  m_initialized = initialize(fileIN, QUIET);
-} // CO20200404 - xStream integration for logging
-xIBZKPT::xIBZKPT(const string& fileIN, ofstream& FileMESSAGE, bool QUIET, ostream& oss) : xStream(FileMESSAGE, oss) {
-  m_initialized = initialize(fileIN, QUIET);
-} // CO20200404 - xStream integration for logging
-
-bool xIBZKPT::initialize(const string& fileIN, ostream& oss, bool QUIET) {
-  xStream::initialize(oss);
-  return initialize(fileIN, QUIET);
-} // CO20200508
-bool xIBZKPT::initialize(const string& fileIN, ofstream& FileMESSAGE, ostream& oss, bool QUIET) {
-  xStream::initialize(FileMESSAGE, oss);
-  return initialize(fileIN, QUIET);
-} // CO20200508
-bool xIBZKPT::initialize(const string& fileIN, bool QUIET) {
-  free();
-  if (aurostd::CompressFileExist(fileIN, filename)) {
-    return GetPropertiesFile(filename, QUIET);
-  } else {
-    return false;
-  }
-}
-
-xIBZKPT::xIBZKPT(const xIBZKPT& b) : xStream(*b.getOFStream(), *b.getOSS()) {
-  free();
-  copy(b);
-} // copy PUBLIC
-
-xIBZKPT::~xIBZKPT() {
-  xStream::free();
-  free();
-} // CO20200404 - xStream integration for logging
-
-void xIBZKPT::free() {
-  m_initialized = false; // CO20200404
-  //------------------------------------------------------------------------------
-  // GetProperties
-  content = ""; // for aflowlib_libraries.cpp
-  vcontent.clear(); // for aflowlib_libraries.cpp
-  filename = ""; // for aflowlib_libraries.cpp
-  nweights = 0; // for aflowlib_libraries.cpp
-  nkpoints_irreducible = 0; // for aflowlib_libraries.cpp
-  vkpoint.clear(); // for aflowlib_libraries.cpp
-  vweights.clear(); // for aflowlib_libraries.cpp
-  ntetrahedra = 0; // for aflowlib_libraries.cpp
-  wtetrahedra = 0.0; // for aflowlib_libraries.cpp
-  vtetrahedra.clear(); // for aflowlib_libraries.cpp
-}
-
-void xIBZKPT::copy(const xIBZKPT& b) { // copy PRIVATE
-  content = b.content;
-  vcontent = b.vcontent;
-  filename = b.filename;
-  nweights = b.nweights; // for aflowlib_libraries.cpp
-  nkpoints_irreducible = b.nkpoints_irreducible; // for aflowlib_libraries.cpp
-  vkpoint = b.vkpoint;
-  vweights = b.vweights;
-  ntetrahedra = b.ntetrahedra; // for aflowlib_libraries.cpp
-  wtetrahedra = b.wtetrahedra; // for aflowlib_libraries.cpp
-  vtetrahedra = b.vtetrahedra;
-}
-
-const xIBZKPT& xIBZKPT::operator=(const xIBZKPT& b) { // operator= PUBLIC
-  if (this != &b) {
-    free();
-    copy(b);
-  }
-  return *this;
-}
-
-void xIBZKPT::clear() { // clear PRIVATE
-  const xIBZKPT _temp;
-  const string filename_aus = filename;
-  copy(_temp);
-  filename = filename_aus;
-}
-
 bool xIBZKPT::GetProperties(const string& stringIN, bool QUIET) {
   stringstream sss;
   sss.str(stringIN);
@@ -9939,7 +9141,7 @@ bool xIBZKPT::GetProperties(const stringstream& stringstreamIN, bool QUIET) {
         // 	cerr << __AFLOW_FUNC__ << " vcontent[iline+iat]=" << vcontent[iline+iat] << endl;
         aurostd::string2tokens(vcontent[iline + iat], tokens, " ");
         if (tokens.size() == 4) {
-          const xvector<double> kpoint(3);
+          xvector<double> kpoint(3);
           kpoint[1] = aurostd::string2utype<double>(tokens.at(0));
           kpoint[2] = aurostd::string2utype<double>(tokens.at(1));
           kpoint[3] = aurostd::string2utype<double>(tokens.at(2));
@@ -9993,7 +9195,7 @@ bool xIBZKPT::GetProperties(const stringstream& stringstreamIN, bool QUIET) {
         // 	cerr << __AFLOW_FUNC__ << " vcontent[iline+iat]=" << vcontent[iline+iat] << endl;
         aurostd::string2tokens(vcontent[iline + iat], tokens, " ");
         if (tokens.size() == 5) {
-          const xvector<int> tetrahedra(5);
+          xvector<int> tetrahedra(5);
           tetrahedra[1] = aurostd::string2utype<double>(tokens.at(0));
           tetrahedra[2] = aurostd::string2utype<double>(tokens.at(1));
           tetrahedra[3] = aurostd::string2utype<double>(tokens.at(2));
@@ -10052,102 +9254,6 @@ xIBZKPT xIBZKPT::deserialize(const aurostd::JSON::object& jo) {
 //---------------------------------------------------------------------------------
 // class xKPOINTS
 //---------------------------------------------------------------------------------
-xKPOINTS::xKPOINTS(ostream& oss) : xStream(oss) {
-  free();
-} // CO20200404 - xStream integration for logging
-xKPOINTS::xKPOINTS(ofstream& FileMESSAGE, ostream& oss) : xStream(FileMESSAGE, oss) {
-  free();
-} // CO20200404 - xStream integration for logging
-xKPOINTS::xKPOINTS(const string& fileIN, bool QUIET, ostream& oss) : xStream(oss) {
-  m_initialized = initialize(fileIN, QUIET);
-} // CO20200404 - xStream integration for logging
-xKPOINTS::xKPOINTS(const string& fileIN, ofstream& FileMESSAGE, bool QUIET, ostream& oss) : xStream(FileMESSAGE, oss) {
-  m_initialized = initialize(fileIN, QUIET);
-} // CO20200404 - xStream integration for logging
-
-bool xKPOINTS::initialize(const string& fileIN, ostream& oss, bool QUIET) {
-  xStream::initialize(oss);
-  return initialize(fileIN, QUIET);
-} // CO20200508
-bool xKPOINTS::initialize(const string& fileIN, ofstream& FileMESSAGE, ostream& oss, bool QUIET) {
-  xStream::initialize(FileMESSAGE, oss);
-  return initialize(fileIN, QUIET);
-} // CO20200508
-bool xKPOINTS::initialize(const string& fileIN, bool QUIET) {
-  free();
-  if (aurostd::CompressFileExist(fileIN, filename)) {
-    return GetPropertiesFile(filename, QUIET);
-  } else {
-    return false;
-  }
-}
-
-xKPOINTS::xKPOINTS(const xKPOINTS& b) : xStream(*b.getOFStream(), *b.getOSS()) {
-  free();
-  copy(b);
-} // copy PUBLIC
-
-xKPOINTS::~xKPOINTS() {
-  xStream::free();
-  free();
-} // CO20200404 - xStream integration for logging
-
-void xKPOINTS::free() {
-  m_initialized = false; // CO20200404
-  //------------------------------------------------------------------------------
-  // constructor
-  content = ""; // for aflowlib_libraries.cpp
-  vcontent.clear(); // for aflowlib_libraries.cpp
-  filename = ""; // for aflowlib_libraries.cpp
-  title = ""; // for aflowlib_libraries.cpp
-  mode = -1; // for aflowlib_libraries.cpp
-  grid_type = ""; // for aflowlib_libraries.cpp
-  is_KPOINTS_NNN = false; // for aflowlib_libraries.cpp
-  is_KPOINTS_PATH = false; // for aflowlib_libraries.cpp
-  nnn_kpoints.clear(); // for aflowlib_libraries.cpp
-  ooo_kpoints.clear(); // for aflowlib_libraries.cpp
-  nkpoints = 0; // for aflowlib_libraries.cpp
-  path_mode = ""; // for aflowlib_libraries.cpp
-  path = ""; // for aflowlib_libraries.cpp
-  vpath.clear(); // for aflowlib_libraries.cpp
-  vkpoints.clear(); // ME20190614
-  path_grid = 0; // for aflowlib_libraries.cpp
-}
-
-void xKPOINTS::copy(const xKPOINTS& b) { // copy PRIVATE
-  content = b.content;
-  vcontent = b.vcontent;
-  filename = b.filename;
-  title = b.title;
-  mode = b.mode;
-  grid_type = b.grid_type;
-  is_KPOINTS_NNN = b.is_KPOINTS_NNN;
-  is_KPOINTS_PATH = b.is_KPOINTS_PATH;
-  nnn_kpoints = b.nnn_kpoints;
-  ooo_kpoints = b.ooo_kpoints;
-  nkpoints = b.nkpoints;
-  path_mode = b.path_mode;
-  path = b.path;
-  vpath = b.vpath;
-  vkpoints = b.vkpoints; // ME20190614
-  path_grid = b.path_grid;
-}
-
-const xKPOINTS& xKPOINTS::operator=(const xKPOINTS& b) { // operator= PUBLIC
-  if (this != &b) {
-    free();
-    copy(b);
-  }
-  return *this;
-}
-
-void xKPOINTS::clear() { // clear PRIVATE
-  const xKPOINTS _temp;
-  const string filename_aus = filename;
-  copy(_temp);
-  filename = filename_aus;
-}
-
 bool xKPOINTS::GetProperties(const string& stringIN, bool QUIET) {
   stringstream sss;
   sss.str(stringIN);
@@ -10259,7 +9365,7 @@ bool xKPOINTS::GetProperties(const stringstream& stringstreamIN, bool QUIET) {
       path_grid = aurostd::string2utype<int>(vcontent.at(1));
       grid_type = vcontent.at(2);
       path_mode = vcontent.at(3);
-      const xvector<double> kpt(3); // ME20190614
+      xvector<double> kpt(3); // ME20190614
       for (size_t iline = 4; iline < vcontent.size(); iline++) {
         aurostd::StringSubstInPlace(vcontent[iline], "!", "@");
         aurostd::StringSubstInPlace(vcontent[iline], "@", "@ "); // CO20210712 - for "!K" vs. "! K"
@@ -10475,84 +9581,6 @@ xKPOINTS xKPOINTS::deserialize(const aurostd::JSON::object& jo) {
 //---------------------------------------------------------------------------------
 // class xCHGCAR
 //---------------------------------------------------------------------------------
-xCHGCAR::xCHGCAR(ostream& oss) : xStream(oss) {
-  free();
-} // CO20200404 - xStream integration for logging
-xCHGCAR::xCHGCAR(ofstream& FileMESSAGE, ostream& oss) : xStream(FileMESSAGE, oss) {
-  free();
-} // CO20200404 - xStream integration for logging
-xCHGCAR::xCHGCAR(const string& fileIN, bool QUIET, ostream& oss) : xStream(oss) {
-  m_initialized = initialize(fileIN, QUIET);
-} // CO20200404 - xStream integration for logging
-xCHGCAR::xCHGCAR(const string& fileIN, ofstream& FileMESSAGE, bool QUIET, ostream& oss) : xStream(FileMESSAGE, oss) {
-  m_initialized = initialize(fileIN, QUIET);
-} // CO20200404 - xStream integration for logging
-
-bool xCHGCAR::initialize(const string& fileIN, ostream& oss, bool QUIET) {
-  xStream::initialize(oss);
-  return initialize(fileIN, QUIET);
-} // CO20200508
-bool xCHGCAR::initialize(const string& fileIN, ofstream& FileMESSAGE, ostream& oss, bool QUIET) {
-  xStream::initialize(FileMESSAGE, oss);
-  return initialize(fileIN, QUIET);
-} // CO20200508
-bool xCHGCAR::initialize(const string& fileIN, bool QUIET) {
-  free();
-  if (aurostd::CompressFileExist(fileIN, filename)) {
-    return GetPropertiesFile(filename, QUIET);
-  } else {
-    return false;
-  }
-}
-
-xCHGCAR::xCHGCAR(const xCHGCAR& b) : xStream(*b.getOFStream(), *b.getOSS()) {
-  free();
-  copy(b);
-} // copy PUBLIC
-
-xCHGCAR::~xCHGCAR() {
-  xStream::free();
-  free();
-} // CO20200404 - xStream integration for logging
-
-void xCHGCAR::free() {
-  m_initialized = false; // CO20200404
-  //------------------------------------------------------------------------------
-  // constructor
-  content = ""; // for aflowlib_libraries.cpp
-  vcontent.clear(); // for aflowlib_libraries.cpp
-  filename = ""; // for aflowlib_libraries.cpp
-  grid.clear(); // N*N*N triplet of grid
-  vstring.clear(); // ORIGIN xvector of values
-  vvalues.clear(); // ORIGIN xvector of values
-  tvalues.clear(); // ORIGIN xtensor of values
-}
-
-void xCHGCAR::copy(const xCHGCAR& b) { // copy PRIVATE
-  content = b.content;
-  vcontent = b.vcontent;
-  filename = b.filename;
-  grid = b.grid;
-  vstring = b.vstring;
-  vvalues = b.vvalues;
-  tvalues = b.tvalues;
-}
-
-const xCHGCAR& xCHGCAR::operator=(const xCHGCAR& b) { // operator= PUBLIC
-  if (this != &b) {
-    free();
-    copy(b);
-  }
-  return *this;
-}
-
-void xCHGCAR::clear() { // clear PRIVATE
-  const xCHGCAR _temp;
-  const string filename_aus = filename;
-  copy(_temp);
-  filename = filename_aus;
-}
-
 bool xCHGCAR::GetProperties(const string& stringIN, bool QUIET) {
   stringstream sss;
   sss.str(stringIN);
@@ -10666,7 +9694,7 @@ bool xCHGCAR::GetProperties(const stringstream& stringstreamIN, bool QUIET) {
   if (LDEBUG) {
     cerr << __AFLOW_FUNC__ << " LOAD VVALUES " << endl;
   }
-  const xvector<double> vvalues_aus(vstring.size());
+  xvector<double> vvalues_aus(vstring.size());
   for (size_t i = 0; i < vstring.size(); i++) {
     vvalues_aus(i + 1) = aurostd::string2utype<double>(vstring[i]);
   }
@@ -10725,87 +9753,6 @@ bool xCHGCAR::GetProperties(const stringstream& stringstreamIN, bool QUIET) {
 //---------------------------------------------------------------------------------
 //  class xQMVASP
 //---------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-//  constructor
-// ME20200427 - included xStream::initialize
-xQMVASP::xQMVASP(ostream& oss) : xStream(oss) {
-  free();
-} // CO20200404 - xStream integration for logging
-xQMVASP::xQMVASP(ofstream& FileMESSAGE, ostream& oss) : xStream(FileMESSAGE, oss) {
-  free();
-} // CO20200404 - xStream integration for logging
-xQMVASP::xQMVASP(const string& fileIN, bool QUIET, ostream& oss) : xStream(oss) {
-  m_initialized = initialize(fileIN, QUIET);
-} // CO20200404 - xStream integration for logging
-xQMVASP::xQMVASP(const string& fileIN, ofstream& FileMESSAGE, bool QUIET, ostream& oss) : xStream(FileMESSAGE, oss) {
-  m_initialized = initialize(fileIN, QUIET);
-} // CO20200404 - xStream integration for logging
-
-bool xQMVASP::initialize(const string& fileIN, ostream& oss, bool QUIET) {
-  xStream::initialize(oss);
-  return initialize(fileIN, QUIET);
-} // CO20200508
-bool xQMVASP::initialize(const string& fileIN, ofstream& FileMESSAGE, ostream& oss, bool QUIET) {
-  xStream::initialize(FileMESSAGE, oss);
-  return initialize(fileIN, QUIET);
-} // CO20200508
-bool xQMVASP::initialize(const string& fileIN, bool QUIET) {
-  free();
-  if (aurostd::CompressFileExist(fileIN, filename)) {
-    return GetPropertiesFile(filename, QUIET);
-  } else {
-    return false;
-  }
-}
-
-xQMVASP::xQMVASP(const xQMVASP& b) : xStream(*b.getOFStream(), *b.getOSS()) {
-  free();
-  copy(b);
-} // copy PUBLIC
-
-xQMVASP::~xQMVASP() {
-  xStream::free();
-  free();
-} // CO20191110 //CO20200404 - xStream integration for logging
-
-void xQMVASP::free() { // CO20191110
-  m_initialized = false; // CO20200404
-  //------------------------------------------------------------------------------
-  content = ""; // for aflowlib_libraries.cpp
-  vcontent.clear(); // for aflowlib_libraries.cpp
-  filename = ""; // for aflowlib_libraries.cpp
-  H_atom_relax = AUROSTD_NAN;
-  H_atom_static = AUROSTD_NAN;
-  vforces.clear(); // CO20191112
-}
-
-void xQMVASP::copy(const xQMVASP& b) { // copy PRIVATE //CO20191110
-  xStream::copy(b); // CO20200404 - xStream integration for logging
-  free();
-  m_initialized = b.m_initialized; // CO20200404 - xStream integration for logging
-  content = b.content;
-  vcontent = b.vcontent;
-  filename = b.filename;
-  H_atom_relax = b.H_atom_relax;
-  H_atom_static = b.H_atom_static;
-  vforces = b.vforces;
-}
-
-const xQMVASP& xQMVASP::operator=(const xQMVASP& b) { // operator= PUBLIC //CO20191110
-  if (this != &b) {
-    free();
-    copy(b);
-  }
-  return *this;
-}
-
-void xQMVASP::clear() { // clear PRIVATE  //CO20191110
-  const xQMVASP _temp;
-  const string filename_aus = filename;
-  copy(_temp);
-  filename = filename_aus;
-}
-
 bool xQMVASP::GetProperties(const string& stringIN, bool QUIET) { // CO20191110
   stringstream sss;
   sss.str(stringIN);
@@ -10848,6 +9795,7 @@ bool xQMVASP::GetProperties(const stringstream& stringstreamIN, bool QUIET) { //
   vcontent.clear();
   vector<string> tokens;
   vector<string> tokens2;
+  stringstream ss_xstr;
   aurostd::string2vectorstring(content, vcontent);
   if (filename.empty()) {
     filename = "stringstream";
@@ -10900,7 +9848,7 @@ bool xQMVASP::GetProperties(const stringstream& stringstreamIN, bool QUIET) { //
         iline++; // skip first [AFLOW]
         // ME20191219 - ++iline needs to be in the while statement or the loop
         //  will never start
-        while (iline < vcontent.size() && aurostd::substring2bool(vcontent[++iline], "[AFLOW]") == false) {
+        while (iline < vcontent.size() && !aurostd::substring2bool(vcontent[++iline], "[AFLOW]")) {
           vforces.emplace_back(3);
           aurostd::string2tokens(vcontent[iline], tokens, " ");
           if (tokens.size() == 6) {
@@ -10915,6 +9863,12 @@ bool xQMVASP::GetProperties(const stringstream& stringstreamIN, bool QUIET) { //
             throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, "Unexpected count of force components", _FILE_CORRUPT_);
           }
         }
+      } else if (vcontent[iline].find("VASP_POSCAR_MODE_EXPLICIT") != string::npos) {
+        aurostd::StringstreamClean(ss_xstr);
+        while (iline < vcontent.size() && !aurostd::substring2bool(vcontent[++iline], "[AFLOW]")) {
+          ss_xstr << vcontent[iline] << endl;
+        }
+        xstr_final.initialize(ss_xstr);
       }
     }
   }
@@ -10952,236 +9906,9 @@ xQMVASP xQMVASP::deserialize(const aurostd::JSON::object& jo) {
 //-------------------------------------------------------------------------------------------------
 // CO20190803 STOP
 
-// CO20190803 START
-//---------------------------------------------------------------------------------
-//  class xPLASMONICS
-//---------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-//  constructor
-xPLASMONICS::xPLASMONICS(ostream& oss) : xStream(oss) {
-  free();
-} // CO20200404 - xStream integration for logging
-xPLASMONICS::xPLASMONICS(ofstream& FileMESSAGE, ostream& oss) : xStream(FileMESSAGE, oss) {
-  free();
-} // CO20200404 - xStream integration for logging
-xPLASMONICS::xPLASMONICS(const string& fileIN, bool QUIET, ostream& oss) : xStream(oss) {
-  m_initialized = initialize(fileIN, QUIET);
-} // CO20200404 - xStream integration for logging
-xPLASMONICS::xPLASMONICS(const string& fileIN, ofstream& FileMESSAGE, bool QUIET, ostream& oss) : xStream(FileMESSAGE, oss) {
-  m_initialized = initialize(fileIN, QUIET);
-} // CO20200404 - xStream integration for logging
-
-bool xPLASMONICS::initialize(const string& fileIN, ostream& oss, bool QUIET) {
-  xStream::initialize(oss);
-  return initialize(fileIN, QUIET);
-} // CO20200508
-bool xPLASMONICS::initialize(const string& fileIN, ofstream& FileMESSAGE, ostream& oss, bool QUIET) {
-  xStream::initialize(FileMESSAGE, oss);
-  return initialize(fileIN, QUIET);
-} // CO20200508
-bool xPLASMONICS::initialize(const string& fileIN, bool QUIET) {
-  free();
-  if (aurostd::CompressFileExist(fileIN, filename)) {
-    return GetPropertiesFile(filename, QUIET);
-  } else {
-    return false;
-  }
-}
-
-xPLASMONICS::xPLASMONICS(const xPLASMONICS& b) : xStream(*b.getOFStream(), *b.getOSS()) {
-  free();
-  copy(b);
-} // copy PUBLIC
-
-xPLASMONICS::~xPLASMONICS() {
-  xStream::free();
-  free();
-} // CO20191110 //CO20200404 - xStream integration for logging
-
-void xPLASMONICS::free() { // CO20191110
-  m_initialized = false; // CO20200404
-  //------------------------------------------------------------------------------
-  content = ""; // for aflowlib_libraries.cpp
-  vcontent.clear(); // for aflowlib_libraries.cpp
-  filename = ""; // for aflowlib_libraries.cpp
-  eps.clear();
-  venergy.clear();
-  veels.clear();
-  vdielectric.clear();
-}
-
-void xPLASMONICS::copy(const xPLASMONICS& b) { // copy PRIVATE //CO20191110
-  xStream::copy(b); // CO20200404 - xStream integration for logging
-  free();
-  m_initialized = b.m_initialized; // CO20200404 - xStream integration for logging
-  content = b.content;
-  vcontent = b.vcontent;
-  filename = b.filename;
-  eps = b.eps;
-  venergy = b.venergy;
-  veels = b.veels;
-  vdielectric = b.vdielectric;
-}
-
-const xPLASMONICS& xPLASMONICS::operator=(const xPLASMONICS& b) { // operator= PUBLIC //CO20191110
-  if (this != &b) {
-    free();
-    copy(b);
-  }
-  return *this;
-}
-
-void xPLASMONICS::clear() { // clear PRIVATE  //CO20191110
-  const string filename_aus = filename;
-  free();
-  filename = filename_aus;
-}
-
-void xPLASMONICS::getEPS() { // CO20211120
-  const bool LDEBUG = (false || XHOST.DEBUG);
-  if (LDEBUG) {
-    cerr << __AFLOW_FUNC__ << " filename=" << filename << endl;
-  }
-  if (filename.find(DEFAULT_AFLOW_PLASMONICS_FILE) != string::npos) {
-    // get eps and store it
-    string _eps = filename;
-    _eps = aurostd::basename(_eps);
-    aurostd::StringSubstInPlace(_eps, DEFAULT_AFLOW_PLASMONICS_FILE + "_", ""); // remove DEFAULT_AFLOW_PLASMONICS_FILE+'_'
-    aurostd::StringSubstInPlace(_eps, DEFAULT_AFLOW_PLASMONICS_FILE, ""); // remove DEFAULT_AFLOW_PLASMONICS_FILE
-    _eps = _eps.substr(0, _eps.find("_")); // remove everything before '_'
-    _eps = _eps.substr(0, _eps.find("." + POCC_OUT_FILE)); // remove everything before '.out'
-    _eps = _eps.substr(0, _eps.find(POCC_OUT_FILE)); // remove everything before 'out'
-    if (aurostd::isfloat(_eps)) {
-      eps = _eps;
-    }
-  }
-  if (LDEBUG) {
-    cerr << __AFLOW_FUNC__ << " eps=" << eps << endl;
-  }
-}
-
-bool xPLASMONICS::GetProperties(const string& stringIN, bool QUIET) { // CO20191110
-  stringstream sss;
-  sss.str(stringIN);
-  if (filename.empty()) {
-    filename = DEFAULT_AFLOW_PLASMONICS_FILE + "_0.01." + POCC_OUT_FILE;
-  }
-  return xPLASMONICS::GetProperties(sss, QUIET);
-}
-
-bool xPLASMONICS::GetPropertiesFile(const string& fileIN, bool QUIET) { // CO20191110
-  stringstream sss;
-  //[CO20211121 - getEPS() needs the right filename]if(filename=="")
-  filename = fileIN;
-  aurostd::compressfile2stringstream(fileIN, sss);
-  return xPLASMONICS::GetProperties(sss, QUIET);
-}
-
-bool xPLASMONICS::GetPropertiesUrlFile(const string& url, const string& file, bool QUIET) { // CO20191110
-  const string tmpfile = aurostd::TmpFileCreate("xPLASMONICS_GetProperties"); // CO20200502 - threadID
-  aurostd::httpGetFileStatus(url + "/" + file, tmpfile);
-  const bool out = GetPropertiesFile(tmpfile, QUIET);
-  filename = "url=" + url; // CO20210315
-  aurostd::RemoveFile(tmpfile);
-  return out;
-}
-
-bool xPLASMONICS::GetProperties(const stringstream& stringstreamIN, bool QUIET) { // CO20191110
-  const bool LDEBUG = (false || XHOST.DEBUG || !QUIET);
-  stringstream message;
-  const bool force_exit = XHOST.POSTPROCESS; // SC wants to exit here so we can fix the problem  // ME20200604 - do not exit with generate_aflowin_only
-
-  const bool ERROR_flag = false;
-  const long double seconds = aurostd::get_seconds();
-  if (LDEBUG) {
-    cerr << __AFLOW_FUNC__ << " BEGIN (" << time_delay(seconds) << ")" << endl;
-  }
-  clear(); // so it does not mess up vector/deque
-  content = stringstreamIN.str();
-  vcontent.clear();
-  vector<string> vlines;
-  aurostd::string2vectorstring(content, vcontent);
-  vlines = aurostd::RemoveComments(vcontent);
-  if (filename.empty()) {
-    filename = "stringstream";
-  }
-
-  // ----------------------------------------------------------------------
-  if (LDEBUG) {
-    cerr << __AFLOW_FUNC__ << " vcontent.size()=" << vcontent.size() << endl;
-  }
-  if (LDEBUG) {
-    cerr << __AFLOW_FUNC__ << " vlines.size()=" << vlines.size() << endl;
-  }
-  // ----------------------------------------------------------------------
-
-  getEPS(); // extract eps from filename if possible
-
-  // crunching to eat the info
-  vector<string> vtokens;
-  xcomplex<double> xcomp_tmp;
-  venergy.clear();
-  veels.clear();
-  vdielectric.clear(); // clear
-  for (size_t iline = 0; iline < vlines.size(); iline++) {
-    if (LDEBUG) {
-      cerr << __AFLOW_FUNC__ << " vlines[iline=" << iline << "]=\"" << vlines[iline] << "\"" << endl;
-    }
-    aurostd::string2tokens(vlines[iline], vtokens, " ");
-    if (LDEBUG) {
-      cerr << __AFLOW_FUNC__ << " vtokens=" << aurostd::joinWDelimiter(vtokens, "|") << endl;
-    }
-    // there should be 5 columns
-    if (vtokens.size() != 5) {
-      throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, "vcols!=5 (=" + aurostd::utype2string(vtokens.size()) + ")", _FILE_NOT_FOUND_);
-    }
-    // The file has 5 columns:
-    // column1 = energy (eV)
-    // column2 = do not consider this
-    // column3 = EELS spectrum
-    // column4 = real part of dielectric function
-    // column5 = imaginary part of dielectric function
-    venergy.push_back(aurostd::string2utype<double>(vtokens[0]));
-    veels.push_back(aurostd::string2utype<double>(vtokens[2]));
-    xcomp_tmp.re = aurostd::string2utype<double>(vtokens[3]);
-    xcomp_tmp.im = aurostd::string2utype<double>(vtokens[4]);
-    vdielectric.push_back(xcomp_tmp);
-  }
-
-  // ----------------------------------------------------------------------
-  // ----------------------------------------------------------------------
-  // DONE NOW RETURN
-  if (LDEBUG) {
-    cerr << __AFLOW_FUNC__ << " END (" << time_delay(seconds) << ")" << endl;
-  }
-  // ----------------------------------------------------------------------
-  // DONE NOW RETURN
-  if (ERROR_flag) {
-    message << "ERROR_flag set in xPLASMONICS";
-    if (force_exit) {
-      throw aurostd::xerror(__AFLOW_FILE__, __AFLOW_FUNC__, message, _RUNTIME_ERROR_);
-    } else {
-      pflow::logger(__AFLOW_FILE__, __AFLOW_FUNC__, message, *p_FileMESSAGE, *p_oss, _LOGGER_ERROR_, QUIET);
-    }
-    return false;
-  }
-  return true;
-}
-
-// JSON serialization of xPLASMONICS
-aurostd::JSON::object xPLASMONICS::serialize() const {
-  return aurostd::JSON::object({AST_JSON_GETTER(JSON_xPLASMONICS_MEMBERS)});
-}
-
-xPLASMONICS xPLASMONICS::deserialize(const aurostd::JSON::object& jo) {
-  AST_JSON_SETTER(JSON_xPLASMONICS_MEMBERS)
-  return *this;
-}
-
 //-------------------------------------------------------------------------------------------------
 // CO20190803 STOP
 
-#endif //  _AFLOW_OVASP_CPP_
 // ***************************************************************************
 // *                                                                         *
 // *           Aflow STEFANO CURTAROLO - Duke University 2003-2024           *

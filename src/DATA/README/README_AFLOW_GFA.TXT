@@ -50,7 +50,7 @@ Finally, the GFA is calculated over a grid of stoichiometries as the multiplicat
 of the functions describing the structural similarity and enthalpy similarity 
 normalized by the sum of the weights.
 
-AFLOW_CHULL is used to calculate the convex hull and AFLOW_COMPARE is used to
+AFLOW_NHULL is used to calculate the convex hull and AFLOW_COMPARE is used to
 remove duplicate structures from the analysis.
 
 ********************************************************************************

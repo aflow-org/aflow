@@ -46,7 +46,6 @@ namespace KBIN {
   bool VASP_Produce_POTCAR(_xvasp& xvasp, const std::string& AflowIn, std::ofstream& FileERROR, _aflags& aflags, _kflags& kflags, _vflags& vflags);
   bool VASP_Modify_POTCAR(_xvasp& xvasp, std::ofstream& FileERROR, _aflags& aflags, _vflags& vflags);
   bool VASP_Reread_POTCAR(_xvasp& xvasp, std::ofstream& FileMESSAGE, _aflags& aflags);
-  std::string VASP_PseudoPotential_CleanName(const std::string& specieIN);
   bool VASP_PseudoPotential_CleanName_TEST(); // CO20190712
   uint VASP_SplitAlloySpecies(std::string alloy_in, std::vector<std::string>& speciesX);
   uint VASP_SplitAlloySpecies(std::string alloy_in, std::vector<std::string>& speciesX, std::vector<double>& natomsX);
@@ -74,7 +73,8 @@ namespace KBIN {
   void XVASP_INCAR_Metagga(_xvasp& xvasp, _vflags& vflags);
   void XVASP_INCAR_Ivdw(_xvasp& xvasp, _vflags& vflags);
   void XVASP_INCAR_ABMIX(_xvasp& xvasp, _vflags& vflags);
-  int XVASP_INCAR_GetNBANDS(const _xvasp& xvasp, const _aflags& aflags, bool ispin = true); // CO20210315 - spin==true is safer
+  int XVASP_INCAR_GetNBANDS_AFLOW3(const _xvasp& xvasp, const _aflags& aflags, bool ispin = true); // CO20210315 - spin==true is safer
+  int XVASP_INCAR_GetNBANDS(const _xvasp& xvasp, const _aflags& aflags, bool ispin = true);
   std::string INCAR_IALGO2ALGO(int ialgo); // CO20210315
   bool XVASP_INCAR_Read_MAGMOM(_xvasp& xvasp); // CO20210315
   bool XVASP_INCAR_PREPARE_GENERIC(const std::string& command, _xvasp& xvasp, const _vflags& vflags, const std::string& svalue, int ivalue, double dvalue, bool bvalue);
@@ -132,8 +132,8 @@ namespace KBIN {
   bool ExtractPOSCARStringStreamFromAFLOWIN(const std::string& AflowIn, std::stringstream& poscar, const int index); // SD20220228
   double ExtractEfermiOUTCAR(std::string directory);
   xstructure GetMostRelaxedStructure(std::string directory); // CO20180627
-  std::vector<std::string> ExtractAtomicSpecies(const std::string& directory, std::ostream& oss = std::cout);
-  std::vector<std::string> ExtractAtomicSpecies(const std::string& directory, std::ofstream& FileMESSAGE, std::ostream& oss = std::cout);
+  std::vector<std::string> ExtractAtomicSpecies(const std::string& directory);
+  std::vector<std::string> ExtractAtomicSpecies(const std::string& directory, std::ofstream& FileMESSAGE);
 
 } // namespace KBIN
 

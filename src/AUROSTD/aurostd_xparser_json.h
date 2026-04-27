@@ -53,9 +53,12 @@ namespace aurostd {
       std::shared_ptr<void> obj = nullptr;
 
       // operators
-      JSON::object& operator[](size_t index) const;
-      JSON::object& operator[](const std::string& key) const;
-      JSON::object& operator[](const char* key) const;
+      JSON::object& operator[](size_t index);
+      const JSON::object& operator[](size_t index) const;
+      JSON::object& operator[](const std::string& key);
+      const JSON::object& operator[](const std::string& key) const;
+      JSON::object& operator[](const char* key);
+      const JSON::object& operator[](const char* key) const;
       JSON::object& operator=(const char* content); // for literal strings
       JSON::object& operator=(const std::string& content);
       JSON::object& operator=(bool content);
@@ -155,7 +158,7 @@ namespace aurostd {
     std::string unescape_unicode(const std::string& raw, size_t& pos);
     std::string escape(const std::string& raw, bool unicode = true);
     std::string char32_to_string(char32_t cp);
-    std::string char_escape(char16_t c);
+    std::string char_escape(char32_t c);
 
     // basic functions
     object loadFile(const std::string& file_path);

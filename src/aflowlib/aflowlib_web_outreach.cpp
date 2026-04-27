@@ -5,17 +5,13 @@
 // ***************************************************************************
 // Stefano Curtarolo - Duke
 
-#ifndef _AFLOWLIB_WEB_OUTREACH_CPP_
-#define _AFLOWLIB_WEB_OUTREACH_CPP_
-
 #include "aflowlib/aflowlib_web_outreach.h"
 
+#include "config.h"
+
 #include <algorithm>
-#include <cstddef>
-#include <filesystem>
-#include <fstream>
+#include <ctime>
 #include <iostream>
-#include <istream>
 #include <ostream>
 #include <sstream>
 #include <string>
@@ -42,17 +38,14 @@
 #define AUTHOR_RECENT_ARTICLES 300
 #define AUTHOR_RECENT_YEARS 30
 
-#define MAX_YEAR_PRESENTATIONS 2025
+// use MAX_YEAR_PRESENTATIONS if you don't want the current year as cutoff for presentations
+// #define MAX_YEAR_PRESENTATIONS 2025
 
 using std::cerr;
 using std::cout;
 using std::endl;
-using std::ifstream;
 using std::istream;
-using std::istringstream;
-using std::ofstream;
 using std::ostream;
-using std::ostringstream;
 using std::string;
 using std::stringstream;
 using std::vector;
@@ -827,7 +820,7 @@ void voutreach_print_publications_EXTRA(ostream& oss) {
 void SystemReferences(const string& system_in, vector<uint>& voutreach_wnumber) { // ADD REFERENCES
   voutreach_wnumber.clear();
 
-  const string system = KBIN::VASP_PseudoPotential_CleanName(system_in);
+  const string system = aurostd::VASP_PseudoPotential_CleanName(system_in);
   vector<_outreach> voutreach;
   voutreach_load(voutreach, "PUBLICATIONS");
   // if(!XHOST.QUIET_CERR) cerr << "LOADED " << voutreach.size() << " articles" << endl;
@@ -938,6 +931,13 @@ bool AlloyAlphabeticLIBRARY(const string& s) {
 // ******************************************************************************************************************************************************
 
 void voutreach_print(uint _mode, ostream& oss, string what2print) {
+#ifdef MAX_YEAR_PRESENTATIONS
+  const uint max_year_presentations = MAX_YEAR_PRESENTATIONS;
+#else
+  const std::time_t t = std::time(nullptr);
+  const std::tm* now = std::localtime(&t);
+  const uint max_year_presentations = 1900 + now->tm_year;
+#endif
   string message;
   const aurostd::xoption vflag = XHOST.vflag_outreach;
   const bool LDEBUG = (false || XHOST.DEBUG);
@@ -1484,7 +1484,7 @@ void voutreach_print(uint _mode, ostream& oss, string what2print) {
       voutreach_local.clear();
       for (size_t ialloy = 0; ialloy < valloy.size(); ialloy++) {
         vector<uint> voutreach_wnumber;
-        SystemReferences(KBIN::VASP_PseudoPotential_CleanName(valloy[ialloy]), voutreach_wnumber);
+        SystemReferences(aurostd::VASP_PseudoPotential_CleanName(valloy[ialloy]), voutreach_wnumber);
         for (size_t iwnumber = 0; iwnumber < voutreach_wnumber.size(); iwnumber++) {
           for (size_t iarticle = 0; iarticle < voutreach.size(); iarticle++) {
             if (voutreach[iarticle].wnumber == voutreach_wnumber[iwnumber]) {
@@ -1562,7 +1562,7 @@ void voutreach_print(uint _mode, ostream& oss, string what2print) {
             voutreach_local.push_back(voutreach[i]);
           }
         }
-        for (uint year = MAX_YEAR_PRESENTATIONS; year >= 1998; year--) {
+        for (uint year = max_year_presentations; year >= 1998; year--) {
           bool flag_year = false;
           for (size_t i = 0; i < voutreach_local.size() && !flag_year; i++) {
             if (year == voutreach_local[i].year) {
@@ -1605,7 +1605,7 @@ void voutreach_print(uint _mode, ostream& oss, string what2print) {
           }
         }
 
-        for (uint year = MAX_YEAR_PRESENTATIONS; year >= 1998; year--) {
+        for (uint year = max_year_presentations; year >= 1998; year--) {
           bool flag_year = false;
           for (size_t i = 0; i < voutreach_local.size() && !flag_year; i++) {
             if (year == voutreach_local[i].year) {
@@ -1647,7 +1647,7 @@ void voutreach_print(uint _mode, ostream& oss, string what2print) {
             }
           }
 
-          for (uint year = MAX_YEAR_PRESENTATIONS; year >= 1998; year--) {
+          for (uint year = max_year_presentations; year >= 1998; year--) {
             bool flag_year = false;
             for (size_t i = 0; i < voutreach_local.size() && !flag_year; i++) {
               if (year == voutreach_local[i].year) {
@@ -2359,8 +2359,6 @@ void center_print(uint mode, ostream& oss) {
     oss << "  <br>" << endl;
   }
 }
-
-#endif //   _AFLOW_WEB_INTERFACE_CPP_
 
 // ***************************************************************************
 // *                                                                         *

@@ -6,8 +6,6 @@
 // ***************************************************************************
 // Written by Cormac Toher
 // cormac.toher@duke.edu
-#ifndef _AFLOW_AGL_RUNGIBBS_CPP
-#define _AFLOW_AGL_RUNGIBBS_CPP
 
 #include <algorithm>
 #include <cmath>
@@ -2379,8 +2377,6 @@ namespace AGL_functions {
 // **************************************************************************
 //  End of AFLOW AGL run GIBBS
 // **************************************************************************
-
-#endif // _AFLOW_AGL_RUNGIBBS_CPP
 
 // ***************************************************************************
 // *                                                                         *

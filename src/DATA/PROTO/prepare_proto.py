@@ -12,6 +12,8 @@ def gcd(numbers):
     for i in range(1, len(numbers)):
         result = math.gcd(result, numbers[i])
     return result
+
+
 def stoichiometry_key(label):
     stoichiometry = label.split("_", maxsplit=1)[0]
     stoichiometry = re.split(r'[A-Z]', stoichiometry)[1:]
@@ -23,8 +25,49 @@ def stoichiometry_key(label):
             key.append(int(s))
     gcd_value = gcd(key)
     if gcd_value != 1:
-        key = [k/gcd_value for k in key]
+        key = [k / gcd_value for k in key]
     return ":".join([str(k) for k in sorted(key, reverse=True)])
+
+
+def alphabetized_prototype(raw_proto):
+    # take a chemical formular and return the alphabetized version
+    # if already in the current form return None
+    if "(" in raw_proto or "-" in raw_proto:
+        # Don't try to sort grouped formulas or ones with comments
+        return None
+    chem_pattern = re.compile(r'([A-Z][a-z]?)([0-9.]*)')
+    matches = chem_pattern.findall(raw_proto)
+    parsed_elements = []
+    for element, count_str in matches:
+        # If count_str is empty, the count is one
+        if count_str == '':
+            count = 1.0
+        else:
+            try:
+                count = float(count_str)
+            except ValueError:
+                print(f"Error: Could not process '{raw_proto}' ('{count_str}' could not be parsed as float).'")
+                exit(1)
+        parsed_elements.append((element, count))
+    parsed_elements = sorted(parsed_elements)  # tuples are always sorted on the 0th element first
+    proto = ""
+    for element, count in parsed_elements:
+        # detect if non integer element ratios are used and avoid problems with unprecise floats
+        if abs(count - int(count)) > 0.00001:
+            proto += f"{element}{count}"
+        else:
+            count = int(round(count))
+            if count > 1:
+                proto += f"{element}{count}"
+            else:
+                proto += f"{element}"  # don't write ones
+
+    # check if the original prototype was already in standard form
+    if raw_proto != proto and raw_proto != "":
+        return proto
+
+    return None
+
 
 base_folder = Path(__file__).parent
 collection_folder = base_folder / "aflow_prototype_encyclopedia" / "data"
@@ -51,6 +94,7 @@ expected_keys = ["uid",
                  'notes',
                  'comments']
 
+
 def prepare():
     lookup = dict(icsd={}, alias={}, label={}, ccdc={},
                   prototype=defaultdict(list), pearson_symbol=defaultdict(list),
@@ -61,11 +105,11 @@ def prepare():
     for lib_entry_path in collection_folder.glob("*/info.json"):
         lib_entry = json.loads(lib_entry_path.read_text())
         for key in expected_keys:
-            if not key in lib_entry:
+            if key not in lib_entry:
                 lib_entry[key] = None
         combined[lib_entry["uid"]] = lib_entry
         if lib_entry["label"] is None:
-            print(f"problem: {key} {lib_entry[key]}")
+            print(f"problem: no label - {lib_entry}")
             exit()
         lookup["label"][lib_entry["label"]] = lib_entry["uid"]
         base_label, num_id = lib_entry["label"].rsplit("-", maxsplit=1)
@@ -92,6 +136,11 @@ def prepare():
         for key in ["prototype", "pearson_symbol", "space_group_number", "part", "number_of_species"]:
             if lib_entry[key] is not None:
                 lookup[key][lib_entry[key]].append(lib_entry["uid"])
+                # enforce AFLOW alphabetic sorting
+                if key == "prototype":
+                    alpha_proto = alphabetized_prototype(lib_entry[key])
+                    if alpha_proto is not None:
+                        lookup[key][alpha_proto].append(lib_entry["uid"])
 
         stoichiometry = stoichiometry_key(lib_entry["label"])
         lookup["stoichiometry"][stoichiometry].append(lib_entry["uid"])
@@ -102,13 +151,13 @@ def prepare():
             lookup["alias"][base_label] = lib_entry["uid"]
 
     for uid, lib_entry in legacy_data.items():
-        found=None
+        found = None
         for key in ["icsd", 'ccdc', 'label']:
             if lib_entry[key] in lookup[key]:
-                found=lookup[key][lib_entry[key]]
+                found = lookup[key][lib_entry[key]]
                 break
         if lib_entry["label"] in lookup["alias"]:
-            found=lookup["alias"][lib_entry["label"]]
+            found = lookup["alias"][lib_entry["label"]]
 
         if found is not None:
             if lib_entry["alias"] is not None:
@@ -154,7 +203,6 @@ def prepare():
 
     (base_folder / "lookup.json").write_text(json.dumps(lookup))
     (base_folder / "data.json").write_text(json.dumps(combined, indent=4))
-
 
 
 if __name__ == '__main__':

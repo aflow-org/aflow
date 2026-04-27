@@ -47,6 +47,7 @@ using std::cerr;
 using std::cout;
 using std::endl;
 using std::ifstream;
+using std::iostream;
 using std::istream;
 using std::istringstream;
 using std::ofstream;
@@ -316,7 +317,7 @@ namespace LATTICE {
   string SpaceGroup2LatticeTypeAndCentering(uint sg) {
     string lattice_type;
     string lattice_system;
-    string type_and_centering;
+    const string type_and_centering;
     LATTICE::SpaceGroup2Lattice(sg, lattice_type, lattice_system);
     return LATTICE::Lattice2TypeAndCentering(lattice_type);
   }
@@ -709,7 +710,7 @@ namespace LATTICE {
     }
     if (lattice == "bcc" || lattice == "BCC" || lattice == "cI") {// unique choice
       found = true;
-      const xmatrix<double> bcc(3, 3);
+      xmatrix<double> bcc(3, 3);
       bcc[1][1] = 0.0;
       bcc[1][2] = 1.0;
       bcc[1][3] = 1.0;
@@ -723,7 +724,7 @@ namespace LATTICE {
     }
     if (lattice == "fcc" || lattice == "FCC" || lattice == "cF") {// unique choice
       found = true;
-      const xmatrix<double> fcc(3, 3);
+      xmatrix<double> fcc(3, 3);
       fcc[1][1] = -1.0;
       fcc[1][2] = 1.0;
       fcc[1][3] = 1.0;
@@ -741,7 +742,7 @@ namespace LATTICE {
     }
     if (aurostd::substring2bool(lattice, "bct") || aurostd::substring2bool(lattice, "BCT") || aurostd::substring2bool(lattice, "tI")) {
       found = true;
-      const xmatrix<double> bct(3, 3);
+      xmatrix<double> bct(3, 3);
       bct[1][1] = 0.0;
       bct[1][2] = 1.0;
       bct[1][3] = 1.0;
@@ -759,7 +760,7 @@ namespace LATTICE {
     }
     if (aurostd::substring2bool(lattice, "orcf") || aurostd::substring2bool(lattice, "ORCF") || aurostd::substring2bool(lattice, "oF")) {
       found = true;
-      const xmatrix<double> orcf(3, 3);
+      xmatrix<double> orcf(3, 3);
       orcf[1][1] = -1.0;
       orcf[1][2] = 1.0;
       orcf[1][3] = 1.0;
@@ -773,7 +774,7 @@ namespace LATTICE {
     }
     if (aurostd::substring2bool(lattice, "orci") || aurostd::substring2bool(lattice, "ORCI") || aurostd::substring2bool(lattice, "oI")) {
       found = true;
-      const xmatrix<double> orci(3, 3);
+      xmatrix<double> orci(3, 3);
       orci[1][1] = 0.0;
       orci[1][2] = 1.0;
       orci[1][3] = 1.0;
@@ -787,7 +788,7 @@ namespace LATTICE {
     }
     if (aurostd::substring2bool(lattice, "orcc") || aurostd::substring2bool(lattice, "ORCC") || aurostd::substring2bool(lattice, "oS") || aurostd::substring2bool(lattice, "oC")) {
       found = true;
-      const xmatrix<double> orcc(3, 3);
+      xmatrix<double> orcc(3, 3);
       orcc[1][1] = 1.0;
       orcc[1][2] = 1.0;
       orcc[1][3] = 0.0;
@@ -813,7 +814,7 @@ namespace LATTICE {
     }
     if (aurostd::substring2bool(lattice, "mclc") || aurostd::substring2bool(lattice, "MCLC") || aurostd::substring2bool(lattice, "mS") || aurostd::substring2bool(lattice, "mC")) {
       found = true;
-      const xmatrix<double> mclc(3, 3);
+      xmatrix<double> mclc(3, 3);
       mclc[1][1] = 1.0;
       mclc[1][2] = -1.0;
       mclc[1][3] = 0.0;
@@ -848,7 +849,7 @@ namespace LATTICE {
     xmatrix<double> clattice(3, 3);
     clattice = rlattice;
     // lattices
-    const xmatrix<double> identity(3, 3);
+    xmatrix<double> identity(3, 3);
     identity[1][1] = 1.0;
     identity[1][2] = 0.0;
     identity[1][3] = 0.0;
@@ -865,7 +866,7 @@ namespace LATTICE {
       clattice = cub * rlattice;
     }
     if (lattice == "bcc" || lattice == "BCC") {// unique choice
-      const xmatrix<double> bcc(3, 3);
+      xmatrix<double> bcc(3, 3);
       bcc[1][1] = 0.0;
       bcc[1][2] = 1.0;
       bcc[1][3] = 1.0;
@@ -878,7 +879,7 @@ namespace LATTICE {
       clattice = bcc * rlattice;
     }
     if (lattice == "fcc" || lattice == "FCC") {// unique choice
-      const xmatrix<double> fcc(3, 3);
+      xmatrix<double> fcc(3, 3);
       fcc[1][1] = -1.0;
       fcc[1][2] = 1.0;
       fcc[1][3] = 1.0;
@@ -896,7 +897,7 @@ namespace LATTICE {
       clattice = tet * rlattice;
     }
     if (aurostd::substring2bool(lattice, "bct") || aurostd::substring2bool(lattice, "BCT")) {
-      const xmatrix<double> bct(3, 3);
+      xmatrix<double> bct(3, 3);
       bct[1][1] = 0.0;
       bct[1][2] = 1.0;
       bct[1][3] = 1.0;
@@ -933,7 +934,7 @@ namespace LATTICE {
     }
 
     if (aurostd::substring2bool(lattice, "orcf") || aurostd::substring2bool(lattice, "ORCF")) {
-      const xmatrix<double> orcf(3, 3);
+      xmatrix<double> orcf(3, 3);
       orcf[1][1] = -1.0;
       orcf[1][2] = 1.0;
       orcf[1][3] = 1.0;
@@ -947,7 +948,7 @@ namespace LATTICE {
     }
 
     if (aurostd::substring2bool(lattice, "orci") || aurostd::substring2bool(lattice, "ORCI")) {
-      const xmatrix<double> orci(3, 3);
+      xmatrix<double> orci(3, 3);
       orci[1][1] = 0.0;
       orci[1][2] = 1.0;
       orci[1][3] = 1.0;
@@ -961,7 +962,7 @@ namespace LATTICE {
     }
 
     if (aurostd::substring2bool(lattice, "orcc") || aurostd::substring2bool(lattice, "ORCC")) {
-      const xmatrix<double> orcc(3, 3);
+      xmatrix<double> orcc(3, 3);
       orcc[1][1] = 1.0;
       orcc[1][2] = 1.0;
       orcc[1][3] = 0.0;
@@ -981,7 +982,7 @@ namespace LATTICE {
     }
 
     if (aurostd::substring2bool(lattice, "mclc") || aurostd::substring2bool(lattice, "MCLC")) {
-      const xmatrix<double> mclc(3, 3);
+      xmatrix<double> mclc(3, 3);
       mclc[1][1] = 1.0;
       mclc[1][2] = -1.0;
       mclc[1][3] = 0.0;
@@ -1001,7 +1002,7 @@ namespace LATTICE {
     }
     // done with the lattices
 
-    const xvector<double> data(6);
+    xvector<double> data(6);
     data(1) = modulus(clattice(1));
     data(2) = modulus(clattice(2));
     data(3) = modulus(clattice(3));
@@ -1031,7 +1032,7 @@ namespace LATTICE {
     // ---------------------------------------------------------------------------
     // get volume of original structure and volume tolerance
     const double volume_orig = det(lattice_original); // volume
-    const double amin = min(aurostd::modulus(lattice_original(1)), aurostd::modulus(lattice_original(2)), aurostd::modulus(lattice_original(3)));
+    const double amin = aurostd::min(aurostd::modulus(lattice_original(1)), aurostd::modulus(lattice_original(2)), aurostd::modulus(lattice_original(3)));
     const double volume_eps = eps * amin * amin * amin; // DX20211016 - this volume_eps is used to see if volumes are similar
     double volume_tmp = AUROSTD_MAX_DOUBLE;
     double volume_tmp_abs = AUROSTD_MAX_DOUBLE;
@@ -1469,13 +1470,13 @@ namespace LATTICE {
     //  dims(1)=4;dims(2)=4;dims(3)=4;
     xmatrix<double> rlattice(3, 3);
     xmatrix<double> plattice(3, 3);
-    xmatrix<double> clattice(3, 3);
+    const xmatrix<double> clattice(3, 3);
     xmatrix<double> klattice(3, 3);
-    xmatrix<double> t(3, 3);
+    const xmatrix<double> t(3, 3);
     xvector<double> aus(3);
-    xvector<double> a1(3);
-    xvector<double> a2(3);
-    xvector<double> a3(3);
+    const xvector<double> a1(3);
+    const xvector<double> a2(3);
+    const xvector<double> a3(3);
     xvector<double> rdata(6);
     xvector<double> kdata(6);
     double volume = 0.0;
@@ -1502,7 +1503,7 @@ namespace LATTICE {
     vector<xmatrix<double>> vrlattice1;
     vector<xmatrix<double>> vrlattice1_aaa;
     vector<xvector<double>> vvectors;
-    const double amin = min(aurostd::modulus(str_sp.lattice(1)), aurostd::modulus(str_sp.lattice(2)), aurostd::modulus(str_sp.lattice(3))); // DX
+    const double amin = aurostd::min(aurostd::modulus(str_sp.lattice(1)), aurostd::modulus(str_sp.lattice(2)), aurostd::modulus(str_sp.lattice(3))); // DX
     volume = det(str_sp.lattice);
     const double eps_volume = eps * amin * amin * amin; // DX
     vrlattice1.push_back(str_sp.lattice);
@@ -1534,30 +1535,30 @@ namespace LATTICE {
 
     rdata = Getabc_angles(str_sc.lattice, DEGREES);
     if (crystal_system == "cubic") {
-      cutoff = sqrt(2) * max(rdata[1], rdata[2], rdata[3]);
+      cutoff = sqrt(2) * aurostd::max(rdata[1], rdata[2], rdata[3]);
     }
     if (crystal_system == "hexagonal") {
-      cutoff = max(rdata[1], rdata[2], rdata[3]);
+      cutoff = aurostd::max(rdata[1], rdata[2], rdata[3]);
     } // the primitives always get the max of the lenghts
     //  if(crystal_system=="tetragonal") {cutoff=(2.0/sqrt(3.0))*max(rdata[1],rdata[2],rdata[3]);}
     if (crystal_system == "tetragonal") {
       cutoff = 1.05 * (2.0 / sqrt(3.0)) * RadiusSphereLattice(str_sc.lattice);
     }
     if (crystal_system == "trigonal") {
-      cutoff = max(rdata[1], rdata[2], rdata[3]);
+      cutoff = aurostd::max(rdata[1], rdata[2], rdata[3]);
     } // the primitives always get the max of the lenghts
     //  if(crystal_system=="orthorhombic") {cutoff=sqrt(2)*max(rdata[1],rdata[2],rdata[3]);lattice_found=true;} //SC recipe
     if (crystal_system == "orthorhombic") {
       cutoff = 1.05 * (2.0 / sqrt(3.0)) * RadiusSphereLattice(str_sc.lattice);
     }
     if (crystal_system == "monoclinic") {
-      cutoff = sqrt(2) * max(rdata[1], rdata[2], rdata[3]);
+      cutoff = sqrt(2) * aurostd::max(rdata[1], rdata[2], rdata[3]);
     } // sqrt(2) catches the centered face
     if (crystal_system == "triclinic") {
-      cutoff = max(rdata[1], rdata[2], rdata[3]);
+      cutoff = aurostd::max(rdata[1], rdata[2], rdata[3]);
     } // the primitives always get the max of the lenghts
     if (crystal_system == "triclinic") {
-      cutoff = max(rdata[2] + rdata[3], rdata[1] + rdata[3], rdata[1] + rdata[2]);
+      cutoff = aurostd::max(rdata[2] + rdata[3], rdata[1] + rdata[3], rdata[1] + rdata[2]);
     } // the primitives always get the max of the lenghts
     //  if(crystal_system=="triclinic") {cutoff=rdata[1]+rdata[2]+rdata[3];} // the primitives always get the max of the lenghts
 
@@ -1915,7 +1916,7 @@ namespace LATTICE {
         if (VERBOSE_PROGRESS) {
           cerr << "BCT FROM PRIMITIVE looking for rlattice that is a transformed version of a1=[-a/2 a/2 c/2] a2=[a/2 -a/2 c/2] a3=[a/2 a/2 -c/2]" << endl;
         }
-        const xmatrix<double> bct(3, 3);
+        xmatrix<double> bct(3, 3);
         bct[1][1] = 0.0;
         bct[1][2] = 1.0;
         bct[1][3] = 1.0;
@@ -2001,7 +2002,7 @@ namespace LATTICE {
           cerr << "RHL SYSTEMS looking for lattices a a a alpha alpha alpha" << endl;
         }
         // DX double rhl_ratio=1.0; // you might need to reduce this to reproduce tiny distortions... insted of increasing eps, you reduce it
-        const xmatrix<double> rhl(3, 3);
+        xmatrix<double> rhl(3, 3);
         rhl[1][1] = 1.0;
         rhl[1][2] = -1.0;
         rhl[1][3] = 0.0;
@@ -2216,8 +2217,8 @@ namespace LATTICE {
               a = rdata[1];
               b = rdata[2];
               c = rdata[3];
-              minabc = min(a, b, c);
-              maxabc = max(a, b, c);
+              minabc = aurostd::min(a, b, c);
+              maxabc = aurostd::max(a, b, c);
               if (aurostd::isequal(a, minabc, eps)) {
                 ;
               } // min * * , ok
@@ -2232,8 +2233,8 @@ namespace LATTICE {
                 a = rdata[1];
                 b = rdata[2];
                 c = rdata[3];
-                minabc = min(a, b, c);
-                maxabc = max(a, b, c);
+                minabc = aurostd::min(a, b, c);
+                maxabc = aurostd::max(a, b, c);
               }
               if (aurostd::isequal(c, minabc, eps) || aurostd::isequal(a, maxabc, eps)) { // * * min , swap 1,3    OR    max * * , swap 1,3
                 swap_rows(rlattice, 1, 3);
@@ -2246,8 +2247,8 @@ namespace LATTICE {
                 a = rdata[1];
                 b = rdata[2];
                 c = rdata[3];
-                minabc = min(a, b, c);
-                maxabc = max(a, b, c);
+                minabc = aurostd::min(a, b, c);
+                maxabc = aurostd::max(a, b, c);
               }
               if (aurostd::isequal(b, maxabc, eps)) { // * max * , swap 2,3
                 swap_rows(rlattice, 3, 2);
@@ -2260,8 +2261,8 @@ namespace LATTICE {
                 a = rdata[1];
                 b = rdata[2];
                 c = rdata[3];
-                minabc = min(a, b, c);
-                maxabc = max(a, b, c);
+                minabc = aurostd::min(a, b, c);
+                maxabc = aurostd::max(a, b, c);
               }
               if (aurostd::isequal(c, maxabc, eps)) {
                 ;
@@ -2316,7 +2317,7 @@ namespace LATTICE {
         if (VERBOSE_PROGRESS) {
           cerr << "ORCF SYSTEM looking for orcf*rlattice==conventional lattice of ORCF" << endl;
         }
-        const xmatrix<double> orcf(3, 3);
+        xmatrix<double> orcf(3, 3);
         orcf[1][1] = -1.0;
         orcf[1][2] = 1.0;
         orcf[1][3] = 1.0;
@@ -2408,7 +2409,7 @@ namespace LATTICE {
         if (VERBOSE_PROGRESS) {
           cerr << "ORCF SYSTEM looking for orci*rlattice==conventional lattice of ORCI" << endl;
         }
-        const xmatrix<double> orci(3, 3);
+        xmatrix<double> orci(3, 3);
         orci[1][1] = 0.0;
         orci[1][2] = 1.0;
         orci[1][3] = 1.0;
@@ -2491,7 +2492,7 @@ namespace LATTICE {
         if (VERBOSE_PROGRESS) {
           cerr << "ORCC SYSTEM looking for orcc*rlattice==conventional lattice of ORCC" << endl;
         }
-        const xmatrix<double> orcc(3, 3);
+        xmatrix<double> orcc(3, 3);
         orcc[1][1] = 1.0;
         orcc[1][2] = 1.0;
         orcc[1][3] = 0.0;
@@ -2664,7 +2665,7 @@ namespace LATTICE {
         if (VERBOSE_PROGRESS) {
           cerr << "MCLC SYSTEM a b c alpha<~90 90 90" << endl;
         }
-        const xmatrix<double> mclc(3, 3);
+        xmatrix<double> mclc(3, 3);
         mclc[1][1] = 1.0;
         mclc[1][2] = -1.0;
         mclc[1][3] = 0.0;
@@ -2890,19 +2891,19 @@ namespace LATTICE {
             // lets pick the nicest TRI 1/2 a/b
             a = b = c = alpha = beta = gamma = ka = kb = kc = kalpha = kbeta = kgamma = 0.0;
             bool found_TRI = false;
-            if (weight_TRI1a <= min(weight_TRI2a, weight_TRI1b, weight_TRI2b) && found_TRI == false) {
+            if (weight_TRI1a <= aurostd::min(weight_TRI2a, weight_TRI1b, weight_TRI2b) && found_TRI == false) {
               rlattice = rrlattice_TRI1a;
               found_TRI = true;
             }
-            if (weight_TRI2a <= min(weight_TRI1b, weight_TRI2b, weight_TRI1a) && found_TRI == false) {
+            if (weight_TRI2a <= aurostd::min(weight_TRI1b, weight_TRI2b, weight_TRI1a) && found_TRI == false) {
               rlattice = rrlattice_TRI2a;
               found_TRI = true;
             }
-            if (weight_TRI1b <= min(weight_TRI2b, weight_TRI1a, weight_TRI2a) && found_TRI == false) {
+            if (weight_TRI1b <= aurostd::min(weight_TRI2b, weight_TRI1a, weight_TRI2a) && found_TRI == false) {
               rlattice = rrlattice_TRI1b;
               found_TRI = true;
             }
-            if (weight_TRI2b <= min(weight_TRI1a, weight_TRI2a, weight_TRI1b) && found_TRI == false) {
+            if (weight_TRI2b <= aurostd::min(weight_TRI1a, weight_TRI2a, weight_TRI1b) && found_TRI == false) {
               rlattice = rrlattice_TRI2b;
               found_TRI = true;
             }
@@ -2979,9 +2980,9 @@ namespace LATTICE {
               str_sp.bravais_lattice_system = "triclinic";
               str_sp.pearson_symbol = "aP" + aurostd::utype2string(str_sp.atoms.size());
               // make standard primitive
-              double alf = alpha * PI / 180.0;
-              double bet = beta * PI / 180.0;
-              double gam = gamma * PI / 180.0;
+              const double alf = alpha * PI / 180.0;
+              const double bet = beta * PI / 180.0;
+              const double gam = gamma * PI / 180.0;
               plattice[1][1] = a;
               plattice[1][2] = 0.0;
               plattice[1][3] = 0.0;
@@ -3200,7 +3201,7 @@ void CheckLatticeHistogram() {
 
 namespace LATTICE {
   string Primitive_Lattice_Type(const xstructure& str) {
-    xstructure str_in(str);
+    const xstructure str_in(str);
     xstructure str_sp;
     xstructure str_sc;
     LATTICE::Standard_Lattice_Structure(str_in, str_sp, str_sc);
@@ -3217,16 +3218,16 @@ namespace LATTICE {
 
 namespace LATTICE {
   string Lattice_Variation_Type(const xstructure& str) {
-    xstructure str_in(str);
-    xstructure str_sp;
-    xstructure str_sc;
+    const xstructure str_in(str);
+    const xstructure str_sp;
+    const xstructure str_sc;
     return str_sp.bravais_lattice_variation_type;
   }
 } // namespace LATTICE
 
 namespace LATTICE {
   xstructure Standard_Primitive_Lattice_Structure(const xstructure& str) {
-    xstructure str_in(str);
+    const xstructure str_in(str);
     xstructure str_sp;
     xstructure str_sc;
     LATTICE::Standard_Lattice_Structure(str_in, str_sp, str_sc);
@@ -3236,7 +3237,7 @@ namespace LATTICE {
 
 namespace LATTICE {
   xstructure Standard_Conventional_Lattice_Structure(const xstructure& str) {
-    xstructure str_in(str);
+    const xstructure str_in(str);
     xstructure str_sp;
     xstructure str_sc;
     LATTICE::Standard_Lattice_Structure(str_in, str_sp, str_sc);
@@ -3481,7 +3482,7 @@ namespace LATTICE {
     double beta;
     double gamma;
     double pLtheta;
-    xstructure str_in(poscar, IOVASP_AUTO);
+    const xstructure str_in(poscar, IOVASP_AUTO);
     xstructure str_sp;
     if (mode < 10) {
       str_sp = GetStandardPrimitive(str_in);
@@ -3519,7 +3520,7 @@ namespace LATTICE {
     xvector<double> b3(3);
     xvector<double> pL(3);
     xvector<double> pLaxis(3);
-    xvector<double> pz(3);
+    const xvector<double> pz(3);
     xvector<double> ptmp(3);
     xvector<double> tmpb1(3);
     xvector<double> tmpb2(3);
@@ -3590,7 +3591,7 @@ namespace LATTICE {
     xmatrix<int> ircon(2, 50);
     xmatrix<int> irconback(2, 50);
     vector<string> irbzlab(50 + 1);
-    string title = "";
+    const string title = "";
     string glatt = "";
     string gpath = "";
 
@@ -11004,7 +11005,7 @@ namespace LATTICE {
       igrid = uint(round(grid));
     }
     if (grid < 0) {
-      igrid = uint(round(max(1.0, -modulus(Bx - Ax) / grid)));
+      igrid = uint(round(aurostd::max(1.0, -modulus(Bx - Ax) / grid)));
     }
     if (grid == 0.0) {
       igrid = 1;
@@ -11170,15 +11171,15 @@ namespace LATTICE {
     //  rdata=LATTICE::Getabc_angles_Conventional(sp,lattice_type,DEGREES); // multiply with the lattice matrices..
     kdata = Getabc_angles(klattice, DEGREES);
 
-    double a = cdata[1];
-    double b = cdata[2];
-    double c = cdata[3];
-    double alpha = cdata[4]; //,beta=cdata[5],gamma=cdata[6];
+    const double a = cdata[1];
+    const double b = cdata[2];
+    const double c = cdata[3];
+    const double alpha = cdata[4]; //,beta=cdata[5],gamma=cdata[6];
     //  double kalpha=kdata[4],kbeta=kdata[5],kgamma=kdata[6];
     stringstream oss;
 
     foundBZ = false;
-    uint nkpoint = 0;
+    const uint nkpoint = 0;
 
     //   1. TRI order: kalpha,kbeta,kgamma  > 90 (kgamma<kalpha, kgamma<kbeta)
     //   or kalpha,kbeta,kgamma  < 90 (kgamma>kalpha, kgamma>kbeta)

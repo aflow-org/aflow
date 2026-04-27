@@ -1,18 +1,25 @@
 ## AFLOW Documentation
 
-### How to build
+The AFLOW source code documentation is generated using [doxygen](https://doxygen.nl/). 
+The documentation system provides detailed information about the codebase including classes, functions, and modules.
 
-- install [doxygen](https://doxygen.nl/download.html)
-  - mac: `brew install doxygen`
-  - debian/ubuntu: `sudo apt install doxygen`
-- change to this `doc` folder
-- run `doxygen`
-  - `doxygen aflow.doxy`
-- open the `index.html`
-  - mac: `open ./out/html/index.html`
-- create the pdf
-  - `make -p ./out/latex`
-  
+### Building the Documentation
+
+First, install [doxygen](https://doxygen.nl/download.html):
+- macOS: `brew install doxygen`
+- Debian/Ubuntu: `sudo apt install doxygen`
+
+Then generate the documentation:
+```shell
+cmake -S src --preset release
+cd build/release/docs
+doxygen aflow.doxy
+```
+
+The generated documentation can be viewed by opening the index file:
+- macOS: `open ./out/html/index.html`
+- Linux: `xdg-open ./out/html/index.html`
+
 ### How to document
 ```c++
   /// @brief volume of a solid defined by points, facets their normals
@@ -73,7 +80,7 @@
     - `author` is the two letter shorthand used in comment signatures (`//HE20220707`)
     - `date` follows the same format (`YYYYMMDD`)
     - `change` short description of the main change
-    - avoid extra spaces between `author` and `date`
+    - avoid spaces between `author` and `date`
 - If needed, add a detailed explanation next
   - math symbols in text can be used encapsuled in `\f$`
   - full multiline functions can use `\f[` and `\f]`

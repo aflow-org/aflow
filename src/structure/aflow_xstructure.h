@@ -11,6 +11,7 @@
 #include "AUROSTD/aurostd_xmatrix.h"
 #include "AUROSTD/aurostd_xoption.h"
 #include "AUROSTD/aurostd_xparser.h"
+#include "AUROSTD/aurostd_xplotter.h"
 #include "AUROSTD/aurostd_xserialization.h"
 #include "AUROSTD/aurostd_xvector.h"
 

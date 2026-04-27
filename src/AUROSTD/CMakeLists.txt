@@ -1,16 +1,10 @@
-# set definitions
-
-add_compile_definitions(AFLOW_VERSION="${AFLOW_VERSION}")
-add_compile_definitions(AFLOW_VERSION_SHORT="${CMAKE_PROJECT_VERSION}")
-add_compile_definitions(TODAY="${TODAY_TMP}")
-add_compile_definitions(CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}/")
 
 # building apack to avoid dependency on xz being installed
 add_executable(apack apack.c)
 target_link_libraries(apack PRIVATE ${LibArchive_LIBRARIES})
 
 # building aurostd
-add_library(aurostd OBJECT aurostd.h
+add_library(aurostd OBJECT aurostd.cpp
                            aurostd_argv.cpp
                            aurostd_hash.cpp
                            aurostd_data.cpp
@@ -30,13 +24,21 @@ add_library(aurostd OBJECT aurostd.h
                            aurostd_xrandom.cpp
                            aurostd_xscalar.cpp
                            aurostd_xtensor.cpp
-                           aurostd_xvector.cpp)
+                           aurostd_xvector.cpp
+                           aurostd_xplotter.cpp
+                           aurostd_math.cpp)
 
-target_include_directories(aurostd PUBLIC ${CMAKE_SOURCE_DIR})
+target_include_directories(aurostd
+        PRIVATE
+        ${CMAKE_SOURCE_DIR}
+        ${CMAKE_BINARY_DIR}
+)
+
+target_link_libraries(aurostd PRIVATE config)
 
 # set DATA folder
 set(DATA_FOLDER ${CMAKE_CURRENT_SOURCE_DIR}/../DATA/)
-set(DATA_GROUPS README FINDSYM FROZSL PHVASP TEST SCRIPTS IMAGES)
+set(DATA_GROUPS README FINDSYM FROZSL PHVASP PSPOTS PARAM TEST SCRIPTS IMAGES)
 
 # commands to generate compressed/archived variants
 foreach (DATA_GROUP ${DATA_GROUPS})

@@ -11,8 +11,6 @@
 // Extracted in date  [date=2014-01-14]
 // ***************************************************************************
 
-#ifndef _AFLOW_NOMIX_CPP
-#define _AFLOW_NOMIX_CPP
 #include <string>
 #include <vector>
 
@@ -24,7 +22,7 @@
 int MiscibilityCheck(std::string system_in) {  // (nomix,unknown,mix)
   std::string system = system_in;
   std::vector<std::string> vspecies;
-  // XATOM_SplitAlloySpecies(KBIN::VASP_PseudoPotential_CleanName(system_in),vspecies);
+  // XATOM_SplitAlloySpecies(aurostd::VASP_PseudoPotential_CleanName(system_in),vspecies);
   XATOM_AlphabetizationSpecies(system, vspecies);
   if (system.find("Cs") != std::string::npos) {
     return MISCIBILITY_SYSTEM_NOMIX; // Cs bug !
@@ -4588,7 +4586,6 @@ int MiscibilityCheck(std::string system_in) {  // (nomix,unknown,mix)
 // Total structures calculated = 301071
 // Extracted in date  [date=2014-01-14]
 // ***************************************************************************
-#endif
 
 // ***************************************************************************
 // *                                                                         *

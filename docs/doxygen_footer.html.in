@@ -1,0 +1,18 @@
+<!-- HTML footer for doxygen 1.16.1-->
+<!-- start footer part -->
+<!--BEGIN GENERATE_TREEVIEW-->
+<div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
+  <ul>
+    $navpath
+    <li class="footer"><strong>Doxygen Version:</strong> $doxygenversion </li>
+    <li class="footer"><strong>Git Commit:</strong> <a href=@GIT_COMMIT_URL@>@GIT_COMMIT_SHORT@@GIT_DIRTY@</a></li>
+    <li class="footer"><strong>Commit Date:</strong> @GIT_COMMIT_DATE@ </li>
+    <li class="footer"><strong>Version:</strong> @CMAKE_PROJECT_VERSION@  </li>
+  </ul>
+</div>
+<!--END GENERATE_TREEVIEW-->
+<!--BEGIN !GENERATE_TREEVIEW-->
+</div><!-- doc-content -->
+<!--END !GENERATE_TREEVIEW-->
+</body>
+</html>

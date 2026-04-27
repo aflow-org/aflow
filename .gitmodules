@@ -1,3 +1,3 @@
 [submodule "src/DATA/PROTO/aflow_prototype_encyclopedia"]
 	path = src/DATA/PROTO/aflow_prototype_encyclopedia
-	url = git@github.com:aflow-org/aflow_prototype_encyclopedia.git
+	url = https://github.com/aflow-org/aflow_prototype_encyclopedia.git
